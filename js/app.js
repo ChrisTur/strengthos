@@ -811,7 +811,7 @@ function renderExerciseRows(lastSession){
     const safeName=ex.name.replace(/'/g,"\\'");
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
-    const ytQ=encodeURIComponent(ex.name+' exercise form tutorial');
+    const ytQ=encodeURIComponent(ex.name+' exercise form');
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
     const swapTag=(!isCustom&&muscle)
@@ -824,7 +824,7 @@ function renderExerciseRows(lastSession){
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
-              <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+              <a href="https://www.youtube.com/shorts?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
             </div>
           </div>
           ${isCustom
