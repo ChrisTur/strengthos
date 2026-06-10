@@ -200,6 +200,120 @@ const CARDIO_DAYS={
 };
 function getCardioDay(){ return CARDIO_DAYS[getCardioLevel()]||CARDIO_DAYS.moderate }
 
+// Pure cardio-only schedules — used when goal === 'cardio'
+const CARDIO_PROGRAMS={
+  3:[
+    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
+     tags:['Cardio','Endurance'],
+     defaultNote:'Steady state — hold 60–70% max HR. You should be able to speak in short sentences.',
+     exercises:[
+      {name:'Treadmill / Walk-Run',   structure:'30 min',           note:'Build by 2 min/week — first 5 min easy, last 5 min easy'},
+      {name:'Stationary Bike',        structure:'15 min',           note:'Moderate resistance after the run — active cool-down'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Quads, hip flexors, calves — 30s each'},
+     ]},
+    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
+     tags:['HIIT','Fat Loss','High Intensity'],
+     defaultNote:'High-intensity intervals — push to 80–90% max HR on work sets. Full rest between rounds.',
+     exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Build to 70% max HR — never skip this'},
+      {name:'Sprint Intervals',       structure:'8 × 30s / 30s rest',note:'Max effort each sprint — walk rest'},
+      {name:'Burpees',                structure:'3 × 10',           note:'Full range, chest to floor, jump at top'},
+      {name:'Jump Rope',              structure:'3 × 2 min',        note:'Continuous effort, 60s rest between rounds'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Essential after HIIT — do not skip'},
+     ]},
+    {dow:'Day 3',name:'Active Recovery',short:'Recovery',dots:[GREEN],
+     tags:['Recovery','Cardio','Core'],
+     defaultNote:'Easy movement day — 50–60% max HR, no burning. Goal is blood flow and mobility, not effort.',
+     exercises:[
+      {name:'Brisk Walk',             structure:'25 min',           note:'Comfortable pace — active recovery, not rest'},
+      {name:'Elliptical',             structure:'10 min',           note:'Low resistance, smooth motion'},
+      {name:'Plank Hold',             structure:'3 × 30–45s',       note:'Core stability — steady breathing'},
+      {name:'Full-Body Stretch',      structure:'10 min',           note:'Hold each stretch 30–45s'},
+      {name:'Foam Roll',              structure:'5 min',            note:'Glutes, IT band, upper back'},
+     ]},
+  ],
+  4:[
+    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
+     tags:['Cardio','Endurance'],
+     defaultNote:'Steady state — hold 60–70% max HR for the full session.',
+     exercises:[
+      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min/week — consistency beats intensity here'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
+     ]},
+    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
+     tags:['HIIT','Fat Loss'],
+     defaultNote:'Intervals — 80–90% max HR on work sets. True rest between rounds.',
+     exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build — protect your joints'},
+      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort, walk the rest'},
+      {name:'Air Bike (Assault Bike)',structure:'4 × 20s / 40s rest',note:'All-out — the hardest 20s you have'},
+      {name:'Burpees',                structure:'3 × 12',           note:'Full range every rep'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Essential — heart rate return'},
+     ]},
+    {dow:'Day 3',name:'Zone 2 Endurance',short:'Zone 2',dots:[BLUE,GREEN],
+     tags:['Cardio','Endurance','Zone 2'],
+     defaultNote:'Zone 2 — long easy effort at 60–70% max HR. This builds your aerobic base. Should feel easy.',
+     exercises:[
+      {name:'Stationary Bike',        structure:'40 min',           note:'Steady cadence, hold the same pace throughout'},
+      {name:'Rowing Machine',         structure:'15 min',           note:'Moderate pace — focus on form and breathing'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body + shoulders'},
+     ]},
+    {dow:'Day 4',name:'Active Recovery',short:'Recovery',dots:[GREEN],
+     tags:['Recovery','Core'],
+     defaultNote:'Easy day — restore and move. No burning, no breathlessness.',
+     exercises:[
+      {name:'Brisk Walk',             structure:'30 min',           note:'Easy pace, outdoors if possible'},
+      {name:'Plank Hold',             structure:'3 × 45s',          note:'Core bracing — stable hips'},
+      {name:'Full-Body Stretch',      structure:'10 min',           note:'Priority: hips, hamstrings, upper back'},
+      {name:'Foam Roll',              structure:'5 min',            note:'Slow and deliberate — glutes, IT band, lats'},
+     ]},
+  ],
+  5:[
+    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
+     tags:['Cardio','Endurance'],
+     defaultNote:'Steady state — 60–70% max HR. Easy conversation pace throughout.',
+     exercises:[
+      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min each week'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
+     ]},
+    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
+     tags:['HIIT','High Intensity'],
+     defaultNote:'Intervals — 80–90% max HR work sets, full rest between rounds.',
+     exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build before intervals'},
+      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort every sprint'},
+      {name:'Jump Rope',              structure:'4 × 2 min',        note:'Continuous, 60s rest rounds'},
+      {name:'Burpees',                structure:'4 × 10',           note:'Full range'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Heart rate return — do not skip'},
+     ]},
+    {dow:'Day 3',name:'Zone 2 Endurance',short:'Zone 2',dots:[BLUE,GREEN],
+     tags:['Cardio','Zone 2','Endurance'],
+     defaultNote:'Long easy effort — the session that builds your engine. Keep it truly easy.',
+     exercises:[
+      {name:'Stationary Bike',        structure:'45 min',           note:'Steady cadence, same pace throughout — no surges'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body'},
+     ]},
+    {dow:'Day 4',name:'Tempo Run',short:'Tempo',dots:[CORAL,AMBER],
+     tags:['Cardio','Endurance','Tempo'],
+     defaultNote:'Tempo — comfortably hard. 75–85% max HR. Should feel like a "controlled struggle".',
+     exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Easy pace before tempo'},
+      {name:'Running',                structure:'20 min @ tempo pace',note:'Steady hard effort — not a sprint, not a jog'},
+      {name:'Stair Climber',          structure:'10 min',           note:'Moderate-high resistance, steady climb'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Full lower body stretch'},
+     ]},
+    {dow:'Day 5',name:'Active Recovery',short:'Recovery',dots:[GREEN],
+     tags:['Recovery','Core'],
+     defaultNote:'Easy movement only. Active recovery accelerates progress more than extra hard sessions.',
+     exercises:[
+      {name:'Brisk Walk',             structure:'30 min',           note:'Easy, enjoyable pace'},
+      {name:'Plank Hold',             structure:'3 × 45s',          note:'Core stability maintenance'},
+      {name:'Full-Body Stretch',      structure:'12 min',           note:'Hold each stretch 30–45s — hips, hamstrings, back, shoulders'},
+      {name:'Foam Roll',              structure:'5 min',            note:'Glutes, IT band, upper back, calves'},
+     ]},
+  ],
+};
+
 // Default day-of-week → workout index map per frequency (Mon=0 … Sun=6)
 const WEEK_DEFAULTS={
   7:[0,1,2,3,4,5,6],
@@ -214,24 +328,31 @@ function getActiveDays(){
   const ai=getAIPlan();
   if(ai&&Array.isArray(ai.days)&&ai.days.length) return ai.days;
   const dpw=getDaysPerWeek(),goal=getGoal();
+  // Pure cardio goal → use dedicated cardio-only schedule
+  if(goal==='cardio'&&CARDIO_PROGRAMS[dpw]) return CARDIO_PROGRAMS[dpw];
   let base;
   if(PROGRAMS[dpw]) base=PROGRAMS[dpw];
   else if(dpw===5) base=DAYS.slice(0,5);
   else if(dpw===6) base=DAYS.slice(0,6);
   else base=DAYS;
-  // Fat loss / cardio goals with a frequency-based program → inject a dedicated cardio day
-  if((goal==='fat_loss'||goal==='cardio')&&PROGRAMS[dpw]) return [...base,getCardioDay()];
+  // Fat loss goal with a frequency-based program → inject a dedicated cardio day
+  if(goal==='fat_loss'&&PROGRAMS[dpw]) return [...base,getCardioDay()];
   return base;
 }
 function getActiveDay(idx){ return getActiveDays()[idx]||null }
 
-// Goal-aware week defaults — fat_loss alternates strength + cardio
+// Goal-aware week defaults
 function getGoalWeekDefaults(){
   const dpw=getDaysPerWeek(),goal=getGoal();
-  if(PROGRAMS[dpw]&&(goal==='fat_loss'||goal==='cardio')){
+  if(goal==='cardio'&&CARDIO_PROGRAMS[dpw]){
+    // Spread cardio days evenly across the week
+    const n=CARDIO_PROGRAMS[dpw].length;
+    return [0,1,2,3,4,5,6].map((_,i)=>i<n?i:REST_DAY);
+  }
+  if(PROGRAMS[dpw]&&goal==='fat_loss'){
     const ci=PROGRAMS[dpw].length; // index of CARDIO_DAY in getActiveDays()
-    if(dpw===3) return [0,ci,1,ci,2,REST_DAY,REST_DAY]; // Mon-Push Tue-Cardio Wed-Pull Thu-Cardio Fri-Legs
-    if(dpw===4) return [0,1,ci,2,3,REST_DAY,REST_DAY];  // Mon-Chest Tue-Back Wed-Cardio Thu-Legs Fri-Shoul
+    if(dpw===3) return [0,ci,1,ci,2,REST_DAY,REST_DAY];
+    if(dpw===4) return [0,1,ci,2,3,REST_DAY,REST_DAY];
   }
   return WEEK_DEFAULTS[dpw]||WEEK_DEFAULTS[7];
 }
