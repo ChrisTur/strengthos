@@ -130,10 +130,35 @@ function confirmRename(){
 function openPlateModal(){
   document.getElementById('plate-input').value='';
   document.getElementById('plate-result').innerHTML='<span style="font-size:12px;color:var(--text3)">Enter a target weight above.</span>';
+  document.getElementById('orm-weight').value='';
+  document.getElementById('orm-reps').value='';
+  document.getElementById('orm-result').innerHTML='<span style="font-size:12px;color:var(--text3)">Enter weight and reps above.</span>';
+  switchCalcTab('plates');
   document.getElementById('plate-modal').style.display='flex';
   setTimeout(()=>document.getElementById('plate-input').focus(),60);
 }
 function closePlateModal(){ document.getElementById('plate-modal').style.display='none' }
+function switchCalcTab(tab){
+  document.getElementById('calc-plates-panel').style.display=tab==='plates'?'':'none';
+  document.getElementById('calc-1rm-panel').style.display=tab==='1rm'?'':'none';
+  document.getElementById('tab-plates').classList.toggle('active',tab==='plates');
+  document.getElementById('tab-1rm').classList.toggle('active',tab==='1rm');
+}
+function calc1RM(){
+  const w=parseFloat(document.getElementById('orm-weight').value);
+  const r=parseInt(document.getElementById('orm-reps').value);
+  const res=document.getElementById('orm-result');
+  if(!w||!r||r<1||r>30){res.innerHTML='<span style="font-size:12px;color:var(--text3)">Enter weight and reps (1–30).</span>';return}
+  const est=Math.round(w*(1+r/30)/2.5)*2.5;
+  const rows=[100,95,90,85,80,75,70,65].map(pct=>{
+    const pw=Math.round(est*pct/100/2.5)*2.5;
+    const zone=pct===100?'Max 1RM':pct>=90?'Strength':pct>=75?'Power':'Hypertrophy';
+    return`<tr><td>${pct}%</td><td style="font-weight:${pct===100?700:400};color:${pct===100?'var(--accent)':'var(--text)'}">${pw} ${getWeightUnit()}</td><td style="color:var(--text3)">${zone}</td></tr>`;
+  }).join('');
+  res.innerHTML=`
+    <div style="margin-bottom:10px;font-size:13px">Est. 1RM: <span style="font-size:18px;font-weight:700;color:var(--accent)">${est} ${getWeightUnit()}</span></div>
+    <table class="orm-table"><thead><tr><th>%</th><th>Weight</th><th>Zone</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
 function calcPlates(){
   const target=parseFloat(document.getElementById('plate-input').value);
   const res=document.getElementById('plate-result');
@@ -916,12 +941,52 @@ function updateSessionStatus(){
   el.style.color='';
 }
 function saveSession(){
+  const prevPRs=calcPRs(loadSessions());
   const sessions=loadSessions();
   const session=JSON.parse(JSON.stringify(draftSession)); session.id=Date.now();
   sessions.push(session); saveSessions(sessions);
-  draftSession.savedAt=Date.now();           // keep data visible; mark as saved
+  draftSession.savedAt=Date.now();
   saveDraft(activeDate,draftSession);
   renderWeekGrid(); renderExerciseRows(session); updateSessionStatus();
+  showCompletionSummary(session,prevPRs);
+}
+
+function showCompletionSummary(session,prevPRs){
+  const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);
+  if(doneSets===0) return; // nothing completed, skip the summary
+  const totalSets=session.exercises.reduce((a,e)=>a+e.sets.length,0);
+  const volume=session.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>{
+    if(!s.done) return b;
+    return b+(parseFloat(s.weight)||0)*(parseFloat(s.reps)||0);
+  },0),0);
+  const newPRs=[];
+  session.exercises.forEach(ex=>{
+    let bestW=0,bestReps=0;
+    ex.sets.forEach(s=>{
+      if(!s.done||!s.weight) return;
+      const w=parseFloat(s.weight);
+      if(w>bestW){bestW=w;bestReps=parseInt(s.reps)||0;}
+    });
+    if(bestW>0&&bestW>(prevPRs[ex.name]?.weight||0))
+      newPRs.push({name:ex.name,weight:bestW,reps:bestReps});
+  });
+  const day=getActiveDay(session.dayIdx)||{name:'Workout'};
+  const prsHTML=newPRs.length
+    ?`<div class="completion-prs"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">New PRs 🏆</div>${newPRs.map(p=>`<div class="completion-pr-chip">${p.name} — ${p.weight} ${getWeightUnit()} × ${p.reps}</div>`).join('')}</div>`
+    :'';
+  document.getElementById('completion-content').innerHTML=`
+    <div style="font-size:44px;margin-bottom:6px">${newPRs.length?'🏆':'✅'}</div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:3px">${day.name} Done!</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">${new Date().toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'})}</div>
+    <div class="completion-stats">
+      <div><div class="completion-stat-val">${doneSets}/${totalSets}</div><div class="completion-stat-lbl">Sets Done</div></div>
+      ${volume>0?`<div><div class="completion-stat-val">${volume.toLocaleString()}</div><div class="completion-stat-lbl">${getWeightUnit()} Vol</div></div>`:''}
+    </div>
+    ${prsHTML}`;
+  document.getElementById('completion-modal').style.display='flex';
+}
+function closeCompletionModal(){
+  document.getElementById('completion-modal').style.display='none';
 }
 function discardDraft(){
   if(!confirm('Reset this workout log and start fresh?')) return;
@@ -980,8 +1045,8 @@ function renderDashboard(){
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">Total Sessions</div></div>
       <div class="stat-card"><div class="stat-value">${stats.thisWeek}</div><div class="stat-label">This Week</div></div>
-      <div class="stat-card"><div class="stat-value">${stats.streak}</div><div class="stat-label">Day Streak</div>
-        <div class="stat-sub">${stats.streak>0?'🔥 Keep it up!':'Log to start'}</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.weekStreak}</div><div class="stat-label">Week Streak</div>
+        <div class="stat-sub">${stats.weekStreak>0?'🔥 Keep it up!':'Log to start'}</div></div>
       <div class="stat-card"><div class="stat-value">${stats.topDay}</div><div class="stat-label">Most Trained</div>
         <div class="stat-sub">${stats.topDayCount>0?stats.topDayCount+' sessions':''}</div></div>
     </div>
@@ -1074,18 +1139,27 @@ function calcStats(sessions){
   const today=new Date().toISOString().slice(0,10);
   const weekAgo=new Date(Date.now()-6*86400000).toISOString().slice(0,10);
   const thisWeek=sessions.filter(s=>s.date>=weekAgo&&s.date<=today).length;
-  const dateCounts={};
-  sessions.forEach(s=>{dateCounts[s.date]=(dateCounts[s.date]||0)+1});
-  let streak=0,check=new Date(today+'T00:00:00');
-  if(!dateCounts[today]) check.setDate(check.getDate()-1);
-  while(true){const ds=check.toISOString().slice(0,10);if(!dateCounts[ds])break;streak++;check.setDate(check.getDate()-1)}
+  // Week streak — consecutive Mon-Sun calendar weeks with ≥1 session
+  const now=new Date();
+  const dow=now.getDay(),toMon=dow===0?-6:1-dow;
+  const curMon=new Date(now); curMon.setDate(now.getDate()+toMon); curMon.setHours(0,0,0,0);
+  let weekStreak=0;
+  const wk=new Date(curMon);
+  while(true){
+    const ws=wk.toISOString().slice(0,10);
+    const we=new Date(wk); we.setDate(wk.getDate()+7);
+    const weStr=we.toISOString().slice(0,10);
+    if(!sessions.some(s=>s.date>=ws&&s.date<weStr)) break;
+    weekStreak++;
+    wk.setDate(wk.getDate()-7);
+  }
   const activeDays=getActiveDays();
   const nBuckets=Math.max(7,activeDays.length);
   const dayCounts=Array(nBuckets).fill(0);
   sessions.forEach(s=>{if(s.dayIdx>=0&&s.dayIdx<nBuckets)dayCounts[s.dayIdx]++});
   const maxD=Math.max(...dayCounts),topIdx=dayCounts.indexOf(maxD);
   const topDayObj=maxD>0?(activeDays[topIdx]||DAYS[topIdx]||null):null;
-  return{total:sessions.length,thisWeek,streak,topDay:topDayObj?topDayObj.dow:'—',topDayCount:maxD};
+  return{total:sessions.length,thisWeek,weekStreak,topDay:topDayObj?topDayObj.dow:'—',topDayCount:maxD};
 }
 
 function calcWeeklyData(sessions,numWeeks){

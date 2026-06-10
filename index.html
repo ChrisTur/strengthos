@@ -144,16 +144,46 @@
   </div>
 </div>
 
-<!-- Plate calculator modal -->
+<!-- Plate / 1RM calculator modal -->
 <div id="plate-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closePlateModal()">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-title">🏋️ Plate Calculator</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Standard Olympic bar = 45 lbs</p>
-    <input type="number" id="plate-input" class="modal-input" placeholder="Target weight (lbs)" min="45" step="2.5"
-      oninput="calcPlates()" onkeydown="if(event.key==='Escape')closePlateModal()">
-    <div class="plate-result" id="plate-result"><span style="font-size:12px;color:var(--text3)">Enter a target weight above.</span></div>
-    <div class="modal-actions">
+  <div class="modal-box" onclick="event.stopPropagation()" style="width:360px;max-width:100%">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="calc-tab active" id="tab-plates" onclick="switchCalcTab('plates')">🏋️ Plates</button>
+      <button class="calc-tab" id="tab-1rm" onclick="switchCalcTab('1rm')">💪 1RM</button>
+    </div>
+    <div id="calc-plates-panel">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Standard Olympic bar = 45 lbs</p>
+      <input type="number" id="plate-input" class="modal-input" placeholder="Target weight (lbs)" min="45" step="2.5"
+        oninput="calcPlates()" onkeydown="if(event.key==='Escape')closePlateModal()">
+      <div class="plate-result" id="plate-result"><span style="font-size:12px;color:var(--text3)">Enter a target weight above.</span></div>
+    </div>
+    <div id="calc-1rm-panel" style="display:none">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Weight</label>
+          <input type="number" id="orm-weight" class="modal-input" placeholder="lbs" min="0" step="2.5"
+            oninput="calc1RM()" onkeydown="if(event.key==='Escape')closePlateModal()">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Reps completed</label>
+          <input type="number" id="orm-reps" class="modal-input" placeholder="reps" min="1" max="30"
+            oninput="calc1RM()" onkeydown="if(event.key==='Escape')closePlateModal()">
+        </div>
+      </div>
+      <div id="orm-result"><span style="font-size:12px;color:var(--text3)">Enter weight and reps above.</span></div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-sm" onclick="closePlateModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session completion modal -->
+<div id="completion-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCompletionModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="text-align:center;width:320px;max-width:100%">
+    <div id="completion-content"></div>
+    <div class="modal-actions" style="justify-content:center;margin-top:18px">
+      <button class="btn btn-sm btn-green" onclick="closeCompletionModal()">Done</button>
     </div>
   </div>
 </div>
