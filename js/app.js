@@ -748,19 +748,18 @@ function renderExerciseRows(lastSession){
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
     const ytQ=encodeURIComponent(ex.name+' exercise form tutorial');
     const muscle=getExerciseMuscle(ex.name);
-    const swapBtn=(!isCustom&&muscle)
-      ?`<button class="ex-swap-btn" onclick="openSwapModal(${ei})">⇄ Swap</button>`:'';
-    const muscleTag=muscle
-      ?`<span class="ex-muscle-tag" style="background:${MUSCLE_COLORS[muscle]||'#555'}">${muscle}</span>`:'';
+    const muscleColor=MUSCLE_COLORS[muscle]||'#555';
+    const swapTag=(!isCustom&&muscle)
+      ?`<button class="ex-muscle-swap-btn" style="background:${muscleColor}" onclick="openSwapModal(${ei})" title="Tap to swap with another ${muscle} exercise">${muscle} ⇄</button>`
+      :(muscle?`<span class="ex-muscle-tag" style="background:${muscleColor}">${muscle}</span>`:'');
     tr.innerHTML=`
       <td class="ex-name-cell">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
           <div>
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
-              ${muscleTag}
+              ${swapTag}
               <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
-              ${swapBtn}
             </div>
           </div>
           ${isCustom

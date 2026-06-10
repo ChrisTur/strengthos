@@ -603,23 +603,34 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   font-size:9px;
   font-weight:700;
   color:#fff;
-  border-radius:3px;
-  padding:1px 5px;
+  border-radius:4px;
+  padding:2px 6px;
   text-transform:uppercase;
   letter-spacing:0.4px;
 }
-.ex-swap-btn{
-  font-size:10px;
-  color:var(--text3);
-  background:var(--surface2);
+/* Clickable muscle badge — the primary swap entry point */
+.ex-muscle-swap-btn{
+  font-size:9px;
+  font-weight:700;
+  color:#fff;
   border:none;
-  border-radius:3px;
-  padding:1px 6px;
+  border-radius:4px;
+  padding:3px 7px;
   cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
   white-space:nowrap;
-  transition:color 0.15s, background 0.15s;
+  opacity:0.9;
+  transition:opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  min-height:22px;
+  min-width:44px;
 }
-.ex-swap-btn:hover{ color:var(--accent); background:rgba(224,123,57,0.15); }
+.ex-muscle-swap-btn:hover{
+  opacity:1;
+  transform:translateY(-1px);
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+.ex-muscle-swap-btn:active{ transform:translateY(0); opacity:0.8; }
 
 @media(max-width:600px){
   .ob-goals{ grid-template-columns:1fr 1fr; }
