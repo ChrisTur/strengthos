@@ -445,49 +445,101 @@ function completeOnboarding(){
   initApp();
 }
 
-// ── Exercise swap modal ───────────────────────────────────────────────────────
-let _swapEI=-1;
+// ── Exercise library modal (swap + add) ───────────────────────────────────────
+let _swapEI=-1, _swapMode='swap', _swapMuscleFilter=null;
 
-function openSwapModal(ei){
-  _swapEI=ei;
-  const ex=draftSession.exercises[ei];
-  const muscle=getExerciseMuscle(ex.name);
-  document.getElementById('swap-subtitle').textContent=
-    'Replacing: '+ex.name+(muscle?' · '+muscle+' group':'');
+function _openLibraryModal(){
   document.getElementById('swap-search').value='';
+  renderSwapMuscleFilter();
   renderSwapGrid();
   document.getElementById('swap-modal').style.display='flex';
   setTimeout(()=>document.getElementById('swap-search').focus(),60);
 }
 
-function renderSwapGrid(){
-  if(_swapEI<0) return;
-  const ex=draftSession.exercises[_swapEI];
+function openSwapModal(ei){
+  _swapEI=ei; _swapMode='swap'; _swapMuscleFilter=null;
+  const ex=draftSession.exercises[ei];
   const muscle=getExerciseMuscle(ex.name);
+  document.getElementById('swap-modal-title').textContent='⇄ Swap Exercise';
+  document.getElementById('swap-subtitle').textContent=
+    'Replacing: '+ex.name+(muscle?' · '+muscle+' group':'');
+  _openLibraryModal();
+}
+
+function openAddExModal(){
+  _swapEI=-1; _swapMode='add'; _swapMuscleFilter=null;
+  document.getElementById('swap-modal-title').textContent='+ Add Exercise';
+  document.getElementById('swap-subtitle').textContent='Browse the library or search by name.';
+  _openLibraryModal();
+}
+
+function setSwapMuscleFilter(muscle){
+  _swapMuscleFilter=_swapMuscleFilter===muscle?null:muscle;
+  renderSwapMuscleFilter();
+  renderSwapGrid();
+}
+
+function renderSwapMuscleFilter(){
+  const el=document.getElementById('swap-muscle-filter');
+  if(!el) return;
+  if(_swapMode!=='add'){ el.style.display='none'; return; }
+  el.style.display='';
+  el.innerHTML=['All',...Object.keys(EXERCISE_LIBRARY)].map(m=>{
+    const isAll=m==='All';
+    const active=isAll?!_swapMuscleFilter:_swapMuscleFilter===m;
+    const col=isAll?'var(--text2)':(MUSCLE_COLORS[m]||'#555');
+    const style=active?`background:${col};color:#fff;border-color:${col}`:`color:${col};border-color:${col}`;
+    const fn=isAll?'null':`'${m}'`;
+    return `<button class="muscle-filter-tab" style="${style}" onclick="setSwapMuscleFilter(${fn})">${m}</button>`;
+  }).join('');
+}
+
+function renderSwapGrid(){
   const q=document.getElementById('swap-search').value.trim().toLowerCase();
   const isSearch=q.length>0;
-  let pool=[];
-  if(muscle&&EXERCISE_LIBRARY[muscle]){
-    pool=EXERCISE_LIBRARY[muscle].filter(e=>e.name!==ex.name);
-    if(isSearch) pool=[...pool,...Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name&&!pool.includes(e))];
+  let pool=[], activeMuscle=null;
+
+  if(_swapMode==='add'){
+    // Add mode: show library filtered by tab selection and/or search
+    if(_swapMuscleFilter&&EXERCISE_LIBRARY[_swapMuscleFilter]){
+      pool=EXERCISE_LIBRARY[_swapMuscleFilter].slice();
+      activeMuscle=_swapMuscleFilter;
+    } else {
+      pool=Object.values(EXERCISE_LIBRARY).flat();
+    }
+    // Hide exercises already in this session
+    const inSession=new Set((draftSession?.exercises||[]).map(e=>e.name));
+    pool=pool.filter(e=>!inSession.has(e.name));
   } else {
-    pool=Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name);
+    // Swap mode: same-muscle group alternatives
+    if(_swapEI<0) return;
+    const ex=draftSession.exercises[_swapEI];
+    activeMuscle=getExerciseMuscle(ex.name);
+    if(activeMuscle&&EXERCISE_LIBRARY[activeMuscle]){
+      pool=EXERCISE_LIBRARY[activeMuscle].filter(e=>e.name!==ex.name);
+      if(isSearch) pool=[...pool,...Object.values(EXERCISE_LIBRARY).flat()
+        .filter(e=>e.name!==ex.name&&!pool.some(p=>p.name===e.name))];
+    } else {
+      pool=Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==(draftSession.exercises[_swapEI]||{}).name);
+    }
   }
+
   if(isSearch) pool=pool.filter(e=>e.name.toLowerCase().includes(q));
+
   const grid=document.getElementById('swap-exercise-grid');
   if(!pool.length){
     grid.innerHTML='<p style="color:var(--text3);font-size:13px;padding:8px 0">No exercises found.</p>';
     return;
   }
   grid.innerHTML=pool.map(e=>{
-    const m=getExerciseMuscle(e.name)||muscle||'';
+    const m=getExerciseMuscle(e.name)||activeMuscle||'';
     const color=MUSCLE_COLORS[m]||'#555';
     const safe=e.name.replace(/'/g,"\\'");
-    // Only show the muscle badge when searching across groups
-    const groupBadge=isSearch&&m!==muscle
+    const showGroup=!activeMuscle||(isSearch&&m!==activeMuscle);
+    const groupBadge=showGroup&&m
       ?`<span style="font-size:9px;font-weight:700;color:#fff;background:${color};border-radius:3px;padding:1px 5px;text-transform:uppercase">${m}</span>`:'';
     const typeClass=e.type==='Compound'?'badge-compound':'badge-isolation';
-    return `<div class="swap-card" onclick="swapExercise('${safe}')">
+    return `<div class="swap-card" onclick="selectLibraryExercise('${safe}')">
       <div class="swap-card-name">${e.name}</div>
       <div class="swap-card-meta">
         ${groupBadge}
@@ -498,17 +550,25 @@ function renderSwapGrid(){
   }).join('');
 }
 
-function swapExercise(newName){
-  if(_swapEI<0) return;
-  draftSession.exercises[_swapEI].name=newName;
-  _markModified(); saveDraft(activeDate,draftSession);
-  closeSwapModal();
-  renderExerciseRows(_lastSavedSession()); updateSessionStatus();
+function selectLibraryExercise(name){
+  if(_swapMode==='add'){
+    draftSession.exercises.push({name,sets:[{reps:'',weight:'',done:false}],custom:true});
+    _markModified(); saveDraft(activeDate,draftSession);
+    closeSwapModal();
+    const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
+    setTimeout(()=>{ const rows=document.querySelectorAll('.ex-row'); if(rows.length) rows[rows.length-1].scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
+  } else {
+    if(_swapEI<0) return;
+    draftSession.exercises[_swapEI].name=name;
+    _markModified(); saveDraft(activeDate,draftSession);
+    closeSwapModal();
+    renderExerciseRows(_lastSavedSession()); updateSessionStatus();
+  }
 }
 
 function closeSwapModal(){
   document.getElementById('swap-modal').style.display='none';
-  _swapEI=-1;
+  _swapEI=-1; _swapMode='swap'; _swapMuscleFilter=null;
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -686,9 +746,7 @@ function renderDetail(){
       <tbody id="ex-tbody"></tbody>
     </table>
     <div class="add-ex-wrap">
-      <input type="text" id="add-ex-input" placeholder="+ Add another exercise…" autocomplete="off"
-        oninput="_markModified()" onkeydown="if(event.key==='Enter')submitAddEx()">
-      <button onclick="submitAddEx()">Add</button>
+      <button class="add-ex-btn" onclick="openAddExModal()">+ Add Exercise</button>
     </div>
     <div class="note-edit">${note}</div>
     ${coachingNote?`<div style="margin:0 12px 10px;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;background:var(--amber-bg);border-left:3px solid var(--amber);color:var(--amber)">${coachingNote}</div>`:''}
@@ -791,7 +849,7 @@ function renderSets(ei){
     const row=document.createElement('div'); row.className='set-row';
     row.innerHTML=`
       <span class="set-label">S${si+1}</span>
-      <input class="set-input" type="text" inputmode="decimal" placeholder="lbs"
+      <input class="set-input" type="text" inputmode="decimal" placeholder="${getWeightUnit()}"
         value="${set.weight}" oninput="updateSet(${ei},${si},'weight',this.value)">
       <span class="set-x">×</span>
       <input class="set-input" type="text" inputmode="numeric" placeholder="reps"
@@ -896,12 +954,12 @@ function renderDashboard(){
   const prsHTML=prEntries.length===0
     ?'<div class="empty-state" style="padding:24px">No PRs yet — mark sets ✓ while logging.</div>'
     :`<table class="pr-table"><thead><tr><th>Exercise</th><th>Best Weight</th><th>Reps</th><th>Date</th></tr></thead>
-      <tbody>${prEntries.map(([name,pr])=>`<tr><td>${name}</td><td class="pr-weight">${pr.weight} lbs</td><td>${pr.reps||'—'}</td><td>${formatDate(pr.date)}</td></tr>`).join('')}</tbody></table>`;
+      <tbody>${prEntries.map(([name,pr])=>`<tr><td>${name}</td><td class="pr-weight">${pr.weight} ${getWeightUnit()}</td><td>${pr.reps||'—'}</td><td>${formatDate(pr.date)}</td></tr>`).join('')}</tbody></table>`;
 
   // Body weight section
   const latestBW=bwEntries.length?bwEntries[bwEntries.length-1]:null;
   const bwChips=bwEntries.slice(-12).reverse().map((e,i)=>
-    `<span class="bw-chip ${i===0?'latest':''}">${e.weight} lbs <span style="color:var(--text3);font-size:10px">${formatDateShort(e.date)}</span></span>`
+    `<span class="bw-chip ${i===0?'latest':''}">${e.weight} ${getWeightUnit()} <span style="color:var(--text3);font-size:10px">${formatDateShort(e.date)}</span></span>`
   ).join('');
   const bwSVG=bwEntries.length>=2?renderBWSVG(bwEntries.slice(-12)):'';
 
@@ -954,13 +1012,13 @@ function renderDashboard(){
       <div class="freq-labels">${labelsHTML}</div>
     </div>
 
-    <div class="dash-section-title">Weekly Volume — Last 8 Weeks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(lbs × reps, completed sets)</span></div>
+    <div class="dash-section-title">Weekly Volume — Last 8 Weeks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(${getWeightUnit()} × reps, completed sets)</span></div>
     <div class="chart-wrap">${volSVG}</div>
 
     <div class="dash-section-title">Body Weight</div>
     <div class="chart-wrap">
       <div class="bw-row">
-        <span style="font-size:13px;color:var(--text2)">${latestBW?`<strong style="color:var(--text)">${latestBW.weight} lbs</strong> · ${formatDateShort(latestBW.date)}`:'No entries yet'}</span>
+        <span style="font-size:13px;color:var(--text2)">${latestBW?`<strong style="color:var(--text)">${latestBW.weight} ${getWeightUnit()}</strong> · ${formatDateShort(latestBW.date)}`:'No entries yet'}</span>
         <button class="btn btn-sm" onclick="openBWModal()">+ Log weight</button>
       </div>
       ${bwSVG}
@@ -981,7 +1039,7 @@ function renderVolumeSVG(weeks){
   }));
   const path=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const area=`${pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')} L${pts[pts.length-1].x.toFixed(1)},${H} L${pts[0].x.toFixed(1)},${H} Z`;
-  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${p.vol>0?'#e07b39':'#444'}"><title>${p.label}: ${p.vol.toLocaleString()} lbs vol</title></circle>`).join('');
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${p.vol>0?'#e07b39':'#444'}"><title>${p.label}: ${p.vol.toLocaleString()} ${getWeightUnit()} vol</title></circle>`).join('');
   const labels=pts.map(p=>`<text x="${p.x.toFixed(1)}" y="${H+12}" text-anchor="middle" font-size="9" fill="var(--text3)">${p.label}</text>`).join('');
   return`<svg viewBox="0 0 ${W} ${H+16}" style="width:100%;height:86px">
     <defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e07b39" stop-opacity=".25"/><stop offset="100%" stop-color="#e07b39" stop-opacity="0"/></linearGradient></defs>
@@ -1002,7 +1060,7 @@ function renderBWSVG(entries){
     y:H-PAD-((e.weight-minW)/range)*(H-2*PAD)
   }));
   const path=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const dots=pts.map((p,i)=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${i===entries.length-1?'#e07b39':'#5b9bd5'}"><title>${entries[i].weight} lbs · ${entries[i].date}</title></circle>`).join('');
+  const dots=pts.map((p,i)=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${i===entries.length-1?'#e07b39':'#5b9bd5'}"><title>${entries[i].weight} ${getWeightUnit()} · ${entries[i].date}</title></circle>`).join('');
   return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:60px;margin-bottom:6px">
     <path d="${path}" fill="none" stroke="#5b9bd5" stroke-width="1.5" stroke-opacity=".7"/>
     ${dots}
@@ -1108,7 +1166,7 @@ function renderHistory(){
               ${ex.sets.map((s,i)=>{
                 const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&s.done;
                 return`<span class="hist-set-chip ${s.done?'done':''} ${isPR?'pr':''}">
-                  S${i+1} ${s.weight?s.weight+'lbs':'—'} × ${s.reps||'—'}${isPR?' 🏆':''}
+                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${isPR?' 🏆':''}
                 </span>`;
               }).join('')}
             </div>
@@ -1158,7 +1216,7 @@ function shareSession(id){
   session.exercises.forEach(ex=>{
     text+=`${ex.name}:\n`;
     ex.sets.forEach((s,i)=>{
-      text+=`  S${i+1}: ${s.weight||'—'} lbs × ${s.reps||'—'} reps${s.done?' ✓':''}\n`;
+      text+=`  S${i+1}: ${s.weight||'—'} ${getWeightUnit()} × ${s.reps||'—'} reps${s.done?' ✓':''}\n`;
     });
     text+='\n';
   });
@@ -1172,7 +1230,7 @@ function shareSession(id){
 // ── Export / Import ───────────────────────────────────────────────────────────
 function exportCSV(){
   const sessions=loadSessions(); if(!sessions.length){alert('No sessions to export.');return}
-  const rows=[['Date','Day','Exercise','Set','Weight (lbs)','Reps','Completed','Session Notes']];
+  const rows=[['Date','Day','Exercise','Set',`Weight (${getWeightUnit()})`,'Reps','Completed','Session Notes']];
   sessions.forEach(s=>{
     const day=(s.dayIdx>=0?(getActiveDay(s.dayIdx)||DAYS[s.dayIdx]):null)||{name:'Unknown'};
     s.exercises.forEach(ex=>{
@@ -1322,6 +1380,7 @@ function fmtShort(iso){
 // ── Init ──────────────────────────────────────────────────────────────────────
 function initApp(){
   initProfiles();
+  initWeightUnit();
   setActiveDate(TODAY);
   renderProfileSelector();
   populateHistoryFilters();

@@ -74,6 +74,17 @@ function initTheme(){
   document.documentElement.setAttribute('data-theme',t);
   document.getElementById('theme-btn').textContent=t==='dark'?'🌙':'☀️';
 }
+function toggleWeightUnit(){
+  const next=getWeightUnit()==='lbs'?'kg':'lbs';
+  setWeightUnit(next);
+  document.getElementById('unit-btn').textContent=next;
+  // Refresh visible renders so placeholders and labels update
+  if(typeof renderDetail==='function') renderDetail();
+  if(typeof renderDashboard==='function'&&document.getElementById('dashboard-view')?.style.display!=='none') renderDashboard();
+}
+function initWeightUnit(){
+  document.getElementById('unit-btn').textContent=getWeightUnit();
+}
 
 
 function loadBW(){ try{return JSON.parse(localStorage.getItem(bwKey(getActiveProfile())))||[]}catch{return[]} }
@@ -102,6 +113,10 @@ function getGoal(){ return localStorage.getItem(goalKey(getActiveProfile()))||''
 function setGoal(id){ localStorage.setItem(goalKey(getActiveProfile()),id) }
 function getDaysPerWeek(){ return parseInt(localStorage.getItem(daysPerWeekKey(getActiveProfile()))||'7',10) }
 function setDaysPerWeek(n){ localStorage.setItem(daysPerWeekKey(getActiveProfile()),String(n)) }
+
+// ── Weight unit preference ────────────────────────────────────────────────────
+function getWeightUnit(){ return localStorage.getItem('wt_unit')||'lbs' }
+function setWeightUnit(u){ localStorage.setItem('wt_unit',u) }
 
 // ── Anthropic API key ─────────────────────────────────────────────────────────
 function getAPIKey(){ return localStorage.getItem('wt_api_key')||'' }

@@ -37,6 +37,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-amber:hover{background:var(--amber);color:#fff}
 .btn-blue{background:var(--blue-bg);border-color:var(--blue);color:var(--blue)}
 .btn-blue:hover{background:var(--blue);color:#fff}
+.unit-toggle-btn{min-width:36px;font-weight:600;letter-spacing:.03em}
 
 /* Deload banner */
 .deload-banner{background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;color:var(--amber);font-weight:500;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
@@ -515,6 +516,21 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   letter-spacing:0.2px;
 }
 
+/* ── Add Exercise button ─────────────────────────────────────────────────────── */
+.add-ex-btn{
+  width:100%;
+  background:var(--surface2);
+  border:1px dashed var(--border);
+  border-radius:8px;
+  color:var(--text2);
+  font-size:14px;
+  padding:11px;
+  cursor:pointer;
+  transition:background 0.15s, color 0.15s, border-color 0.15s;
+  text-align:center;
+}
+.add-ex-btn:hover{ background:var(--surface); color:var(--accent); border-color:var(--accent); }
+
 /* ── Exercise swap modal ─────────────────────────────────────────────────────── */
 .swap-modal-box{
   max-height:88vh;
@@ -538,6 +554,30 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   margin-bottom:12px;
 }
 .swap-search-input:focus{ border-color:var(--accent); }
+
+/* Muscle group filter tabs (add mode) */
+.swap-muscle-filter{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.muscle-filter-tab{
+  font-size:11px;
+  font-weight:600;
+  border:1.5px solid;
+  border-radius:20px;
+  padding:4px 10px;
+  background:transparent;
+  cursor:pointer;
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:background 0.15s, color 0.15s;
+}
+
 #swap-exercise-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
