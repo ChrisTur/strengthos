@@ -367,6 +367,145 @@ function clearAIPlanAndRefresh(){
   renderWeekGrid(); renderDetail();
 }
 
+// ── Onboarding wizard ─────────────────────────────────────────────────────────
+let _obDPW=5, _obGoal='';
+
+function needsOnboarding(){
+  if(localStorage.getItem('wt_onboarded')) return false;
+  initProfiles();
+  return !loadSessions().length && loadProfiles().length<=1 && getActiveProfile()==='Me';
+}
+
+function showOnboarding(){
+  document.getElementById('onboarding').style.display='flex';
+  const grid=document.getElementById('ob-goal-grid');
+  grid.innerHTML=GOALS.map(g=>`
+    <button class="ob-goal-opt" data-id="${g.id}" onclick="obSelectGoal('${g.id}')">
+      <span class="ob-goal-icon">${g.icon}</span>
+      <span class="ob-goal-label">${g.label}</span>
+      <span class="ob-goal-desc">${g.desc}</span>
+    </button>`).join('');
+  renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+  const desc=document.getElementById('ob-dpw-desc');
+  if(desc) desc.textContent=DPW_DESCS[_obDPW]||'';
+  setTimeout(()=>document.getElementById('ob-name-input').focus(),100);
+}
+
+function obSelectGoal(id){
+  _obGoal=id;
+  document.querySelectorAll('.ob-goal-opt').forEach(b=>b.classList.toggle('selected',b.dataset.id===id));
+  document.getElementById('ob-goal-btn').disabled=false;
+}
+
+function obSelectDPW(n){
+  _obDPW=n;
+  renderDPWButtons('ob-dpw-row',n,'obSelectDPW');
+  const desc=document.getElementById('ob-dpw-desc');
+  if(desc) desc.textContent=DPW_DESCS[n]||'';
+}
+
+function obNext(step){
+  if(step===2){
+    const name=document.getElementById('ob-name-input').value.trim();
+    if(!name){ document.getElementById('ob-name-input').focus(); return; }
+  }
+  if(step===4) renderObPlanPreview();
+  document.querySelectorAll('.ob-card').forEach(c=>c.style.display='none');
+  document.getElementById('ob-step-'+step).style.display='flex';
+}
+
+function obBack(step){
+  document.querySelectorAll('.ob-card').forEach(c=>c.style.display='none');
+  document.getElementById('ob-step-'+step).style.display='flex';
+}
+
+function renderObPlanPreview(){
+  const name=(document.getElementById('ob-name-input').value.trim())||'there';
+  document.getElementById('ob-name-preview').textContent=name;
+  const goalObj=GOALS.find(g=>g.id===_obGoal)||GOALS[0];
+  document.getElementById('ob-plan-desc').textContent=goalObj.label+' · '+_obDPW+' days/week';
+  const prog=PROGRAMS[_obDPW]||(DAYS.length>=_obDPW?DAYS.slice(0,_obDPW):DAYS);
+  const preview=document.getElementById('ob-plan-preview');
+  preview.innerHTML=prog.slice(0,_obDPW).map(day=>`
+    <div class="ob-day-pill" style="background:${day.color||'#555'}">
+      <span>${day.short||day.name||'Day'}</span>
+    </div>`).join('');
+}
+
+function completeOnboarding(){
+  const name=(document.getElementById('ob-name-input').value.trim())||'Me';
+  const profs=loadProfiles();
+  const idx=profs.indexOf('Me');
+  if(idx>=0&&name!=='Me'){ profs[idx]=name; saveProfiles(profs); setActiveProfile(name); }
+  else if(!profs.includes(name)){ profs.push(name); saveProfiles(profs); setActiveProfile(name); }
+  if(_obDPW) setDaysPerWeek(_obDPW);
+  if(_obGoal) setGoal(_obGoal);
+  localStorage.setItem('wt_onboarded','1');
+  document.getElementById('onboarding').style.display='none';
+  initApp();
+}
+
+// ── Exercise swap modal ───────────────────────────────────────────────────────
+let _swapEI=-1;
+
+function openSwapModal(ei){
+  _swapEI=ei;
+  const ex=draftSession.exercises[ei];
+  const muscle=getExerciseMuscle(ex.name);
+  document.getElementById('swap-subtitle').textContent=
+    'Replacing: '+ex.name+(muscle?' · '+muscle+' group':'');
+  document.getElementById('swap-search').value='';
+  renderSwapGrid();
+  document.getElementById('swap-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('swap-search').focus(),60);
+}
+
+function renderSwapGrid(){
+  if(_swapEI<0) return;
+  const ex=draftSession.exercises[_swapEI];
+  const muscle=getExerciseMuscle(ex.name);
+  const q=document.getElementById('swap-search').value.trim().toLowerCase();
+  let pool=[];
+  if(muscle&&EXERCISE_LIBRARY[muscle]){
+    pool=EXERCISE_LIBRARY[muscle].filter(e=>e.name!==ex.name);
+    // If search is active, also show cross-muscle results
+    if(q) pool=[...pool,...Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name&&!pool.includes(e))];
+  } else {
+    pool=Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name);
+  }
+  if(q) pool=pool.filter(e=>e.name.toLowerCase().includes(q));
+  const grid=document.getElementById('swap-exercise-grid');
+  if(!pool.length){
+    grid.innerHTML='<p style="color:var(--text3);font-size:13px;padding:8px 0">No exercises found.</p>';
+    return;
+  }
+  grid.innerHTML=pool.map(e=>{
+    const m=getExerciseMuscle(e.name)||muscle||'';
+    const color=MUSCLE_COLORS[m]||'#555';
+    const safe=e.name.replace(/'/g,"\\'");
+    return `<div class="swap-card" onclick="swapExercise('${safe}')">
+      <div class="swap-card-badge" style="background:${color}">${m||'Exercise'}</div>
+      <div class="swap-card-name">${e.name}</div>
+      <div class="swap-card-meta">
+        <span class="badge-type ${e.type==='Compound'?'badge-compound':'badge-isolation'}">${e.type}</span>
+        <span class="badge-equip">${e.equipment}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function swapExercise(newName){
+  if(_swapEI<0) return;
+  draftSession.exercises[_swapEI].name=newName;
+  _markModified(); saveDraft(activeDate,draftSession);
+  closeSwapModal();
+  renderExerciseRows(_lastSavedSession()); updateSessionStatus();
+}
+
+function closeSwapModal(){
+  document.getElementById('swap-modal').style.display='none';
+  _swapEI=-1;
+}
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const TODAY=new Date().toISOString().slice(0,10);
@@ -608,12 +747,21 @@ function renderExerciseRows(lastSession){
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
     const ytQ=encodeURIComponent(ex.name+' exercise form tutorial');
+    const muscle=getExerciseMuscle(ex.name);
+    const swapBtn=(!isCustom&&muscle)
+      ?`<button class="ex-swap-btn" onclick="openSwapModal(${ei})">⇄ Swap</button>`:'';
+    const muscleTag=muscle
+      ?`<span class="ex-muscle-tag" style="background:${MUSCLE_COLORS[muscle]||'#555'}">${muscle}</span>`:'';
     tr.innerHTML=`
       <td class="ex-name-cell">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
           <div>
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
-            <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+            <div class="ex-action-row">
+              ${muscleTag}
+              <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+              ${swapBtn}
+            </div>
           </div>
           ${isCustom
             ?`<button class="ex-skip-btn" onclick="removeCustomExercise(${ei})" title="Remove from today">✕</button>`
@@ -1169,14 +1317,23 @@ function fmtShort(iso){
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+function initApp(){
+  initProfiles();
+  setActiveDate(TODAY);
+  renderProfileSelector();
+  populateHistoryFilters();
+  document.getElementById('deload-banner').style.display=isDeload()?'':'none';
+  renderWeekGrid();
+  renderDetail();
+}
+
 initTheme();
-initProfiles();
-setActiveDate(TODAY); // derive activeDayIdx from today's schedule
-renderProfileSelector();
-populateHistoryFilters();
-document.getElementById('deload-banner').style.display=isDeload()?'':'none';
-renderWeekGrid();
-renderDetail();
+if(needsOnboarding()){
+  showOnboarding();
+} else {
+  localStorage.setItem('wt_onboarded','1');
+  initApp();
+}
 
 document.addEventListener('click',e=>{
   const sel=document.getElementById('profile-selector');
