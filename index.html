@@ -57,13 +57,15 @@
 <!-- ── Exercise swap / add modal ───────────────────────────────────────────── -->
 <div id="swap-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSwapModal()">
   <div class="modal-box swap-modal-box" onclick="event.stopPropagation()">
-    <div id="swap-modal-title" class="modal-title">⇄ Swap Exercise</div>
-    <div id="swap-subtitle" style="font-size:12px;color:var(--text3);margin-bottom:8px"></div>
-    <div id="swap-muscle-filter" class="swap-muscle-filter" style="display:none"></div>
-    <input type="text" id="swap-search" class="swap-search-input" placeholder="Search exercises…"
-      oninput="renderSwapGrid()" autocomplete="off">
+    <div class="swap-modal-header">
+      <div id="swap-modal-title" class="modal-title">⇄ Swap Exercise</div>
+      <div id="swap-subtitle" style="font-size:12px;color:var(--text3);margin-bottom:8px"></div>
+      <div id="swap-muscle-filter" class="swap-muscle-filter" style="display:none"></div>
+      <input type="text" id="swap-search" class="swap-search-input" placeholder="Search exercises…"
+        oninput="renderSwapGrid()" autocomplete="off">
+    </div>
     <div id="swap-exercise-grid"></div>
-    <div class="modal-actions">
+    <div class="modal-actions swap-modal-footer">
       <button class="btn btn-sm" onclick="closeSwapModal()">Cancel</button>
     </div>
   </div>
@@ -106,6 +108,12 @@
 <div id="prefs-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closePrefsModal()">
   <div class="modal-box" onclick="event.stopPropagation()" style="width:400px;max-width:100%">
     <div class="modal-title">⚙️ Training Preferences</div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Weight unit</div>
+    <div class="dpw-row" id="unit-row" style="margin-bottom:18px">
+      <button class="dpw-btn" data-unit="lbs" onclick="selectWeightUnit('lbs')">lbs<br><span style="font-size:10px;font-weight:400">Pounds</span></button>
+      <button class="dpw-btn" data-unit="kg" onclick="selectWeightUnit('kg')">kg<br><span style="font-size:10px;font-weight:400">Kilograms</span></button>
+    </div>
 
     <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Cardio intensity</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Affects exercise selection on cardio days</div>
@@ -224,8 +232,6 @@
         <div class="profile-option profile-new" onclick="openProfileModal()">+ New profile</div>
       </div>
     </div>
-    <!-- Unit toggle -->
-    <button class="btn btn-sm unit-toggle-btn" id="unit-btn" onclick="toggleWeightUnit()" title="Switch between lbs and kg">lbs</button>
     <!-- Theme toggle -->
     <button class="btn btn-icon" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
     <!-- Plate calc -->

@@ -74,16 +74,11 @@ function initTheme(){
   document.documentElement.setAttribute('data-theme',t);
   document.getElementById('theme-btn').textContent=t==='dark'?'🌙':'☀️';
 }
-function toggleWeightUnit(){
-  const next=getWeightUnit()==='lbs'?'kg':'lbs';
-  setWeightUnit(next);
-  document.getElementById('unit-btn').textContent=next;
-  // Refresh visible renders so placeholders and labels update
+function selectWeightUnit(u){
+  setWeightUnit(u);
+  if(typeof renderPrefsModal==='function') renderPrefsModal();
   if(typeof renderDetail==='function') renderDetail();
   if(typeof renderDashboard==='function'&&document.getElementById('dashboard-view')?.style.display!=='none') renderDashboard();
-}
-function initWeightUnit(){
-  document.getElementById('unit-btn').textContent=getWeightUnit();
 }
 
 

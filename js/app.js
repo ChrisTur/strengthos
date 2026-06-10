@@ -240,6 +240,10 @@ function selectCardioLevel(level){
   renderPrefsModal();
 }
 function renderPrefsModal(){
+  const unit=getWeightUnit();
+  document.querySelectorAll('#unit-row .dpw-btn').forEach(btn=>{
+    btn.classList.toggle('selected',btn.dataset.unit===unit);
+  });
   const level=getCardioLevel();
   document.querySelectorAll('#cardio-level-row .dpw-btn').forEach(btn=>{
     btn.classList.toggle('selected',btn.dataset.level===level);
@@ -1380,7 +1384,6 @@ function fmtShort(iso){
 // ── Init ──────────────────────────────────────────────────────────────────────
 function initApp(){
   initProfiles();
-  initWeightUnit();
   setActiveDate(TODAY);
   renderProfileSelector();
   populateHistoryFilters();
