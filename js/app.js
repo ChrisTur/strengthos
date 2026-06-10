@@ -589,10 +589,9 @@ function setActiveDate(date){
 
 // ── Week grid ─────────────────────────────────────────────────────────────────
 function getWeekDates(offset){
-  const now=new Date(TODAY+'T00:00:00');
-  const dow=now.getDay(),toMon=dow===0?-6:1-dow;
-  const mon=new Date(now); mon.setDate(now.getDate()+toMon+offset*7);
-  return Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d.toISOString().slice(0,10); });
+  const anchor=new Date(TODAY+'T00:00:00');
+  anchor.setDate(anchor.getDate()+offset*7);
+  return Array.from({length:7},(_,i)=>{ const d=new Date(anchor); d.setDate(anchor.getDate()+i); return d.toISOString().slice(0,10); });
 }
 
 function changeWeek(delta){ weekOffset+=delta; renderWeekGrid(); }
