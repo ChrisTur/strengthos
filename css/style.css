@@ -348,3 +348,41 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   .modal-box{padding:16px;margin:8px}
   .modal-overlay{padding:8px}
 }
+
+/* ── YouTube demo link ───────────────────────────────────────────────────────── */
+.yt-demo-link{
+  display:inline-block;
+  font-size:10px;
+  color:var(--text3);
+  text-decoration:none;
+  background:var(--surface2);
+  border-radius:3px;
+  padding:1px 5px;
+  margin-top:3px;
+  white-space:nowrap;
+  transition:color 0.15s,background 0.15s;
+}
+.yt-demo-link:hover{ color:#ff4444; background:rgba(255,68,68,0.1); }
+
+/* ── AI plan section in prefs modal ─────────────────────────────────────────── */
+.ai-section-divider{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text2);
+  margin:20px 0 8px;
+  padding-top:18px;
+  border-top:1px solid var(--border);
+}
+.ai-key-input{
+  width:100%;
+  box-sizing:border-box;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text1);
+  padding:9px 12px;
+  font-size:13px;
+  font-family:monospace;
+  outline:none;
+}
+.ai-key-input:focus{ border-color:var(--accent); }

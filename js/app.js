@@ -248,18 +248,123 @@ function renderPrefsModal(){
   const el=document.getElementById('prefs-disliked-list');
   if(!disliked.length){
     el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">No exercises skipped yet. Use the Skip button on any exercise to hide it.</div>';
-    return;
+  } else {
+    el.innerHTML=disliked.map(name=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px">${name}</span>
+        <button class="btn btn-sm btn-green" onclick="restoreExercise('${name.replace(/'/g,"\\'")}')">Restore</button>
+      </div>`).join('');
   }
-  el.innerHTML=disliked.map(name=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:13px">${name}</span>
-      <button class="btn btn-sm btn-green" onclick="restoreExercise('${name.replace(/'/g,"\\'")}')">Restore</button>
-    </div>`).join('');
+  const keyInput=document.getElementById('api-key-input');
+  if(keyInput) keyInput.value=getAPIKey();
+  const plan=getAIPlan();
+  const clearBtn=document.getElementById('ai-clear-btn');
+  if(clearBtn) clearBtn.style.display=plan?'':'none';
+  const statusEl=document.getElementById('ai-gen-status');
+  if(statusEl&&plan&&!statusEl.textContent){
+    statusEl.textContent=`Active: "${plan.planName||'Custom Plan'}"`;
+    statusEl.style.color='var(--green)';
+  }
 }
 function restoreExercise(name){
   const d=loadDisliked().filter(n=>n!==name);
   saveDisliked(d);
   renderPrefsModal();
+}
+function saveAPIKeyFromInput(){
+  setAPIKey(document.getElementById('api-key-input').value);
+}
+
+// ── AI plan generation ────────────────────────────────────────────────────────
+function buildAIPlanPrompt(goal,dpw,cardioLevel,disliked){
+  const goalObj=GOALS.find(g=>g.id===goal)||{label:'Build Muscle',desc:'Progressive overload, hypertrophy focus'};
+  const cardioDesc={low:'easy walks and light recovery activity',moderate:'jogging, cycling, or a mix of steady-state and HIIT',high:'HIIT, sprints, battle ropes, and high-intensity cardio'};
+  const dislikedStr=disliked.length?`NEVER include these exercises: ${disliked.join(', ')}.`:'';
+  return `You are an expert personal trainer. Generate a ${dpw}-day per week workout plan for someone whose goal is: ${goalObj.label} (${goalObj.desc}).
+
+Cardio intensity preference: ${cardioLevel} — meaning ${cardioDesc[cardioLevel]||cardioDesc.moderate}.
+${dislikedStr}
+
+Return ONLY a JSON code block with this exact structure:
+\`\`\`json
+{
+  "planName": "Short descriptive name for this plan",
+  "days": [
+    {
+      "name": "Day label (e.g. Push, Pull, Legs, Upper, Lower, Full Body, Cardio)",
+      "color": "#hex — use #e07b39 for push/chest/shoulder, #8b6fd4 for pull/back/biceps, #5b9bd5 for legs/lower, #3aab6d for cardio/conditioning, #888 for active recovery",
+      "exercises": [
+        { "name": "Exercise name", "plan": "Sets×Reps (e.g. 4×8-10)", "structure": "Compound or Isolation", "note": "One brief form cue" }
+      ],
+      "defaultNote": "One-line focus summary for this day"
+    }
+  ]
+}
+\`\`\`
+
+Rules:
+- Exactly ${dpw} training days (omit rest days — the app handles scheduling)
+- 4-7 exercises per day; lead with a compound movement
+- Vary rep ranges across days for stimulus diversity
+- Use specific exercise names (e.g. "Barbell Back Squat" not "Squats")
+- Cardio days must match the "${cardioLevel}" intensity preference
+- No markdown outside the JSON block`;
+}
+
+async function generateAIPlan(){
+  const key=getAPIKey();
+  if(!key){
+    alert('Enter your Anthropic API key in the field above first.');
+    document.getElementById('api-key-input').focus();
+    return;
+  }
+  const btn=document.getElementById('ai-gen-btn');
+  const statusEl=document.getElementById('ai-gen-status');
+  btn.disabled=true; btn.textContent='Generating…';
+  statusEl.textContent='Talking to Claude…'; statusEl.style.color='var(--text2)';
+
+  try {
+    const prompt=buildAIPlanPrompt(getGoal()||'muscle',getDaysPerWeek()||5,getCardioLevel(),loadDisliked());
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'content-type':'application/json',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-opus-4-8',max_tokens:4096,messages:[{role:'user',content:prompt}]})
+    });
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      throw new Error(err.error?.message||`API error ${resp.status}`);
+    }
+    const data=await resp.json();
+    const text=data.content?.[0]?.text||'';
+    const m=text.match(/```json\s*([\s\S]*?)\s*```/)||text.match(/(\{[\s\S]*\})/);
+    if(!m) throw new Error('No JSON found in response');
+    const plan=JSON.parse(m[1]);
+    if(!Array.isArray(plan.days)||!plan.days.length) throw new Error('Plan missing days array');
+    setAIPlan(plan);
+    statusEl.textContent=`✓ "${plan.planName||'Custom Plan'}" applied`;
+    statusEl.style.color='var(--green)';
+    document.getElementById('ai-clear-btn').style.display='';
+    renderWeekGrid(); renderDetail();
+  } catch(e){
+    statusEl.textContent='Error: '+e.message;
+    statusEl.style.color='var(--red)';
+  } finally {
+    btn.disabled=false; btn.textContent='✨ Generate AI Plan';
+  }
+}
+
+function clearAIPlanAndRefresh(){
+  if(!confirm('Remove the AI plan and return to the default program?')) return;
+  clearAIPlan();
+  const statusEl=document.getElementById('ai-gen-status');
+  statusEl.textContent='Returned to default program.'; statusEl.style.color='var(--text2)';
+  document.getElementById('ai-clear-btn').style.display='none';
+  renderWeekGrid(); renderDetail();
 }
 
 
@@ -502,10 +607,14 @@ function renderExerciseRows(lastSession){
     const safeName=ex.name.replace(/'/g,"\\'");
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
+    const ytQ=encodeURIComponent(ex.name+' exercise form tutorial');
     tr.innerHTML=`
       <td class="ex-name-cell">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
-          <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
+          <div>
+            <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
+            <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+          </div>
           ${isCustom
             ?`<button class="ex-skip-btn" onclick="removeCustomExercise(${ei})" title="Remove from today">✕</button>`
             :`<button class="ex-skip-btn" onclick="skipExercise('${safeName}')" title="Hide from all workouts">Skip</button>`

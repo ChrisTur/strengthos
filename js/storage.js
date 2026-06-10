@@ -102,3 +102,12 @@ function getGoal(){ return localStorage.getItem(goalKey(getActiveProfile()))||''
 function setGoal(id){ localStorage.setItem(goalKey(getActiveProfile()),id) }
 function getDaysPerWeek(){ return parseInt(localStorage.getItem(daysPerWeekKey(getActiveProfile()))||'7',10) }
 function setDaysPerWeek(n){ localStorage.setItem(daysPerWeekKey(getActiveProfile()),String(n)) }
+
+// ── Anthropic API key ─────────────────────────────────────────────────────────
+function getAPIKey(){ return localStorage.getItem('wt_api_key')||'' }
+function setAPIKey(k){ if(k) localStorage.setItem('wt_api_key',k.trim()); else localStorage.removeItem('wt_api_key') }
+
+// ── AI-generated workout plan ─────────────────────────────────────────────────
+function getAIPlan(){ try{return JSON.parse(localStorage.getItem('wt_aiplan_'+getActiveProfile()))||null}catch{return null} }
+function setAIPlan(plan){ localStorage.setItem('wt_aiplan_'+getActiveProfile(),JSON.stringify(plan)) }
+function clearAIPlan(){ localStorage.removeItem('wt_aiplan_'+getActiveProfile()) }

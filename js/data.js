@@ -210,6 +210,9 @@ const WEEK_DEFAULTS={
 };
 
 function getActiveDays(){
+  // AI-generated plan takes priority when present
+  const ai=getAIPlan();
+  if(ai&&Array.isArray(ai.days)&&ai.days.length) return ai.days;
   const dpw=getDaysPerWeek(),goal=getGoal();
   let base;
   if(PROGRAMS[dpw]) base=PROGRAMS[dpw];

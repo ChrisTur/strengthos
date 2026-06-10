@@ -61,6 +61,15 @@
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px">These are hidden from your workouts. Tap Restore to bring one back.</div>
     <div id="prefs-disliked-list"></div>
 
+    <div class="ai-section-divider">✨ AI Workout Builder</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Claude generates a personalized plan based on your goal, cardio preference, and skipped exercises. Requires an <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--accent)">Anthropic API key</a>.</div>
+    <input type="password" id="api-key-input" class="ai-key-input" placeholder="sk-ant-api03-…" autocomplete="off" oninput="saveAPIKeyFromInput()">
+    <div style="display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap">
+      <button id="ai-gen-btn" class="btn btn-sm btn-green" onclick="generateAIPlan()">✨ Generate AI Plan</button>
+      <button id="ai-clear-btn" class="btn btn-sm" style="display:none;color:var(--red)" onclick="clearAIPlanAndRefresh()">✕ Remove Plan</button>
+    </div>
+    <div id="ai-gen-status" style="font-size:12px;min-height:18px"></div>
+
     <div class="modal-actions" style="margin-top:18px">
       <button class="btn btn-sm btn-green" onclick="closePrefsModal()">Done</button>
     </div>
