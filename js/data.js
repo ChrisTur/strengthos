@@ -426,6 +426,31 @@ const CARDIO_PROGRAMS={
   ],
 };
 
+// ── Workout hero images (Unsplash photo IDs, matched by day name/tags) ────────
+const DAY_IMAGES={
+  Push:      '1571019614242-c5c5dee9f50b',
+  Pull:      '1534438327276-14e5300c3a48',
+  Legs:      '1571019613576-6cbc2bc3a7c3',
+  Chest:     '1571019614242-c5c5dee9f50b',
+  Back:      '1534438327276-14e5300c3a48',
+  Shoulders: '1583454110551-21f2fa2afe61',
+  Steady:    '1476480862126-209bfaa8edc8',
+  HIIT:      '1601422407692-ec4eeec1d9b3',
+  'Zone 2':  '1571731956672-f2b94d7dd0cb',
+  Tempo:     '1547592180-85f173990554',
+  Long:      '1558618666-fcd25c85cd64',
+  Recovery:  '1571008887538-b36bb32f4571',
+  Mobility:  '1544367567-0f2fcb009e0b',
+  default:   '1540497077202-7c8a3999166f',
+};
+function getWorkoutImageUrl(day){
+  if(!day) return null;
+  const keys=Object.keys(DAY_IMAGES).filter(k=>k!=='default');
+  const haystack=[(day.short||''),(day.name||''),...(day.tags||[])].join(' ');
+  const found=keys.find(k=>haystack.includes(k));
+  return `https://images.unsplash.com/photo-${found?DAY_IMAGES[found]:DAY_IMAGES.default}?auto=format&fit=crop&w=800&h=300&q=80`;
+}
+
 // Default day-of-week → workout index map per frequency (Mon=0 … Sun=6)
 const WEEK_DEFAULTS={
   7:[0,1,2,3,4,5,6],

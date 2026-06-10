@@ -711,8 +711,14 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .cday-del{color:var(--red);border-color:var(--red-bg)}
 .cday-del:hover{background:var(--red-bg)}
 
+/* Workout hero banner */
+.workout-hero{width:100%;height:150px;position:relative;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0;flex-shrink:0}
+.workout-hero img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.65) saturate(0.8)}
+.workout-hero-grad{position:absolute;inset:0;background:linear-gradient(170deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.5) 100%)}
+
 @media(max-width:600px){
   .ob-goals{ grid-template-columns:1fr 1fr; }
   #swap-exercise-grid{ grid-template-columns:1fr 1fr; }
   .ob-title{ font-size:19px; }
+  .workout-hero{ height:110px; }
 }

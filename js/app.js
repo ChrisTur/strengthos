@@ -840,8 +840,11 @@ function renderDetail(){
   const note=getDayNote(activeDayIdx);
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
   const coachingNote=GOAL_COACHING[goal]||'';
+  const heroUrl=typeof getWorkoutImageUrl==='function'?getWorkoutImageUrl(day):null;
+  const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${day.name}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
 
   panel.innerHTML=`
+    ${heroHTML}
     <div class="detail-header">
       <div>
         <div class="detail-title">${day.name}</div>
