@@ -540,9 +540,9 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .swap-search-input:focus{ border-color:var(--accent); }
 #swap-exercise-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
-  gap:10px;
-  max-height:52vh;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:8px;
+  max-height:55vh;
   overflow-y:auto;
   margin-bottom:12px;
   padding-right:2px;
@@ -554,32 +554,30 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   overflow:hidden;
   cursor:pointer;
   transition:border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:10px 12px 9px;
+  min-height:56px;
 }
 .swap-card:hover{
   border-color:var(--accent);
   transform:translateY(-2px);
-  box-shadow:0 4px 12px rgba(0,0,0,0.25);
+  box-shadow:0 4px 12px rgba(0,0,0,0.22);
 }
-.swap-card-badge{
-  font-size:10px;
-  font-weight:700;
-  color:#fff;
-  padding:4px 10px;
-  text-transform:uppercase;
-  letter-spacing:0.6px;
-}
+.swap-card:active{ transform:translateY(0); }
 .swap-card-name{
-  font-size:13px;
+  font-size:14px;
   font-weight:600;
   color:var(--text1);
-  padding:8px 10px 5px;
   line-height:1.3;
+  margin-bottom:5px;
 }
 .swap-card-meta{
-  padding:0 10px 9px;
   display:flex;
   gap:5px;
   flex-wrap:wrap;
+  align-items:center;
 }
 .badge-type,.badge-equip{
   font-size:10px;

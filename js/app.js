@@ -465,15 +465,15 @@ function renderSwapGrid(){
   const ex=draftSession.exercises[_swapEI];
   const muscle=getExerciseMuscle(ex.name);
   const q=document.getElementById('swap-search').value.trim().toLowerCase();
+  const isSearch=q.length>0;
   let pool=[];
   if(muscle&&EXERCISE_LIBRARY[muscle]){
     pool=EXERCISE_LIBRARY[muscle].filter(e=>e.name!==ex.name);
-    // If search is active, also show cross-muscle results
-    if(q) pool=[...pool,...Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name&&!pool.includes(e))];
+    if(isSearch) pool=[...pool,...Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name&&!pool.includes(e))];
   } else {
     pool=Object.values(EXERCISE_LIBRARY).flat().filter(e=>e.name!==ex.name);
   }
-  if(q) pool=pool.filter(e=>e.name.toLowerCase().includes(q));
+  if(isSearch) pool=pool.filter(e=>e.name.toLowerCase().includes(q));
   const grid=document.getElementById('swap-exercise-grid');
   if(!pool.length){
     grid.innerHTML='<p style="color:var(--text3);font-size:13px;padding:8px 0">No exercises found.</p>';
@@ -483,11 +483,15 @@ function renderSwapGrid(){
     const m=getExerciseMuscle(e.name)||muscle||'';
     const color=MUSCLE_COLORS[m]||'#555';
     const safe=e.name.replace(/'/g,"\\'");
+    // Only show the muscle badge when searching across groups
+    const groupBadge=isSearch&&m!==muscle
+      ?`<span style="font-size:9px;font-weight:700;color:#fff;background:${color};border-radius:3px;padding:1px 5px;text-transform:uppercase">${m}</span>`:'';
+    const typeClass=e.type==='Compound'?'badge-compound':'badge-isolation';
     return `<div class="swap-card" onclick="swapExercise('${safe}')">
-      <div class="swap-card-badge" style="background:${color}">${m||'Exercise'}</div>
       <div class="swap-card-name">${e.name}</div>
       <div class="swap-card-meta">
-        <span class="badge-type ${e.type==='Compound'?'badge-compound':'badge-isolation'}">${e.type}</span>
+        ${groupBadge}
+        <span class="badge-type ${typeClass}">${e.type}</span>
         <span class="badge-equip">${e.equipment}</span>
       </div>
     </div>`;
