@@ -264,7 +264,20 @@ function selectCardioLevel(level){
   setCardioLevel(level);
   renderPrefsModal();
 }
+function selectEquipment(type){
+  toggleEquipmentType(type);
+  renderPrefsModal();
+}
 function renderPrefsModal(){
+  // Equipment
+  const avail=getAvailableEquipment();
+  const equipRow=document.getElementById('equip-row');
+  if(equipRow){
+    equipRow.innerHTML=ALL_EQUIPMENT.map(t=>{
+      const on=avail.includes(t);
+      return`<button class="equip-btn${on?' active':''}" onclick="selectEquipment('${t}')">${t}</button>`;
+    }).join('');
+  }
   const unit=getWeightUnit();
   document.querySelectorAll('#unit-row .dpw-btn').forEach(btn=>{
     btn.classList.toggle('selected',btn.dataset.unit===unit);
@@ -476,6 +489,8 @@ function completeOnboarding(){
 
 // ── Exercise library modal (swap + add) ───────────────────────────────────────
 let _swapEI=-1, _swapMode='swap', _swapMuscleFilter=null;
+let _customDayIdx=-1, _customDayExercises=[], _customDayName='';
+let _durationTimer=null;
 
 function _openLibraryModal(){
   document.getElementById('swap-search').value='';
@@ -554,6 +569,9 @@ function renderSwapGrid(){
   }
 
   if(isSearch) pool=pool.filter(e=>e.name.toLowerCase().includes(q));
+  // Filter by user's available equipment
+  const avail=getAvailableEquipment();
+  pool=pool.filter(e=>avail.includes(e.equipment));
 
   const grid=document.getElementById('swap-exercise-grid');
   if(!pool.length){
@@ -580,6 +598,13 @@ function renderSwapGrid(){
 }
 
 function selectLibraryExercise(name){
+  if(_swapMode==='custom'){
+    _customDayExercises.push({name,structure:''});
+    closeSwapModal();
+    renderCustomDayModal();
+    document.getElementById('custom-day-modal').style.display='flex';
+    return;
+  }
   if(_swapMode==='add'){
     draftSession.exercises.push({name,sets:[{reps:'',weight:'',done:false}],custom:true});
     _markModified(); saveDraft(activeDate,draftSession);
@@ -598,6 +623,74 @@ function selectLibraryExercise(name){
 function closeSwapModal(){
   document.getElementById('swap-modal').style.display='none';
   _swapEI=-1; _swapMode='swap'; _swapMuscleFilter=null;
+}
+
+// ── Custom day builder ────────────────────────────────────────────────────────
+function openCustomDayModal(dayIdx){
+  _customDayIdx=dayIdx;
+  const day=getActiveDay(dayIdx)||DAYS[dayIdx];
+  _customDayExercises=(day?.exercises||[]).map(e=>({name:e.name,structure:e.structure||''}));
+  _customDayName=day?.name||'';
+  document.getElementById('custom-day-name').value=_customDayName;
+  renderCustomDayModal();
+  document.getElementById('custom-day-modal').style.display='flex';
+}
+function closeCustomDayModal(){
+  document.getElementById('custom-day-modal').style.display='none';
+}
+function renderCustomDayModal(){
+  const list=document.getElementById('custom-day-list'); if(!list) return;
+  if(!_customDayExercises.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:12px 0">No exercises yet. Add some below.</div>';
+    return;
+  }
+  list.innerHTML=_customDayExercises.map((ex,i)=>`
+    <div class="custom-day-row">
+      <span class="custom-day-name-txt">${ex.name}</span>
+      <input class="custom-day-struct" value="${ex.structure}" placeholder="e.g. 3×10"
+        oninput="_customDayExercises[${i}].structure=this.value">
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="cday-btn" onclick="moveCustomEx(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="cday-btn" onclick="moveCustomEx(${i},1)" ${i===_customDayExercises.length-1?'disabled':''}>↓</button>
+        <button class="cday-btn cday-del" onclick="removeCustomEx(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+function moveCustomEx(i,dir){
+  const j=i+dir;
+  if(j<0||j>=_customDayExercises.length) return;
+  [_customDayExercises[i],_customDayExercises[j]]=[_customDayExercises[j],_customDayExercises[i]];
+  renderCustomDayModal();
+}
+function removeCustomEx(i){
+  _customDayExercises.splice(i,1);
+  renderCustomDayModal();
+}
+function openAddToCustomDay(){
+  _swapMode='custom'; _swapMuscleFilter=null;
+  document.getElementById('swap-modal-title').textContent='+ Add to Day';
+  document.getElementById('swap-subtitle').textContent='Select an exercise to add to this day template.';
+  document.getElementById('custom-day-modal').style.display='none';
+  _openLibraryModal();
+}
+function saveCustomDay(){
+  const name=document.getElementById('custom-day-name').value.trim()||'Custom Day';
+  const base=getActiveDay(_customDayIdx)||DAYS[_customDayIdx]||{};
+  setCustomDay(_customDayIdx,{
+    ...base,
+    name,
+    short:name.length>10?name.slice(0,10)+'…':name,
+    exercises:_customDayExercises.map(e=>({name:e.name,structure:e.structure,note:''})),
+    tags:['Custom'],
+  });
+  closeCustomDayModal();
+  renderWeekGrid(); renderDetail();
+}
+function resetCustomDay(){
+  if(!confirm('Remove custom template and revert to the program default?')) return;
+  clearCustomDay(_customDayIdx);
+  closeCustomDayModal();
+  renderWeekGrid(); renderDetail();
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -690,13 +783,13 @@ function initDraft(dayIdx,date){
     .filter(ex=>!disliked.includes(ex.name))
     .map(ex=>({name:ex.name,sets:[{reps:'',weight:'',done:false}],goalAdded:true}));
   const day=getActiveDay(dayIdx);
-  if(!day) return{dayIdx,date,exercises:[...extras],notes:''};
+  if(!day) return{dayIdx,date,exercises:[...extras],notes:'',startedAt:Date.now()};
   return{dayIdx,date,
     exercises:[
       ...day.exercises.filter(ex=>!disliked.includes(ex.name)).map(ex=>({name:ex.name,sets:[{reps:'',weight:'',done:false}]})),
       ...extras
     ],
-    notes:''};
+    notes:'',startedAt:Date.now()};
 }
 
 function syncGoalExercises(){
@@ -756,6 +849,7 @@ function renderDetail(){
         <div class="tags">${day.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}</div>
       </div>
       <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="openCustomDayModal(${activeDayIdx})" title="Edit exercises for this day template">✏️ Edit day</button>
         <select class="workout-select" onchange="changeWorkoutForDate(this.value)" title="Change workout for this date">${workoutOpts}</select>
         <input type="date" id="session-date" value="${draftSession.date}"
           style="padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer"
@@ -784,7 +878,10 @@ function renderDetail(){
         oninput="draftSession.notes=this.value;saveDraft(activeDate,draftSession)">${draftSession.notes}</textarea>
     </div>
     <div class="session-bar">
-      <div class="session-date" id="session-status">Draft — not saved</div>
+      <div>
+        <div class="session-date" id="session-status">Draft — not saved</div>
+        <div id="session-timer" style="font-size:10px;color:var(--text3);margin-top:2px"></div>
+      </div>
       <div style="display:flex;gap:6px">
         <button class="btn btn-sm btn-red" onclick="discardDraft()">Discard</button>
         <button class="btn btn-sm btn-green" onclick="saveSession()">Save workout</button>
@@ -793,6 +890,36 @@ function renderDetail(){
 
   renderExerciseRows(lastSession);
   updateSessionStatus();
+  startDurationTimer();
+}
+
+function startDurationTimer(){
+  clearInterval(_durationTimer);
+  const el=document.getElementById('session-timer');
+  if(!el||!draftSession||draftSession.savedAt) return;
+  const update=()=>{
+    if(!draftSession?.startedAt){el.textContent='';return}
+    const mins=Math.round((Date.now()-draftSession.startedAt)/60000);
+    el.textContent=mins>0?`⏱ ${mins} min`:'';
+  };
+  update();
+  _durationTimer=setInterval(update,30000);
+}
+
+function buildMuscleRecovery(){
+  const recovery={};
+  const today=new Date(TODAY+'T00:00:00');
+  loadSessions().filter(s=>s.date<TODAY).forEach(s=>{
+    s.exercises.forEach(ex=>{
+      const m=getExerciseMuscle(ex.name);
+      if(m&&(!recovery[m]||s.date>recovery[m])) recovery[m]=s.date;
+    });
+  });
+  const days={};
+  Object.entries(recovery).forEach(([m,d])=>{
+    days[m]=Math.round((today-new Date(d+'T00:00:00'))/(86400000));
+  });
+  return days;
 }
 
 function renderExerciseRows(lastSession){
@@ -803,8 +930,8 @@ function renderExerciseRows(lastSession){
   const goal=getGoal();
   const goalExtras=GOAL_EXERCISES[goal]||[];
   const planTag=GOAL_PLAN_TAG[goal]||'';
-  // Show structure (no preset weights) for new users OR non-7-day programs
   const useStructure=sessions.length===0||getDaysPerWeek()<7;
+  const recovery=buildMuscleRecovery();
 
   draftSession.exercises.forEach((ex,ei)=>{
     const isGoalEx=!!ex.goalAdded;
@@ -821,12 +948,19 @@ function renderExerciseRows(lastSession){
 
     const lastEx=lastSession?lastSession.exercises.find(e=>e.name===ex.name):null;
     let lastHTML='<span style="font-size:11px;color:var(--text3)">—</span>';
+    let overloadHint='';
     if(lastEx&&lastEx.sets.length){
       const chips=lastEx.sets.filter(s=>s.done||(s.weight||s.reps)).map(s=>{
         const isPR=allPRs[ex.name]&&parseFloat(s.weight)>=allPRs[ex.name].weight&&s.done;
         return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${isPR?' 🏆':''}</span>`;
       }).join('');
       if(chips) lastHTML=`<div class="last-set-row">${chips}</div>`;
+      const doneSets=lastEx.sets.filter(s=>s.done&&parseFloat(s.weight)>0);
+      if(doneSets.length){
+        const bestW=Math.max(...doneSets.map(s=>parseFloat(s.weight)));
+        const inc=getWeightUnit()==='kg'?2.5:5;
+        overloadHint=`<span class="overload-hint">↑ Try ${bestW+inc} ${getWeightUnit()}</span>`;
+      }
     }
 
     const goalTag=isGoalEx
@@ -839,9 +973,12 @@ function renderExerciseRows(lastSession){
     const ytQ=encodeURIComponent(ex.name+' exercise form');
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
+    const daysSince=muscle!==null?recovery[muscle]:undefined;
+    const recColor=daysSince===undefined?null:daysSince<=1?'#e05555':daysSince===2?'var(--amber)':'var(--green)';
+    const recDot=recColor?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${recColor};margin-left:3px;vertical-align:middle" title="${daysSince===0?'Trained today':daysSince===1?'Trained yesterday':`${daysSince}d ago`}"></span>`:'';
     const swapTag=(!isCustom&&muscle)
-      ?`<button class="ex-muscle-swap-btn" style="background:${muscleColor}" onclick="openSwapModal(${ei})" title="Tap to swap with another ${muscle} exercise">${muscle} ⇄</button>`
-      :(muscle?`<span class="ex-muscle-tag" style="background:${muscleColor}">${muscle}</span>`:'');
+      ?`<button class="ex-muscle-swap-btn" style="background:${muscleColor}" onclick="openSwapModal(${ei})" title="Tap to swap with another ${muscle} exercise">${muscle} ⇄${recDot}</button>`
+      :(muscle?`<span class="ex-muscle-tag" style="background:${muscleColor}">${muscle}${recDot}</span>`:'');
     tr.innerHTML=`
       <td class="ex-name-cell">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
@@ -859,7 +996,7 @@ function renderExerciseRows(lastSession){
         </div>
       </td>
       <td class="ex-plan-cell">${displayPlan}<br><span style="font-size:11px;color:var(--text3)">${planEx.note||''}</span>${goalTag}</td>
-      <td class="ex-last-cell">${lastHTML}</td>
+      <td class="ex-last-cell">${lastHTML}${overloadHint}</td>
       <td class="ex-log-cell">
         <div class="sets-container" id="sets-${ei}"></div>
         <button class="add-set-btn" onclick="addSet(${ei})">+ add set</button>
@@ -941,9 +1078,13 @@ function updateSessionStatus(){
   el.style.color='';
 }
 function saveSession(){
+  clearInterval(_durationTimer);
   const prevPRs=calcPRs(loadSessions());
   const sessions=loadSessions();
-  const session=JSON.parse(JSON.stringify(draftSession)); session.id=Date.now();
+  const session=JSON.parse(JSON.stringify(draftSession));
+  session.id=Date.now();
+  session.endedAt=Date.now();
+  session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
   sessions.push(session); saveSessions(sessions);
   draftSession.savedAt=Date.now();
   saveDraft(activeDate,draftSession);
@@ -981,6 +1122,7 @@ function showCompletionSummary(session,prevPRs){
     <div class="completion-stats">
       <div><div class="completion-stat-val">${doneSets}/${totalSets}</div><div class="completion-stat-lbl">Sets Done</div></div>
       ${volume>0?`<div><div class="completion-stat-val">${volume.toLocaleString()}</div><div class="completion-stat-lbl">${getWeightUnit()} Vol</div></div>`:''}
+      ${session.duration>0?`<div><div class="completion-stat-val">${session.duration}</div><div class="completion-stat-lbl">Min</div></div>`:''}
     </div>
     ${prsHTML}`;
   document.getElementById('completion-modal').style.display='flex';
@@ -1226,7 +1368,7 @@ function renderHistory(){
       <div class="hist-session-header" onclick="toggleCollapse(this.parentElement)">
         <div>
           <div class="hist-session-title">${day.dow} — ${day.name}</div>
-          <div class="hist-session-date">${formatDate(session.date)}</div>
+          <div class="hist-session-date">${formatDate(session.date)}${session.duration?` · ${session.duration} min`:''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="hist-session-date">${countDoneSets(session)} sets done</span>

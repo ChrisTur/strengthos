@@ -329,15 +329,16 @@ function getActiveDays(){
   if(ai&&Array.isArray(ai.days)&&ai.days.length) return ai.days;
   const dpw=getDaysPerWeek(),goal=getGoal();
   // Pure cardio goal → use dedicated cardio-only schedule
-  if(goal==='cardio'&&CARDIO_PROGRAMS[dpw]) return CARDIO_PROGRAMS[dpw];
+  if(goal==='cardio'&&CARDIO_PROGRAMS[dpw]) return CARDIO_PROGRAMS[dpw].map((d,i)=>getCustomDay(i)||d);
   let base;
   if(PROGRAMS[dpw]) base=PROGRAMS[dpw];
   else if(dpw===5) base=DAYS.slice(0,5);
   else if(dpw===6) base=DAYS.slice(0,6);
   else base=DAYS;
   // Fat loss goal with a frequency-based program → inject a dedicated cardio day
-  if(goal==='fat_loss'&&PROGRAMS[dpw]) return [...base,getCardioDay()];
-  return base;
+  if(goal==='fat_loss'&&PROGRAMS[dpw]) base=[...base,getCardioDay()];
+  // Apply per-slot custom day overrides
+  return base.map((d,i)=>getCustomDay(i)||d);
 }
 function getActiveDay(idx){ return getActiveDays()[idx]||null }
 

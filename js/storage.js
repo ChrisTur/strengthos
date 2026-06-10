@@ -113,6 +113,24 @@ function setDaysPerWeek(n){ localStorage.setItem(daysPerWeekKey(getActiveProfile
 function getWeightUnit(){ return localStorage.getItem('wt_unit')||'lbs' }
 function setWeightUnit(u){ localStorage.setItem('wt_unit',u) }
 
+// ── Equipment availability (per-profile) ──────────────────────────────────────
+const ALL_EQUIPMENT=['Barbell','Dumbbell','Machine','Cable','Bodyweight','Equipment'];
+function getEquipment(){ try{const r=localStorage.getItem('wt_equip_'+getActiveProfile()); return r?JSON.parse(r):null}catch{return null} }
+function setEquipment(arr){ localStorage.setItem('wt_equip_'+getActiveProfile(),JSON.stringify(arr)) }
+function getAvailableEquipment(){ return getEquipment()||ALL_EQUIPMENT }
+function toggleEquipmentType(type){
+  const cur=getAvailableEquipment();
+  const next=cur.includes(type)?cur.filter(t=>t!==type):[...cur,type];
+  setEquipment(next); return next;
+}
+
+// ── Custom day templates (per-profile) ────────────────────────────────────────
+function getCustomDays(){ try{return JSON.parse(localStorage.getItem('wt_customdays_'+getActiveProfile()))||{}}catch{return{}} }
+function setCustomDays(obj){ localStorage.setItem('wt_customdays_'+getActiveProfile(),JSON.stringify(obj)) }
+function getCustomDay(idx){ return getCustomDays()[String(idx)]||null }
+function setCustomDay(idx,day){ const d=getCustomDays(); d[String(idx)]=day; setCustomDays(d) }
+function clearCustomDay(idx){ const d=getCustomDays(); delete d[String(idx)]; setCustomDays(d) }
+
 // ── Anthropic API key ─────────────────────────────────────────────────────────
 function getAPIKey(){ return localStorage.getItem('wt_api_key')||'' }
 function setAPIKey(k){ if(k) localStorage.setItem('wt_api_key',k.trim()); else localStorage.removeItem('wt_api_key') }

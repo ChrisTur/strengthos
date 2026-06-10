@@ -694,6 +694,23 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 }
 .ex-muscle-swap-btn:active{ transform:translateY(0); opacity:0.8; }
 
+/* Progressive overload hint */
+.overload-hint{display:block;font-size:10px;color:var(--green);font-weight:600;margin-top:3px;letter-spacing:.01em}
+
+/* Equipment filter buttons in prefs */
+.equip-btn{padding:5px 11px;border-radius:20px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.equip-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Custom day builder */
+.custom-day-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.custom-day-name-txt{flex:1;font-size:13px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.custom-day-struct{width:72px;padding:4px 7px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:12px;flex-shrink:0}
+.cday-btn{padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;transition:background .12s}
+.cday-btn:hover{background:var(--bg4)}
+.cday-btn:disabled{opacity:.3;cursor:default}
+.cday-del{color:var(--red);border-color:var(--red-bg)}
+.cday-del:hover{background:var(--red-bg)}
+
 @media(max-width:600px){
   .ob-goals{ grid-template-columns:1fr 1fr; }
   #swap-exercise-grid{ grid-template-columns:1fr 1fr; }
