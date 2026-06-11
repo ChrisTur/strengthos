@@ -711,6 +711,77 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .cday-del{color:var(--red);border-color:var(--red-bg)}
 .cday-del:hover{background:var(--red-bg)}
 
+/* ── Onboarding program cards ──────────────────────────────────────────────── */
+.ob-card-wide{ max-width:700px; }
+.ob-programs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  width:100%;
+}
+.ob-prog-card{
+  position:relative;
+  border-radius:12px;
+  overflow:hidden;
+  height:160px;
+  cursor:pointer;
+  border:2px solid transparent;
+  background:var(--bg3);
+  transition:border-color .15s, transform .15s, box-shadow .15s;
+  flex-shrink:0;
+}
+.ob-prog-card:hover{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,.4); }
+.ob-prog-card.selected{ border-color:var(--accent); }
+.ob-prog-card img{
+  width:100%; height:100%;
+  object-fit:cover;
+  display:block;
+  position:absolute; inset:0;
+  filter:brightness(.55) saturate(.8);
+}
+.ob-prog-grad{
+  position:absolute; inset:0;
+  background:linear-gradient(160deg,transparent 15%,rgba(0,0,0,.75) 100%);
+}
+.ob-prog-check{
+  position:absolute; top:8px; right:8px;
+  width:22px; height:22px; border-radius:50%;
+  background:var(--accent); color:#fff;
+  font-size:12px; font-weight:700;
+  display:none; align-items:center; justify-content:center;
+}
+.ob-prog-card.selected .ob-prog-check{ display:flex; }
+.ob-prog-body{
+  position:absolute; bottom:0; left:0; right:0;
+  padding:10px 12px;
+}
+.ob-prog-tags{ display:flex; flex-wrap:wrap; gap:3px; margin-bottom:5px; }
+.ob-prog-tag{
+  font-size:9px; color:rgba(255,255,255,.7);
+  background:rgba(255,255,255,.12); border-radius:4px; padding:2px 5px;
+}
+.ob-prog-name{ font-size:13px; font-weight:700; color:#fff; line-height:1.2; }
+.ob-prog-badge{ font-size:10px; color:rgba(255,255,255,.6); margin-top:2px; }
+.ob-prog-custom{
+  background:linear-gradient(135deg,var(--bg3) 0%,var(--bg4) 100%);
+  border:2px dashed var(--border2);
+  display:flex; align-items:center; justify-content:center;
+}
+.ob-prog-custom .ob-prog-body{ position:static; padding:16px; text-align:center; }
+.ob-prog-custom .ob-prog-name{ color:var(--text); font-size:14px; }
+.ob-prog-custom .ob-prog-badge{ color:var(--text3); }
+.ob-prog-selected-desc{ max-width:100%; margin-top:2px !important; }
+
+/* Equipment toggles in onboarding configure step */
+.ob-equip-grid{ display:flex; flex-wrap:wrap; gap:8px; width:100%; justify-content:center; margin-top:4px; }
+.ob-equip-btn{
+  padding:9px 18px; border-radius:20px;
+  border:1.5px solid var(--border2); background:transparent;
+  color:var(--text2); font-size:13px; font-weight:500;
+  cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.ob-equip-btn.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
 /* Workout hero banner */
 .workout-hero{width:100%;height:150px;position:relative;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0;flex-shrink:0}
 .workout-hero img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.65) saturate(0.8)}
@@ -718,6 +789,7 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
 @media(max-width:600px){
   .ob-goals{ grid-template-columns:1fr 1fr; }
+  .ob-programs{ grid-template-columns:1fr 1fr; }
   #swap-exercise-grid{ grid-template-columns:1fr 1fr; }
   .ob-title{ font-size:19px; }
   .workout-hero{ height:110px; }

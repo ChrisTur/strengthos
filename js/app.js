@@ -410,7 +410,7 @@ function clearAIPlanAndRefresh(){
 }
 
 // ── Onboarding wizard ─────────────────────────────────────────────────────────
-let _obDPW=5, _obGoal='';
+let _obDPW=5, _obGoal='', _obProgram=null, _obEquipment=null;
 
 function needsOnboarding(){
   if(localStorage.getItem('wt_onboarded')) return false;
@@ -420,23 +420,96 @@ function needsOnboarding(){
 
 function showOnboarding(){
   document.getElementById('onboarding').style.display='flex';
-  const grid=document.getElementById('ob-goal-grid');
-  grid.innerHTML=GOALS.map(g=>`
-    <button class="ob-goal-opt" data-id="${g.id}" onclick="obSelectGoal('${g.id}')">
-      <span class="ob-goal-icon">${g.icon}</span>
-      <span class="ob-goal-label">${g.label}</span>
-      <span class="ob-goal-desc">${g.desc}</span>
-    </button>`).join('');
-  renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
-  const desc=document.getElementById('ob-dpw-desc');
-  if(desc) desc.textContent=DPW_DESCS[_obDPW]||'';
+  renderProgramCards();
   setTimeout(()=>document.getElementById('ob-name-input').focus(),100);
+}
+
+function renderProgramCards(){
+  const grid=document.getElementById('ob-program-grid');
+  if(!grid) return;
+  grid.innerHTML=ONBOARDING_PROGRAMS.map(p=>{
+    const isCustom=p.type==='custom';
+    const imgUrl=p.imgId?`https://images.unsplash.com/photo-${p.imgId}?auto=format&fit=crop&w=600&h=240&q=80`:'';
+    return `<div class="ob-prog-card${isCustom?' ob-prog-custom':''}" data-id="${p.id}" onclick="obSelectProgram('${p.id}')">
+      ${imgUrl?`<img src="${imgUrl}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">`:''}
+      <div class="ob-prog-grad"></div>
+      <div class="ob-prog-check">✓</div>
+      <div class="ob-prog-body">
+        <div class="ob-prog-tags">${p.tags.map(t=>`<span class="ob-prog-tag">${t}</span>`).join('')}</div>
+        <div class="ob-prog-name">${isCustom?'✏️ ':''}${p.name}</div>
+        <div class="ob-prog-badge">${p.badge}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function obSelectProgram(id){
+  _obProgram=ONBOARDING_PROGRAMS.find(p=>p.id===id)||null;
+  document.querySelectorAll('.ob-prog-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
+  const btn=document.getElementById('ob-program-btn');
+  if(btn) btn.disabled=false;
+  // show description below grid
+  let desc=document.getElementById('ob-prog-desc-row');
+  if(!desc){ desc=document.createElement('p'); desc.id='ob-prog-desc-row'; desc.className='ob-sub ob-prog-selected-desc'; document.getElementById('ob-program-grid').after(desc); }
+  desc.textContent=_obProgram?_obProgram.desc:'';
+}
+
+function renderObConfigure(){
+  const p=_obProgram;
+  if(!p) return;
+  const el=document.getElementById('ob-configure-content');
+  const confBtn=document.getElementById('ob-configure-btn');
+  if(p.type==='custom'){
+    _obGoal='';
+    el.innerHTML=`
+      <h2 class="ob-title">Customize your plan</h2>
+      <p class="ob-sub">Choose your goal and training frequency.</p>
+      <div class="ob-goals" id="ob-goal-grid">${GOALS.map(g=>`
+        <button class="ob-goal-opt" data-id="${g.id}" onclick="obSelectGoal('${g.id}')">
+          <span class="ob-goal-icon">${g.icon}</span>
+          <span class="ob-goal-label">${g.label}</span>
+          <span class="ob-goal-desc">${g.desc}</span>
+        </button>`).join('')}</div>
+      <p class="ob-sub" style="margin-top:4px">Days per week</p>
+      <div class="dpw-row" id="ob-dpw-row"></div>
+      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`;
+    if(confBtn) confBtn.disabled=true;
+    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+    const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
+  } else if(p.type==='cardio'){
+    _obGoal=p.goal; _obDPW=p.dpw||4;
+    el.innerHTML=`
+      <h2 class="ob-title">How many days per week?</h2>
+      <p class="ob-sub">${p.name} · choose your frequency.</p>
+      <div class="dpw-row" id="ob-dpw-row"></div>
+      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`;
+    if(confBtn) confBtn.disabled=false;
+    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+    const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
+  } else {
+    _obGoal=p.goal; _obDPW=p.dpw;
+    const eq=ALL_EQUIPMENT;
+    el.innerHTML=`
+      <h2 class="ob-title">What equipment do you have?</h2>
+      <p class="ob-sub">We'll filter exercises to match your gym. Tap to toggle.</p>
+      <div class="ob-equip-grid">${eq.map(e=>`<button class="ob-equip-btn active" data-eq="${e}" onclick="obToggleEquip(this)">${e}</button>`).join('')}</div>
+      <p class="ob-sub" style="margin-top:16px">Training days / week</p>
+      <div class="dpw-row" id="ob-dpw-row"></div>`;
+    if(confBtn) confBtn.disabled=false;
+    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+  }
+}
+
+function obToggleEquip(btn){
+  btn.classList.toggle('active');
+  _obEquipment=[...document.querySelectorAll('.ob-equip-btn.active')].map(b=>b.dataset.eq);
+  if(!_obEquipment.length){ btn.classList.add('active'); _obEquipment=[btn.dataset.eq]; }
 }
 
 function obSelectGoal(id){
   _obGoal=id;
   document.querySelectorAll('.ob-goal-opt').forEach(b=>b.classList.toggle('selected',b.dataset.id===id));
-  document.getElementById('ob-goal-btn').disabled=false;
+  const btn=document.getElementById('ob-configure-btn'); if(btn) btn.disabled=false;
 }
 
 function obSelectDPW(n){
@@ -451,7 +524,14 @@ function obNext(step){
     const name=document.getElementById('ob-name-input').value.trim();
     if(!name){ document.getElementById('ob-name-input').focus(); return; }
   }
-  if(step===4) renderObPlanPreview();
+  if(step===3){
+    if(!_obProgram) return;
+    renderObConfigure();
+  }
+  if(step===4){
+    if(_obProgram&&_obProgram.type==='custom'&&!_obGoal) return;
+    renderObPlanPreview();
+  }
   document.querySelectorAll('.ob-card').forEach(c=>c.style.display='none');
   document.getElementById('ob-step-'+step).style.display='flex';
 }
@@ -465,11 +545,19 @@ function renderObPlanPreview(){
   const name=(document.getElementById('ob-name-input').value.trim())||'there';
   document.getElementById('ob-name-preview').textContent=name;
   const goalObj=GOALS.find(g=>g.id===_obGoal)||GOALS[0];
-  document.getElementById('ob-plan-desc').textContent=goalObj.label+' · '+_obDPW+' days/week';
-  const prog=PROGRAMS[_obDPW]||(DAYS.length>=_obDPW?DAYS.slice(0,_obDPW):DAYS);
+  const progName=_obProgram&&_obProgram.type!=='custom'?_obProgram.name:goalObj.label;
+  document.getElementById('ob-plan-desc').textContent=progName+' · '+_obDPW+' days/week';
+  let days;
+  if(_obGoal==='cardio'){
+    const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);
+    const cpKey=CARDIO_PROGRAMS[_obDPW]?_obDPW:cpKeys.reduce((a,b)=>Math.abs(b-_obDPW)<Math.abs(a-_obDPW)?b:a);
+    days=CARDIO_PROGRAMS[cpKey];
+  } else {
+    days=PROGRAMS[_obDPW]||(DAYS.length>=_obDPW?DAYS.slice(0,_obDPW):DAYS);
+  }
   const preview=document.getElementById('ob-plan-preview');
-  preview.innerHTML=prog.slice(0,_obDPW).map(day=>`
-    <div class="ob-day-pill" style="background:${day.color||'#555'}">
+  preview.innerHTML=(days||[]).slice(0,_obDPW).map(day=>`
+    <div class="ob-day-pill" style="background:${(day.dots&&day.dots[0])||'#555'}">
       <span>${day.short||day.name||'Day'}</span>
     </div>`).join('');
 }
@@ -482,6 +570,7 @@ function completeOnboarding(){
   else if(!profs.includes(name)){ profs.push(name); saveProfiles(profs); setActiveProfile(name); }
   if(_obDPW) setDaysPerWeek(_obDPW);
   if(_obGoal) setGoal(_obGoal);
+  if(_obEquipment&&_obEquipment.length) setEquipment(_obEquipment);
   localStorage.setItem('wt_onboarded','1');
   document.getElementById('onboarding').style.display='none';
   initApp();

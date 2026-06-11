@@ -25,22 +25,20 @@
     <button class="ob-btn" onclick="obNext(2)">Continue →</button>
   </div>
 
-  <!-- Step 2: Goal -->
-  <div class="ob-card" id="ob-step-2" style="display:none">
+  <!-- Step 2: Program Selection -->
+  <div class="ob-card ob-card-wide" id="ob-step-2" style="display:none">
     <div class="ob-back" onclick="obBack(1)">← Back</div>
-    <h2 class="ob-title">What's your main goal?</h2>
-    <div class="ob-goals" id="ob-goal-grid"></div>
-    <button class="ob-btn" id="ob-goal-btn" disabled onclick="obNext(3)">Continue →</button>
+    <h2 class="ob-title">Choose your program</h2>
+    <p class="ob-sub">Pick a pre-built program to start immediately, or build your own.</p>
+    <div class="ob-programs" id="ob-program-grid"></div>
+    <button class="ob-btn" id="ob-program-btn" disabled onclick="obNext(3)">Continue →</button>
   </div>
 
-  <!-- Step 3: Days per week -->
+  <!-- Step 3: Configure (content rendered by JS based on program type) -->
   <div class="ob-card" id="ob-step-3" style="display:none">
     <div class="ob-back" onclick="obBack(2)">← Back</div>
-    <h2 class="ob-title">How many days per week?</h2>
-    <p class="ob-sub">You can change this any time in Settings.</p>
-    <div class="dpw-row" id="ob-dpw-row"></div>
-    <div id="ob-dpw-desc" class="ob-dpw-desc"></div>
-    <button class="ob-btn" onclick="obNext(4)">Preview my plan →</button>
+    <div id="ob-configure-content"></div>
+    <button class="ob-btn" id="ob-configure-btn" onclick="obNext(4)">Preview my plan →</button>
   </div>
 
   <!-- Step 4: Plan preview -->

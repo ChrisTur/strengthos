@@ -509,6 +509,34 @@ const GOALS=[
   {id:'general', icon:'⚖️', label:'General Fitness',desc:'Balanced strength & health'},
 ];
 
+// ── Pre-built programs shown in onboarding ────────────────────────────────────
+const ONBOARDING_PROGRAMS=[
+  {id:'ppl_3',        name:'Push / Pull / Legs',   goal:'muscle',   dpw:3, type:'strength',
+   imgId:'1571019614242-c5c5dee9f50b',
+   badge:'3 days / week', tags:['Chest','Back','Legs'],
+   desc:'The classic 3-day split — chest/shoulders/triceps, back/biceps, and legs each get a dedicated session.'},
+  {id:'upper_lower',  name:'Upper / Lower',         goal:'muscle',   dpw:4, type:'strength',
+   imgId:'1534438327276-14e5300c3a48',
+   badge:'4 days / week', tags:['Upper Body','Lower Body'],
+   desc:'Alternate upper and lower body sessions twice each. Great frequency without burnout.'},
+  {id:'hypertrophy_5',name:'5-Day Hypertrophy',     goal:'muscle',   dpw:5, type:'strength',
+   imgId:'1583454110551-21f2fa2afe61',
+   badge:'5 days / week', tags:['Chest','Back','Shoulders','Arms','Legs'],
+   desc:'High-volume body-part split. Maximum muscle stimulus across the whole week.'},
+  {id:'cardio',       name:'Pure Cardio',            goal:'cardio',   dpw:4, type:'cardio',
+   imgId:'1476480862126-209bfaa8edc8',
+   badge:'3–7 days / week', tags:['Steady State','HIIT','Zone 2'],
+   desc:'Steady state, HIIT, and Zone 2 sessions. Build your aerobic engine and burn fat.'},
+  {id:'fat_loss',     name:'Fat Loss Circuit',       goal:'fat_loss', dpw:4, type:'strength',
+   imgId:'1601422407692-ec4eeec1d9b3',
+   badge:'4 days / week', tags:['Full Body','Cardio Finisher'],
+   desc:'Strength meets cardio. High reps, short rest, and a cardio finisher at the end of every session.'},
+  {id:'custom',       name:'Build My Own',           goal:null,       dpw:null, type:'custom',
+   imgId:null,
+   badge:'Any schedule',   tags:['Fully Customizable'],
+   desc:'Pick your goal, choose your days, then customize each session exactly how you want.'},
+];
+
 // Extra exercises appended to every session based on goal
 const GOAL_EXERCISES={
   fat_loss:[
