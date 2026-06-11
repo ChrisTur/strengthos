@@ -578,6 +578,7 @@ function completeOnboarding(){
 
 // ── Exercise library modal (swap + add) ───────────────────────────────────────
 let _swapEI=-1, _swapMode='swap', _swapMuscleFilter=null;
+let _progressMuscle=null, _progressExSearch='';
 let _customDayIdx=-1, _customDayExercises=[], _customDayName='';
 let _durationTimer=null;
 
@@ -1088,7 +1089,7 @@ function renderExerciseRows(lastSession){
     const safeName=ex.name.replace(/'/g,"\\'");
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
-    const ytQ=encodeURIComponent(ex.name+' exercise form');
+    const ytQ=encodeURIComponent(ex.name+' exercise form shorts');
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
     const daysSince=muscle!==null?recovery[muscle]:undefined;
@@ -1104,7 +1105,7 @@ function renderExerciseRows(lastSession){
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
-              <a href="https://www.youtube.com/shorts?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+              <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
               <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>
@@ -1254,15 +1255,13 @@ function discardDraft(){
   clearDraft(activeDate); draftSession=initDraft(activeDayIdx,activeDate); renderDetail();
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+// ── Progress page ─────────────────────────────────────────────────────────────
 function renderDashboard(){
   const sessions=loadSessions();
   const stats=calcStats(sessions);
   const weeks=calcWeeklyData(sessions,8);
-  const prs=calcPRs(sessions);
   const bwEntries=loadBW();
   const maxCount=Math.max(...weeks.map(w=>w.count),1);
-  const maxVol=Math.max(...weeks.map(w=>w.vol),1);
 
   // Frequency bars
   const barsHTML=weeks.map((w,i)=>{
@@ -1274,33 +1273,7 @@ function renderDashboard(){
     </div>`;
   }).join('');
   const labelsHTML=weeks.map(w=>`<div class="freq-label">${w.label}</div>`).join('');
-
-  // Volume SVG line chart
   const volSVG=renderVolumeSVG(weeks);
-
-  // PRs table — grouped by muscle, with 1RM + chart link
-  const unit=getWeightUnit();
-  const prEntries=Object.entries(prs).map(([name,pr])=>{
-    const e1rm=Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4;
-    return{name, ...pr, e1rm, muscle:getExerciseMuscle(name)||'Other'};
-  }).sort((a,b)=>b.e1rm-a.e1rm);
-  const muscleGroups=[...new Set(prEntries.map(e=>e.muscle))].sort();
-  const prsHTML=prEntries.length===0
-    ?'<div class="empty-state" style="padding:24px">No PRs yet — mark sets ✓ while logging.</div>'
-    :muscleGroups.map(mg=>{
-      const rows=prEntries.filter(e=>e.muscle===mg);
-      return`<div class="pr-group">
-        <div class="pr-group-label">${mg}</div>
-        <table class="pr-table"><thead><tr><th>Exercise</th><th>Best Set</th><th>Est. 1RM</th><th>Date</th><th></th></tr></thead>
-        <tbody>${rows.map(r=>`<tr>
-          <td><button class="pr-ex-link" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')"><strong>${r.name}</strong></button></td>
-          <td class="pr-weight">${r.weight} ${unit} × ${r.reps||'—'}</td>
-          <td class="pr-orm">${r.e1rm} ${unit}</td>
-          <td style="color:var(--text3);font-size:11px">${formatDateShort(r.date)}</td>
-          <td><button class="pr-chart-btn" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')">📈</button></td>
-        </tr>`).join('')}</tbody></table>
-      </div>`;
-    }).join('');
 
   // Body weight section
   const latestBW=bwEntries.length?bwEntries[bwEntries.length-1]:null;
@@ -1371,8 +1344,142 @@ function renderDashboard(){
       ${bwEntries.length?`<div class="bw-chips">${bwChips}</div>`:''}
     </div>
 
-    <div class="dash-section-title">Personal Records</div>
-    ${prsHTML}`;
+    <div class="dash-section-title">Exercise Progress</div>
+    <div id="progress-section">${renderExerciseProgressSection()}</div>`;
+}
+
+function renderExerciseProgressSection(){
+  const sessions=loadSessions();
+  const prs=calcPRs(sessions);
+  const unit=getWeightUnit();
+
+  // Build list of all exercises that have been logged at least once
+  const loggedNames=new Set();
+  sessions.forEach(s=>s.exercises.forEach(e=>{
+    if(e.sets&&e.sets.some(st=>st.done&&parseFloat(st.weight)>0)) loggedNames.add(e.name);
+  }));
+
+  const muscles=Object.keys(EXERCISE_LIBRARY);
+  const q=_progressExSearch.trim().toLowerCase();
+
+  // Muscle filter tabs
+  const tabsHTML=`<div class="prog-muscle-tabs">
+    ${['All',...muscles].map(m=>{
+      const active=m==='All'?!_progressMuscle:_progressMuscle===m;
+      const col=m==='All'?'var(--accent)':(MUSCLE_COLORS[m]||'#888');
+      const style=active?`background:${col};color:#fff;border-color:${col}`:`color:${col};border-color:${col}`;
+      return`<button class="muscle-filter-tab" style="${style}" onclick="setProgressMuscle(${m==='All'?'null':"'"+m+"'"})'">${m}</button>`;
+    }).join('')}
+  </div>`;
+
+  const searchHTML=`<div class="prog-search-wrap">
+    <input class="prog-search-input" type="text" placeholder="Search exercises…"
+      value="${q.replace(/"/g,'&quot;')}"
+      oninput="setProgressSearch(this.value)">
+    ${q?`<button class="prog-search-clear" onclick="setProgressSearch('')">✕</button>`:''}
+  </div>`;
+
+  // Determine which exercises to show
+  let pool=[];
+  if(q){
+    // Search across all logged exercises
+    pool=[...loggedNames].filter(n=>n.toLowerCase().includes(q));
+  } else if(_progressMuscle){
+    // All exercises in that muscle group that have been logged
+    const libNames=new Set((EXERCISE_LIBRARY[_progressMuscle]||[]).map(e=>e.name));
+    pool=[...loggedNames].filter(n=>libNames.has(n)||getExerciseMuscle(n)===_progressMuscle);
+  }
+
+  // No filter: show PR table
+  if(!q && !_progressMuscle){
+    const prEntries=Object.entries(prs).map(([name,pr])=>{
+      const e1rm=Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4;
+      return{name,...pr,e1rm,muscle:getExerciseMuscle(name)||'Other'};
+    }).sort((a,b)=>b.e1rm-a.e1rm);
+    const muscleGroups=[...new Set(prEntries.map(e=>e.muscle))].sort();
+    const prsHTML=prEntries.length===0
+      ?'<div class="empty-state" style="padding:24px 0">No data yet — complete workouts to see your PRs here.</div>'
+      :muscleGroups.map(mg=>{
+        const rows=prEntries.filter(e=>e.muscle===mg);
+        return`<div class="pr-group">
+          <div class="pr-group-label">${mg}</div>
+          <table class="pr-table"><thead><tr><th>Exercise</th><th>Best Set</th><th>Est. 1RM</th><th>Date</th><th></th></tr></thead>
+          <tbody>${rows.map(r=>`<tr>
+            <td><button class="pr-ex-link" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')"><strong>${r.name}</strong></button></td>
+            <td class="pr-weight">${r.weight} ${unit} × ${r.reps||'—'}</td>
+            <td class="pr-orm">${r.e1rm} ${unit}</td>
+            <td style="color:var(--text3);font-size:11px">${formatDateShort(r.date)}</td>
+            <td><button class="pr-chart-btn" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')">📈</button></td>
+          </tr>`).join('')}</tbody></table>
+        </div>`;
+      }).join('');
+    return`${tabsHTML}${searchHTML}${prsHTML}`;
+  }
+
+  // Filtered: show exercise cards with sparklines
+  if(!pool.length){
+    return`${tabsHTML}${searchHTML}<div class="empty-state" style="padding:24px 0">No logged exercises match this filter.</div>`;
+  }
+
+  const cardsHTML=pool.map(name=>{
+    const history=getExerciseHistory(name);
+    const pr=prs[name];
+    const e1rm=pr?Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4:null;
+    const muscle=getExerciseMuscle(name)||(_progressMuscle||'');
+    const color=MUSCLE_COLORS[muscle]||'#888';
+    const safe=name.replace(/'/g,"\\'");
+    const trend=history.length>=2?(history[history.length-1].bestWeight>history[0].bestWeight?'↑':'→'):'';
+    const trendColor=trend==='↑'?'var(--green)':'var(--text3)';
+    return`<div class="prog-ex-card" onclick="openProgressModal('${safe}')">
+      <div class="prog-ex-card-header">
+        <div style="flex:1;min-width:0">
+          <div class="prog-ex-card-name">${name}</div>
+          <div class="prog-ex-card-meta">
+            <span style="color:${color};font-size:10px;font-weight:700;text-transform:uppercase">${muscle}</span>
+            ${pr?`<span style="color:var(--text3)">·</span><span>PR: <strong>${pr.weight} ${unit} × ${pr.reps}</strong></span>`:''}
+            ${e1rm?`<span style="color:var(--text3)">·</span><span>~${e1rm} ${unit} 1RM</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:18px;font-weight:700;color:${trendColor}">${trend}</div>
+          <div style="font-size:10px;color:var(--text3)">${history.length} session${history.length!==1?'s':''}</div>
+        </div>
+      </div>
+      <div class="prog-ex-sparkline">${renderSparklineSVG(history)}</div>
+    </div>`;
+  }).join('');
+
+  return`${tabsHTML}${searchHTML}<div class="prog-ex-grid">${cardsHTML}</div>`;
+}
+
+function setProgressMuscle(muscle){
+  _progressMuscle=muscle; _progressExSearch='';
+  document.getElementById('progress-section').innerHTML=renderExerciseProgressSection();
+}
+function setProgressSearch(q){
+  _progressExSearch=q; _progressMuscle=null;
+  document.getElementById('progress-section').innerHTML=renderExerciseProgressSection();
+}
+
+function renderSparklineSVG(history){
+  if(history.length<2) return`<div style="height:44px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">Not enough data</div>`;
+  const W=320,H=44,PAD=6;
+  const weights=history.map(h=>h.bestWeight);
+  const minW=Math.min(...weights), maxW=Math.max(...weights), range=maxW-minW||1;
+  const pts=history.map((h,i)=>({
+    x:PAD+(i/(history.length-1))*(W-2*PAD),
+    y:H-PAD-((h.bestWeight-minW)/range)*(H-2*PAD),
+    ...h
+  }));
+  const line=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const area=line+` L${pts[pts.length-1].x.toFixed(1)},${H} L${pts[0].x.toFixed(1)},${H} Z`;
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.bestWeight===maxW?3.5:2}" fill="${p.bestWeight===maxW?'var(--green)':'var(--accent)'}"><title>${formatDateShort(p.date)}: ${p.bestWeight}${getWeightUnit()}</title></circle>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:44px" preserveAspectRatio="none">
+    <defs><linearGradient id="spk_${W}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".2"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#spk_${W})"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+  </svg>`;
 }
 
 function renderVolumeSVG(weeks){
