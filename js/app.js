@@ -1349,21 +1349,8 @@ function renderDashboard(){
 }
 
 function renderExerciseProgressSection(){
-  const sessions=loadSessions();
-  const prs=calcPRs(sessions);
-  const unit=getWeightUnit();
-
-  // Build list of all exercises that have been logged at least once
-  const loggedNames=new Set();
-  sessions.forEach(s=>s.exercises.forEach(e=>{
-    if(e.sets&&e.sets.some(st=>st.done&&parseFloat(st.weight)>0)) loggedNames.add(e.name);
-  }));
-
   const muscles=Object.keys(EXERCISE_LIBRARY);
-  const q=_progressExSearch.trim().toLowerCase();
-
-  // Muscle filter tabs
-  const tabsHTML=`<div class="prog-muscle-tabs">
+  const tabsHTML=`<div class="prog-muscle-tabs" id="progress-tabs">
     ${['All',...muscles].map(m=>{
       const active=m==='All'?!_progressMuscle:_progressMuscle===m;
       const col=m==='All'?'var(--accent)':(MUSCLE_COLORS[m]||'#888');
@@ -1372,33 +1359,39 @@ function renderExerciseProgressSection(){
       return`<button class="muscle-filter-tab" style="${style}" onclick="setProgressMuscle(${arg})">${m}</button>`;
     }).join('')}
   </div>`;
-
   const searchHTML=`<div class="prog-search-wrap">
-    <input class="prog-search-input" type="text" placeholder="Search exercises…"
-      value="${q.replace(/"/g,'&quot;')}"
+    <input class="prog-search-input" id="prog-search-input" type="text" placeholder="Search exercises…"
       oninput="setProgressSearch(this.value)">
-    ${q?`<button class="prog-search-clear" onclick="setProgressSearch('')">✕</button>`:''}
+    <button class="prog-search-clear" id="prog-search-clear" style="display:none" onclick="setProgressSearch('')">✕</button>
   </div>`;
+  return`${tabsHTML}${searchHTML}<div id="progress-results">${renderProgressResults()}</div>`;
+}
 
-  // Determine which exercises to show
+function renderProgressResults(){
+  const sessions=loadSessions();
+  const prs=calcPRs(sessions);
+  const unit=getWeightUnit();
+  const loggedNames=new Set();
+  sessions.forEach(s=>s.exercises.forEach(e=>{
+    if(e.sets&&e.sets.some(st=>st.done&&parseFloat(st.weight)>0)) loggedNames.add(e.name);
+  }));
+  const q=_progressExSearch.trim().toLowerCase();
+
   let pool=[];
   if(q){
-    // Search across all logged exercises
     pool=[...loggedNames].filter(n=>n.toLowerCase().includes(q));
   } else if(_progressMuscle){
-    // All exercises in that muscle group that have been logged
     const libNames=new Set((EXERCISE_LIBRARY[_progressMuscle]||[]).map(e=>e.name));
     pool=[...loggedNames].filter(n=>libNames.has(n)||getExerciseMuscle(n)===_progressMuscle);
   }
 
-  // No filter: show PR table
-  if(!q && !_progressMuscle){
+  if(!q&&!_progressMuscle){
     const prEntries=Object.entries(prs).map(([name,pr])=>{
       const e1rm=Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4;
       return{name,...pr,e1rm,muscle:getExerciseMuscle(name)||'Other'};
     }).sort((a,b)=>b.e1rm-a.e1rm);
     const muscleGroups=[...new Set(prEntries.map(e=>e.muscle))].sort();
-    const prsHTML=prEntries.length===0
+    return prEntries.length===0
       ?'<div class="empty-state" style="padding:24px 0">No data yet — complete workouts to see your PRs here.</div>'
       :muscleGroups.map(mg=>{
         const rows=prEntries.filter(e=>e.muscle===mg);
@@ -1414,15 +1407,11 @@ function renderExerciseProgressSection(){
           </tr>`).join('')}</tbody></table>
         </div>`;
       }).join('');
-    return`${tabsHTML}${searchHTML}${prsHTML}`;
   }
 
-  // Filtered: show exercise cards with sparklines
-  if(!pool.length){
-    return`${tabsHTML}${searchHTML}<div class="empty-state" style="padding:24px 0">No logged exercises match this filter.</div>`;
-  }
+  if(!pool.length) return'<div class="empty-state" style="padding:24px 0">No logged exercises match this filter.</div>';
 
-  const cardsHTML=pool.map(name=>{
+  return`<div class="prog-ex-grid">${pool.map(name=>{
     const history=getExerciseHistory(name);
     const pr=prs[name];
     const e1rm=pr?Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4:null;
@@ -1448,9 +1437,7 @@ function renderExerciseProgressSection(){
       </div>
       <div class="prog-ex-sparkline">${renderSparklineSVG(history)}</div>
     </div>`;
-  }).join('');
-
-  return`${tabsHTML}${searchHTML}<div class="prog-ex-grid">${cardsHTML}</div>`;
+  }).join('')}</div>`;
 }
 
 function setProgressMuscle(muscle){
@@ -1459,9 +1446,10 @@ function setProgressMuscle(muscle){
 }
 function setProgressSearch(q){
   _progressExSearch=q; _progressMuscle=null;
-  document.getElementById('progress-section').innerHTML=renderExerciseProgressSection();
-  const inp=document.querySelector('.prog-search-input');
-  if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length); }
+  const res=document.getElementById('progress-results');
+  if(res) res.innerHTML=renderProgressResults();
+  const clr=document.getElementById('prog-search-clear');
+  if(clr) clr.style.display=q?'':'none';
 }
 
 function renderSparklineSVG(history){
