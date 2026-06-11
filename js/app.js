@@ -936,7 +936,10 @@ function renderDetail(){
     ${heroHTML}
     <div class="detail-header">
       <div>
-        <div class="detail-title">${day.name}</div>
+        <div class="detail-title-wrap" onclick="startDayRename(${activeDayIdx})" title="Click to rename this day">
+          <span class="detail-title" id="detail-day-title">${day.name}</span>
+          <span class="rename-hint">✎</span>
+        </div>
         <div class="detail-sub">${day.exercises.length} exercises · 45–60 min${lastSession?` · Last logged ${formatDate(lastSession.date)}`:''}</div>
         <div class="tags">${day.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}</div>
       </div>
@@ -983,6 +986,27 @@ function renderDetail(){
   renderExerciseRows(lastSession);
   updateSessionStatus();
   startDurationTimer();
+}
+
+function startDayRename(dayIdx){
+  const wrap=document.querySelector('.detail-title-wrap');
+  if(!wrap) return;
+  const cur=(getActiveDay(dayIdx)||DAYS[dayIdx]||{}).name||'';
+  wrap.outerHTML=`<input class="detail-title-input" id="day-rename-input"
+    value="${cur.replace(/"/g,'&quot;')}"
+    onblur="commitDayRename(this,${dayIdx})"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this._cancel=true;this.blur()}">`;
+  const inp=document.getElementById('day-rename-input');
+  if(inp){inp.focus();inp.select();}
+}
+
+function commitDayRename(inp,dayIdx){
+  if(inp._cancel){renderDetail();return;}
+  const name=inp.value.trim();
+  if(!name){renderDetail();return;}
+  const base=getCustomDay(dayIdx)||{...(getActiveDay(dayIdx)||DAYS[dayIdx]||{})};
+  setCustomDay(dayIdx,{...base, name, short:name.length>12?name.slice(0,11)+'…':name});
+  renderWeekGrid();renderDetail();
 }
 
 function startDurationTimer(){

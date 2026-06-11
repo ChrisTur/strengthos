@@ -804,6 +804,13 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .pr-chart-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;transition:background .12s}
 .pr-chart-btn:hover{background:var(--bg4)}
 
+/* Inline day rename */
+.detail-title-wrap{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:6px;padding:2px 4px 2px 0;transition:background .12s}
+.detail-title-wrap:hover{background:var(--bg3)}
+.rename-hint{font-size:13px;color:var(--text3);opacity:0;transition:opacity .15s;flex-shrink:0}
+.detail-title-wrap:hover .rename-hint{opacity:1}
+.detail-title-input{font-size:20px;font-weight:700;background:var(--bg3);border:2px solid var(--accent);border-radius:6px;color:var(--text);padding:1px 8px;outline:none;min-width:140px;max-width:280px;line-height:1.3}
+
 /* Workout hero banner */
 .workout-hero{width:100%;height:150px;position:relative;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0;flex-shrink:0}
 .workout-hero img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.65) saturate(0.8)}
