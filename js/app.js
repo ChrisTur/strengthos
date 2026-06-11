@@ -1368,7 +1368,8 @@ function renderExerciseProgressSection(){
       const active=m==='All'?!_progressMuscle:_progressMuscle===m;
       const col=m==='All'?'var(--accent)':(MUSCLE_COLORS[m]||'#888');
       const style=active?`background:${col};color:#fff;border-color:${col}`:`color:${col};border-color:${col}`;
-      return`<button class="muscle-filter-tab" style="${style}" onclick="setProgressMuscle(${m==='All'?'null':"'"+m+"'"})'">${m}</button>`;
+      const arg=m==='All'?'null':`'${m}'`;
+      return`<button class="muscle-filter-tab" style="${style}" onclick="setProgressMuscle(${arg})">${m}</button>`;
     }).join('')}
   </div>`;
 
@@ -1459,6 +1460,8 @@ function setProgressMuscle(muscle){
 function setProgressSearch(q){
   _progressExSearch=q; _progressMuscle=null;
   document.getElementById('progress-section').innerHTML=renderExerciseProgressSection();
+  const inp=document.querySelector('.prog-search-input');
+  if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length); }
 }
 
 function renderSparklineSVG(history){
