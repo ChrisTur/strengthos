@@ -615,7 +615,7 @@ function setSwapMuscleFilter(muscle){
 function renderSwapMuscleFilter(){
   const el=document.getElementById('swap-muscle-filter');
   if(!el) return;
-  if(_swapMode!=='add'){ el.style.display='none'; return; }
+  if(_swapMode!=='add'&&_swapMode!=='custom'){ el.style.display='none'; return; }
   el.style.display='';
   el.innerHTML=['All',...Object.keys(EXERCISE_LIBRARY)].map(m=>{
     const isAll=m==='All';
@@ -632,7 +632,7 @@ function renderSwapGrid(){
   const isSearch=q.length>0;
   let pool=[], activeMuscle=null;
 
-  if(_swapMode==='add'){
+  if(_swapMode==='add'||_swapMode==='custom'){
     // Add mode: show library filtered by tab selection and/or search
     if(_swapMuscleFilter&&EXERCISE_LIBRARY[_swapMuscleFilter]){
       pool=EXERCISE_LIBRARY[_swapMuscleFilter].slice();
@@ -640,9 +640,11 @@ function renderSwapGrid(){
     } else {
       pool=Object.values(EXERCISE_LIBRARY).flat();
     }
-    // Hide exercises already in this session
-    const inSession=new Set((draftSession?.exercises||[]).map(e=>e.name));
-    pool=pool.filter(e=>!inSession.has(e.name));
+    // Hide exercises already in this day/session
+    const existing=_swapMode==='custom'
+      ? new Set(_customDayExercises.map(e=>e.name))
+      : new Set((draftSession?.exercises||[]).map(e=>e.name));
+    pool=pool.filter(e=>!existing.has(e.name));
   } else {
     // Swap mode: same-muscle group alternatives
     if(_swapEI<0) return;
