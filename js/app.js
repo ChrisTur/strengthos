@@ -1079,6 +1079,7 @@ function renderExerciseRows(lastSession){
             <div class="ex-action-row">
               ${swapTag}
               <a href="https://www.youtube.com/shorts?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+              <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>
           ${isCustom
@@ -1251,12 +1252,29 @@ function renderDashboard(){
   // Volume SVG line chart
   const volSVG=renderVolumeSVG(weeks);
 
-  // PRs table
-  const prEntries=Object.entries(prs).sort((a,b)=>a[0].localeCompare(b[0]));
+  // PRs table — grouped by muscle, with 1RM + chart link
+  const unit=getWeightUnit();
+  const prEntries=Object.entries(prs).map(([name,pr])=>{
+    const e1rm=Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4;
+    return{name, ...pr, e1rm, muscle:getExerciseMuscle(name)||'Other'};
+  }).sort((a,b)=>b.e1rm-a.e1rm);
+  const muscleGroups=[...new Set(prEntries.map(e=>e.muscle))].sort();
   const prsHTML=prEntries.length===0
     ?'<div class="empty-state" style="padding:24px">No PRs yet — mark sets ✓ while logging.</div>'
-    :`<table class="pr-table"><thead><tr><th>Exercise</th><th>Best Weight</th><th>Reps</th><th>Date</th></tr></thead>
-      <tbody>${prEntries.map(([name,pr])=>`<tr><td>${name}</td><td class="pr-weight">${pr.weight} ${getWeightUnit()}</td><td>${pr.reps||'—'}</td><td>${formatDate(pr.date)}</td></tr>`).join('')}</tbody></table>`;
+    :muscleGroups.map(mg=>{
+      const rows=prEntries.filter(e=>e.muscle===mg);
+      return`<div class="pr-group">
+        <div class="pr-group-label">${mg}</div>
+        <table class="pr-table"><thead><tr><th>Exercise</th><th>Best Set</th><th>Est. 1RM</th><th>Date</th><th></th></tr></thead>
+        <tbody>${rows.map(r=>`<tr>
+          <td><button class="pr-ex-link" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')"><strong>${r.name}</strong></button></td>
+          <td class="pr-weight">${r.weight} ${unit} × ${r.reps||'—'}</td>
+          <td class="pr-orm">${r.e1rm} ${unit}</td>
+          <td style="color:var(--text3);font-size:11px">${formatDateShort(r.date)}</td>
+          <td><button class="pr-chart-btn" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')">📈</button></td>
+        </tr>`).join('')}</tbody></table>
+      </div>`;
+    }).join('');
 
   // Body weight section
   const latestBW=bwEntries.length?bwEntries[bwEntries.length-1]:null;
@@ -1486,6 +1504,70 @@ function renderHistory(){
       </div>`;
     list.appendChild(div);
   });
+}
+
+// ── Exercise progress chart ───────────────────────────────────────────────────
+function getExerciseHistory(name){
+  return loadSessions()
+    .filter(s=>s.exercises.some(e=>e.name===name))
+    .sort((a,b)=>a.date.localeCompare(b.date))
+    .map(s=>{
+      const ex=s.exercises.find(e=>e.name===name);
+      const done=ex.sets.filter(set=>set.done&&parseFloat(set.weight)>0);
+      if(!done.length) return null;
+      const bestWeight=Math.max(...done.map(set=>parseFloat(set.weight)));
+      const bestSet=done.find(set=>parseFloat(set.weight)===bestWeight);
+      const volume=done.reduce((sum,set)=>sum+parseFloat(set.weight)*(parseInt(set.reps)||0),0);
+      const e1rm=bestSet?Math.round(bestWeight*(1+(parseInt(bestSet.reps)||0)/30)*4)/4:0;
+      return{date:s.date, bestWeight, reps:parseInt(bestSet?.reps)||0, volume, e1rm};
+    })
+    .filter(Boolean);
+}
+
+function renderExerciseProgressSVG(history){
+  if(history.length<2) return '<p style="text-align:center;color:var(--text3);padding:24px 0;font-size:13px">Log at least 2 sessions to see progress.</p>';
+  const W=500,H=100,PAD=14,LH=16;
+  const weights=history.map(h=>h.bestWeight);
+  const minW=Math.min(...weights), maxW=Math.max(...weights), range=maxW-minW||1;
+  const pts=history.map((h,i)=>({
+    x:PAD+(i/(history.length-1||1))*(W-2*PAD),
+    y:H-PAD-((h.bestWeight-minW)/range)*(H-2*PAD),
+    ...h
+  }));
+  const linePath=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaPath=linePath+` L${pts[pts.length-1].x.toFixed(1)},${H} L${pts[0].x.toFixed(1)},${H} Z`;
+  const step=Math.ceil(history.length/7);
+  const labels=pts.filter((_,i)=>i%step===0||i===pts.length-1)
+    .map(p=>`<text x="${p.x.toFixed(1)}" y="${H+LH-2}" text-anchor="middle" font-size="9" fill="var(--text3)">${fmtShort(p.date)}</text>`).join('');
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.bestWeight===maxW?4.5:3}" fill="${p.bestWeight===maxW?'var(--green)':'var(--accent)'}"><title>${formatDateShort(p.date)}: ${p.bestWeight}${getWeightUnit()} × ${p.reps}</title></circle>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H+LH}" style="width:100%;max-height:116px">
+    <defs><linearGradient id="epg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--green)" stop-opacity=".3"/><stop offset="100%" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>
+    <path d="${areaPath}" fill="url(#epg)"/>
+    <path d="${linePath}" fill="none" stroke="var(--green)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}${labels}
+  </svg>`;
+}
+
+function openProgressModal(name){
+  const history=getExerciseHistory(name);
+  const pr=calcPRs(loadSessions())[name];
+  const e1rm=pr?Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4:null;
+  const unit=getWeightUnit();
+  document.getElementById('progress-modal-title').textContent=name;
+  document.getElementById('progress-modal-body').innerHTML=`
+    <div class="prog-stats">
+      <div class="prog-stat"><div class="prog-stat-val">${pr?pr.weight+' '+unit:'—'}</div><div class="prog-stat-lbl">Best Set</div></div>
+      <div class="prog-stat"><div class="prog-stat-val">${e1rm?e1rm+' '+unit:'—'}</div><div class="prog-stat-lbl">Est. 1RM</div></div>
+      <div class="prog-stat"><div class="prog-stat-val">${history.length}</div><div class="prog-stat-lbl">Sessions</div></div>
+      <div class="prog-stat"><div class="prog-stat-val">${history.length?formatDateShort(history[0].date):'—'}</div><div class="prog-stat-lbl">First Logged</div></div>
+    </div>
+    <div class="prog-chart">${renderExerciseProgressSVG(history)}</div>
+    ${history.length>=2?`<p style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Green dot = all-time best · Orange = other sessions</p>`:''}`;
+  document.getElementById('progress-modal').style.display='flex';
+}
+
+function closeProgressModal(){
+  document.getElementById('progress-modal').style.display='none';
 }
 
 function buildPRsByDate(allSessions){
