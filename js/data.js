@@ -430,7 +430,7 @@ const CARDIO_PROGRAMS={
 const DAY_IMAGES={
   Push:      '1571019614242-c5c5dee9f50b',
   Pull:      '1534438327276-14e5300c3a48',
-  Legs:      '1571019613576-6cbc2bc3a7c3',
+  Legs:      '1541534741688-6078c6bfb5c5',
   Chest:     '1571019614242-c5c5dee9f50b',
   Back:      '1534438327276-14e5300c3a48',
   Shoulders: '1583454110551-21f2fa2afe61',
@@ -439,7 +439,7 @@ const DAY_IMAGES={
   'Zone 2':  '1571731956672-f2b94d7dd0cb',
   Tempo:     '1547592180-85f173990554',
   Long:      '1558618666-fcd25c85cd64',
-  Recovery:  '1571008887538-b36bb32f4571',
+  Recovery:  '1477332552946-cfb384aeaf1c',
   Mobility:  '1544367567-0f2fcb009e0b',
   default:   '1540497077202-7c8a3999166f',
 };
