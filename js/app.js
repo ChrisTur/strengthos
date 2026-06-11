@@ -841,7 +841,7 @@ function renderWeekGrid(){
       ${isSuggested?'<div class="next-badge">→</div>':''}
       <div class="dow">${dowLabel}</div>
       <div class="pdate">${+mm}/${+dd}</div>
-      <div class="dname" style="${isRest?'color:var(--text3)':''}">${isRest?'Rest':day?day.short.replace('/','/<wbr>'):'?'}</div>
+      <div class="dname" style="${isRest?'color:var(--text3)':''}" title="${day?day.name:''}">${isRest?'Rest':day?day.name:'?'}</div>
       <div class="dots">${isRest?'':(day?day.dots.map(c=>`<div class="dot" style="background:${c}"></div>`).join(''):'')}</div>`;
     div.onclick=()=>{ setActiveDate(date); renderWeekGrid(); renderDetail(); };
     grid.appendChild(div);
