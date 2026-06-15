@@ -124,6 +124,14 @@ function toggleEquipmentType(type){
   setEquipment(next); return next;
 }
 
+// ── Week template (Mon–Sun default pattern for all future weeks) ──────────────
+function weekTemplateKey(n){ return 'wt_weektemplate_'+n }
+function getWeekTemplate(){
+  try{const r=localStorage.getItem(weekTemplateKey(getActiveProfile())); return r?JSON.parse(r):null}catch{return null}
+}
+function setWeekTemplate(arr){ localStorage.setItem(weekTemplateKey(getActiveProfile()),JSON.stringify(arr)) }
+function clearWeekTemplate(){ localStorage.removeItem(weekTemplateKey(getActiveProfile())) }
+
 // ── Custom day templates (per-profile) ────────────────────────────────────────
 function getCustomDays(){ try{return JSON.parse(localStorage.getItem('wt_customdays_'+getActiveProfile()))||{}}catch{return{}} }
 function setCustomDays(obj){ localStorage.setItem('wt_customdays_'+getActiveProfile(),JSON.stringify(obj)) }

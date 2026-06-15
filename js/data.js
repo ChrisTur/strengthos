@@ -485,6 +485,8 @@ function getActiveDay(idx){ return getActiveDays()[idx]||null }
 
 // Goal-aware week defaults
 function getGoalWeekDefaults(){
+  const custom=getWeekTemplate();
+  if(custom&&custom.length===7) return custom;
   const dpw=getDaysPerWeek(),goal=getGoal();
   if(goal==='cardio'){
     const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);

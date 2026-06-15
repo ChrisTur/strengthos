@@ -1866,37 +1866,76 @@ function doImport(mode){
 }
 
 // ── Schedule editor modal ─────────────────────────────────────────────────────
-let _schedChanges={};
+let _schedChanges={}, _schedMode='week', _templDraft=[];
 
 function openScheduleModal(){
-  _schedChanges={};
+  _schedChanges={}; _schedMode='week';
+  _templDraft=getGoalWeekDefaults().slice();
   renderScheduleModal();
   document.getElementById('schedule-modal').style.display='flex';
 }
 function closeScheduleModal(){ document.getElementById('schedule-modal').style.display='none' }
 
+function schedSetMode(mode){
+  _schedMode=mode; _schedChanges={};
+  _templDraft=getGoalWeekDefaults().slice();
+  renderScheduleModal();
+}
+
 function renderScheduleModal(){
-  const dates=getWeekDates(weekOffset);
   const activeDays=getActiveDays();
   const dowNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  document.getElementById('sched-rows').innerHTML=dates.map((date,i)=>{
-    const current=_schedChanges[date]!==undefined?_schedChanges[date]:getWorkoutForDate(date);
-    const [,m,d]=date.split('-');
-    const opts=[`<option value="${REST_DAY}"${current===REST_DAY?' selected':''}>Rest / Off</option>`]
-      .concat(activeDays.map((day,idx)=>`<option value="${idx}"${current===idx?' selected':''}>${day.dow} — ${day.name}</option>`))
-      .join('');
-    return`<div class="sched-row">
-      <span class="sched-dow">${dowNames[i]}</span>
-      <span class="sched-date">${+m}/${+d}</span>
-      <select class="sched-sel" data-date="${date}" onchange="schedChange('${date}',this.value)">${opts}</select>
-    </div>`;
-  }).join('');
+  const isTemplate=_schedMode==='template';
+
+  // Update tab active states
+  document.querySelectorAll('.sched-tab').forEach((btn,i)=>{
+    btn.classList.toggle('active',isTemplate?(i===1):(i===0));
+  });
+  document.getElementById('sched-desc').textContent=isTemplate
+    ?'Set your default pattern for every future week. Existing per-day overrides will be cleared for dates from today onwards.'
+    :'Reassign workouts for this specific week only.';
+  document.getElementById('sched-apply-btn').textContent=isTemplate?'Save as Default':'Apply';
+  document.getElementById('sched-reset-btn').textContent=isTemplate?'↺ Clear custom template':'↺ Reset week';
+
+  const makeOpts=(current)=>[
+    `<option value="${REST_DAY}"${current===REST_DAY?' selected':''}>Rest / Off</option>`,
+    ...activeDays.map((day,idx)=>`<option value="${idx}"${current===idx?' selected':''}>${day.dow} — ${day.name}</option>`)
+  ].join('');
+
+  if(isTemplate){
+    document.getElementById('sched-rows').innerHTML=dowNames.map((dow,i)=>`
+      <div class="sched-row">
+        <span class="sched-dow">${dow}</span>
+        <span class="sched-date"></span>
+        <select class="sched-sel" onchange="templChange(${i},this.value)">${makeOpts(_templDraft[i])}</select>
+      </div>`).join('');
+  } else {
+    const dates=getWeekDates(weekOffset);
+    document.getElementById('sched-rows').innerHTML=dates.map((date,i)=>{
+      const current=_schedChanges[date]!==undefined?_schedChanges[date]:getWorkoutForDate(date);
+      const [,m,d]=date.split('-');
+      return`<div class="sched-row">
+        <span class="sched-dow">${dowNames[i]}</span>
+        <span class="sched-date">${+m}/${+d}</span>
+        <select class="sched-sel" onchange="schedChange('${date}',this.value)">${makeOpts(current)}</select>
+      </div>`;
+    }).join('');
+  }
 }
 
 function schedChange(date,val){ _schedChanges[date]=parseInt(val,10) }
+function templChange(dowIdx,val){ _templDraft[dowIdx]=parseInt(val,10) }
 
 function applyScheduleChanges(){
-  Object.entries(_schedChanges).forEach(([date,idx])=>setWorkoutForDate(date,idx));
+  if(_schedMode==='template'){
+    setWeekTemplate(_templDraft);
+    // Clear all future per-date overrides so the template takes effect
+    const sched=loadSchedule();
+    Object.keys(sched).filter(d=>d>=TODAY).forEach(d=>delete sched[d]);
+    saveSchedule(sched);
+  } else {
+    Object.entries(_schedChanges).forEach(([date,idx])=>setWorkoutForDate(date,idx));
+  }
   closeScheduleModal();
   setActiveDate(activeDate);
   renderWeekGrid();
@@ -1904,6 +1943,12 @@ function applyScheduleChanges(){
 }
 
 function resetScheduleToDefault(){
+  if(_schedMode==='template'){
+    clearWeekTemplate();
+    _templDraft=getGoalWeekDefaults().slice();
+    renderScheduleModal();
+    return;
+  }
   const sched=loadSchedule();
   getWeekDates(weekOffset).forEach(date=>delete sched[date]);
   saveSchedule(sched);
