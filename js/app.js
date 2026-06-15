@@ -1108,12 +1108,12 @@ function renderExerciseRows(lastSession){
               <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
-            <button class="ex-skip-btn" onclick="removeExerciseToday(${ei})" title="Remove from today's session">Remove</button>
-            <div style="display:flex;gap:2px">
+          <div class="ex-controls">
+            <div class="ex-reorder-group">
               <button class="ex-reorder-btn" onclick="moveExercise(${ei},-1)" ${ei===0?'disabled':''} title="Move up">↑</button>
               <button class="ex-reorder-btn" onclick="moveExercise(${ei},1)" ${ei===draftSession.exercises.length-1?'disabled':''} title="Move down">↓</button>
             </div>
+            <button class="ex-remove-btn" onclick="removeExerciseToday(${ei})" title="Remove from today's session">✕ Remove</button>
           </div>
         </div>
       </td>

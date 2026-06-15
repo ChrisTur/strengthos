@@ -256,11 +256,13 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .sched-sel{flex:1;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer}
 .sched-sel:focus{outline:none;border-color:var(--accent)}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.ex-skip-btn{font-size:10px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:4px;padding:2px 7px;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.ex-skip-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
-.ex-reorder-btn{font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:3px;padding:0 5px;cursor:pointer;line-height:18px;transition:all .15s}
-.ex-reorder-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
-.ex-reorder-btn:disabled{opacity:.3;cursor:default}
+.ex-controls{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+.ex-reorder-group{display:flex;gap:4px}
+.ex-reorder-btn{font-size:13px;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:5px;padding:5px 10px;cursor:pointer;min-width:32px;line-height:1;transition:opacity .15s}
+.ex-reorder-btn:hover:not(:disabled){opacity:.8}
+.ex-reorder-btn:disabled{background:var(--bg4);color:var(--text3);cursor:default}
+.ex-remove-btn{font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.ex-remove-btn:hover{background:var(--red-bg)}
 .add-ex-wrap{display:flex;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--border)}
 .add-ex-wrap input{flex:1;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
 .add-ex-wrap input:focus{outline:none;border-color:var(--accent)}
