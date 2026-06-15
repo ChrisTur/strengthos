@@ -775,6 +775,9 @@ function saveCustomDay(){
     exercises:_customDayExercises.map(e=>({name:e.name,structure:e.structure,note:''})),
     tags:['Custom'],
   });
+  // Clear the cached draft for this day so renderDetail re-initialises
+  // from the updated template rather than the stale draft.
+  if(_customDayIdx===activeDayIdx) clearDraft(activeDate);
   closeCustomDayModal();
   renderWeekGrid(); renderDetail();
 }
