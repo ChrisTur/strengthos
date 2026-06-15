@@ -821,7 +821,6 @@ function renderWeekGrid(){
   const dates=getWeekDates(weekOffset);
   const grid=document.getElementById('week-grid'); grid.innerHTML='';
   const suggestedIdx=getNextSuggestedDayIdx();
-  const sessions=loadSessions();
   const label=document.getElementById('week-nav-label');
   if(label) label.textContent=fmtShort(dates[0])+' – '+fmtShort(dates[6]);
 
@@ -1109,10 +1108,13 @@ function renderExerciseRows(lastSession){
               <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>
-          ${isCustom
-            ?`<button class="ex-skip-btn" onclick="removeCustomExercise(${ei})" title="Remove from today">✕</button>`
-            :`<button class="ex-skip-btn" onclick="skipExercise('${safeName}')" title="Hide from all workouts">Skip</button>`
-          }
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+            <button class="ex-skip-btn" onclick="removeExerciseToday(${ei})" title="Remove from today's session">Remove</button>
+            <div style="display:flex;gap:2px">
+              <button class="ex-reorder-btn" onclick="moveExercise(${ei},-1)" ${ei===0?'disabled':''} title="Move up">↑</button>
+              <button class="ex-reorder-btn" onclick="moveExercise(${ei},1)" ${ei===draftSession.exercises.length-1?'disabled':''} title="Move down">↓</button>
+            </div>
+          </div>
         </div>
       </td>
       <td class="ex-plan-cell">${displayPlan}<br><span style="font-size:11px;color:var(--text3)">${planEx.note||''}</span>${goalTag}</td>
@@ -1164,10 +1166,16 @@ function removeSet(ei,si){
   draftSession.exercises[ei].sets.splice(si,1); _markModified();
   saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus();
 }
-function skipExercise(name){
-  toggleDisliked(name); _markModified();
-  draftSession.exercises=draftSession.exercises.filter(ex=>ex.name!==name);
+function removeExerciseToday(ei){
+  draftSession.exercises.splice(ei,1); _markModified();
   saveDraft(activeDate,draftSession);
+  const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
+}
+function moveExercise(ei,dir){
+  const j=ei+dir;
+  if(j<0||j>=draftSession.exercises.length) return;
+  [draftSession.exercises[ei],draftSession.exercises[j]]=[draftSession.exercises[j],draftSession.exercises[ei]];
+  _markModified(); saveDraft(activeDate,draftSession);
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
 }
 function removeCustomExercise(ei){
@@ -1418,7 +1426,7 @@ function renderProgressResults(){
     const muscle=getExerciseMuscle(name)||(_progressMuscle||'');
     const color=MUSCLE_COLORS[muscle]||'#888';
     const safe=name.replace(/'/g,"\\'");
-    const trend=history.length>=2?(history[history.length-1].bestWeight>history[0].bestWeight?'↑':'→'):'';
+    const trend=history.length>=2?(history[history.length-1].e1rm>history[0].e1rm?'↑':'→'):'';
     const trendColor=trend==='↑'?'var(--green)':'var(--text3)';
     return`<div class="prog-ex-card" onclick="openProgressModal('${safe}')">
       <div class="prog-ex-card-header">
@@ -1455,16 +1463,16 @@ function setProgressSearch(q){
 function renderSparklineSVG(history){
   if(history.length<2) return`<div style="height:44px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">Not enough data</div>`;
   const W=320,H=44,PAD=6;
-  const weights=history.map(h=>h.bestWeight);
-  const minW=Math.min(...weights), maxW=Math.max(...weights), range=maxW-minW||1;
+  const vals=history.map(h=>h.e1rm);
+  const minV=Math.min(...vals), maxV=Math.max(...vals), range=maxV-minV||1;
   const pts=history.map((h,i)=>({
     x:PAD+(i/(history.length-1))*(W-2*PAD),
-    y:H-PAD-((h.bestWeight-minW)/range)*(H-2*PAD),
+    y:H-PAD-((h.e1rm-minV)/range)*(H-2*PAD),
     ...h
   }));
   const line=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const area=line+` L${pts[pts.length-1].x.toFixed(1)},${H} L${pts[0].x.toFixed(1)},${H} Z`;
-  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.bestWeight===maxW?3.5:2}" fill="${p.bestWeight===maxW?'var(--green)':'var(--accent)'}"><title>${formatDateShort(p.date)}: ${p.bestWeight}${getWeightUnit()}</title></circle>`).join('');
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.e1rm===maxV?3.5:2}" fill="${p.e1rm===maxV?'var(--green)':'var(--accent)'}"><title>${formatDateShort(p.date)}: ${p.bestWeight}${getWeightUnit()} × ${p.reps} (est. 1RM ${p.e1rm})</title></circle>`).join('');
   return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:44px" preserveAspectRatio="none">
     <defs><linearGradient id="spk_${W}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".2"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
     <path d="${area}" fill="url(#spk_${W})"/>
@@ -1566,8 +1574,10 @@ function calcPRs(sessions){
       ex.sets.forEach(set=>{
         if(!set.done) return;
         const w=parseFloat(set.weight); if(isNaN(w)||w<=0) return;
-        if(!prs[ex.name]||w>prs[ex.name].weight)
-          prs[ex.name]={weight:w,reps:set.reps,date:session.date};
+        const r=parseInt(set.reps)||0;
+        const e1rm=Math.round(w*(1+r/30)*4)/4;
+        if(!prs[ex.name]||e1rm>prs[ex.name].e1rm)
+          prs[ex.name]={weight:w, reps:set.reps, date:session.date, e1rm};
       });
     });
   });
@@ -1631,6 +1641,7 @@ function renderHistory(){
 }
 
 // ── Exercise progress chart ───────────────────────────────────────────────────
+function calcSetE1rm(w,r){ return Math.round(w*(1+(r/30))*4)/4; }
 function getExerciseHistory(name){
   return loadSessions()
     .filter(s=>s.exercises.some(e=>e.name===name))
@@ -1639,11 +1650,13 @@ function getExerciseHistory(name){
       const ex=s.exercises.find(e=>e.name===name);
       const done=ex.sets.filter(set=>set.done&&parseFloat(set.weight)>0);
       if(!done.length) return null;
-      const bestWeight=Math.max(...done.map(set=>parseFloat(set.weight)));
-      const bestSet=done.find(set=>parseFloat(set.weight)===bestWeight);
+      // Best set = highest estimated 1RM (captures both weight and rep improvements)
+      const bestSet=done.reduce((best,set)=>{
+        const e=calcSetE1rm(parseFloat(set.weight),parseInt(set.reps)||0);
+        return(!best||e>best.e1rm)?{...set,e1rm:e}:best;
+      },null);
       const volume=done.reduce((sum,set)=>sum+parseFloat(set.weight)*(parseInt(set.reps)||0),0);
-      const e1rm=bestSet?Math.round(bestWeight*(1+(parseInt(bestSet.reps)||0)/30)*4)/4:0;
-      return{date:s.date, bestWeight, reps:parseInt(bestSet?.reps)||0, volume, e1rm};
+      return{date:s.date, bestWeight:parseFloat(bestSet.weight), reps:parseInt(bestSet.reps)||0, volume, e1rm:bestSet.e1rm};
     })
     .filter(Boolean);
 }
@@ -1651,11 +1664,11 @@ function getExerciseHistory(name){
 function renderExerciseProgressSVG(history){
   if(history.length<2) return '<p style="text-align:center;color:var(--text3);padding:24px 0;font-size:13px">Log at least 2 sessions to see progress.</p>';
   const W=500,H=100,PAD=14,LH=16;
-  const weights=history.map(h=>h.bestWeight);
-  const minW=Math.min(...weights), maxW=Math.max(...weights), range=maxW-minW||1;
+  const vals=history.map(h=>h.e1rm);
+  const minV=Math.min(...vals), maxV=Math.max(...vals), range=maxV-minV||1;
   const pts=history.map((h,i)=>({
     x:PAD+(i/(history.length-1||1))*(W-2*PAD),
-    y:H-PAD-((h.bestWeight-minW)/range)*(H-2*PAD),
+    y:H-PAD-((h.e1rm-minV)/range)*(H-2*PAD),
     ...h
   }));
   const linePath=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
@@ -1663,7 +1676,7 @@ function renderExerciseProgressSVG(history){
   const step=Math.ceil(history.length/7);
   const labels=pts.filter((_,i)=>i%step===0||i===pts.length-1)
     .map(p=>`<text x="${p.x.toFixed(1)}" y="${H+LH-2}" text-anchor="middle" font-size="9" fill="var(--text3)">${fmtShort(p.date)}</text>`).join('');
-  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.bestWeight===maxW?4.5:3}" fill="${p.bestWeight===maxW?'var(--green)':'var(--accent)'}"><title>${formatDateShort(p.date)}: ${p.bestWeight}${getWeightUnit()} × ${p.reps}</title></circle>`).join('');
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.e1rm===maxV?4.5:3}" fill="${p.e1rm===maxV?'var(--green)':'var(--accent)'}"><title>${formatDateShort(p.date)}: ${p.bestWeight}${getWeightUnit()} × ${p.reps} (est. 1RM ${p.e1rm})</title></circle>`).join('');
   return`<svg viewBox="0 0 ${W} ${H+LH}" style="width:100%;max-height:116px">
     <defs><linearGradient id="epg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--green)" stop-opacity=".3"/><stop offset="100%" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>
     <path d="${areaPath}" fill="url(#epg)"/>
@@ -1675,7 +1688,7 @@ function renderExerciseProgressSVG(history){
 function openProgressModal(name){
   const history=getExerciseHistory(name);
   const pr=calcPRs(loadSessions())[name];
-  const e1rm=pr?Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4:null;
+  const e1rm=pr?(pr.e1rm||Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4):null;
   const unit=getWeightUnit();
   document.getElementById('progress-modal-title').textContent=name;
   document.getElementById('progress-modal-body').innerHTML=`
