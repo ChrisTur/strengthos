@@ -775,9 +775,9 @@ function saveCustomDay(){
     exercises:_customDayExercises.map(e=>({name:e.name,structure:e.structure,note:''})),
     tags:['Custom'],
   });
-  // Clear the cached draft for this day so renderDetail re-initialises
-  // from the updated template rather than the stale draft.
-  if(_customDayIdx===activeDayIdx) clearDraft(activeDate);
+  // Clear all future stale drafts for this dayIdx so every upcoming
+  // occurrence of this workout picks up the updated template.
+  _clearDraftsForDayIdx(_customDayIdx);
   closeCustomDayModal();
   renderWeekGrid(); renderDetail();
 }
@@ -790,6 +790,7 @@ function resetCustomDay(){
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const TODAY=new Date().toISOString().slice(0,10);
+function _clearDraftsForDayIdx(dayIdx){ clearDraftsForDayIdx(dayIdx,TODAY); }
 let activeDate=TODAY;
 let activeDayIdx=0; // kept in sync via setActiveDate()
 let weekOffset=0;
