@@ -48,6 +48,16 @@ function saveSessions(s){ localStorage.setItem(sessionKey(getActiveProfile()),JS
 function getDraft(date){ try{return JSON.parse(localStorage.getItem(draftKey(date,getActiveProfile())))}catch{return null} }
 function saveDraft(date,d){ localStorage.setItem(draftKey(date,getActiveProfile()),JSON.stringify(d)) }
 function clearDraft(date){ localStorage.removeItem(draftKey(date,getActiveProfile())) }
+function clearDraftsForDayIdx(dayIdx,fromDate){
+  const profile=getActiveProfile();
+  const prefix='wt_draft_', suffix='_'+profile;
+  Object.keys(localStorage)
+    .filter(k=>k.startsWith(prefix)&&k.endsWith(suffix))
+    .forEach(k=>{
+      const date=k.slice(prefix.length,k.length-suffix.length);
+      if(date>=fromDate && getWorkoutForDate(date)===dayIdx) localStorage.removeItem(k);
+    });
+}
 
 // ── Day notes ─────────────────────────────────────────────────────────────────
 function getDayNote(i){ return localStorage.getItem(noteKey(i,getActiveProfile()))||(getActiveDay(i)||DAYS[i]||{}).defaultNote||'' }

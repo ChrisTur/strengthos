@@ -775,9 +775,9 @@ function saveCustomDay(){
     exercises:_customDayExercises.map(e=>({name:e.name,structure:e.structure,note:''})),
     tags:['Custom'],
   });
-  // Clear the cached draft for this day so renderDetail re-initialises
-  // from the updated template rather than the stale draft.
-  if(_customDayIdx===activeDayIdx) clearDraft(activeDate);
+  // Clear all future stale drafts for this dayIdx so every upcoming
+  // occurrence of this workout picks up the updated template.
+  _clearDraftsForDayIdx(_customDayIdx);
   closeCustomDayModal();
   renderWeekGrid(); renderDetail();
 }
@@ -790,6 +790,7 @@ function resetCustomDay(){
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const TODAY=new Date().toISOString().slice(0,10);
+function _clearDraftsForDayIdx(dayIdx){ clearDraftsForDayIdx(dayIdx,TODAY); }
 let activeDate=TODAY;
 let activeDayIdx=0; // kept in sync via setActiveDate()
 let weekOffset=0;
@@ -1217,6 +1218,7 @@ function saveSession(){
   session.endedAt=Date.now();
   session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
   sessions.push(session); saveSessions(sessions);
+  apiSyncSession(session); // sync to Postgres (fire-and-forget)
   draftSession.savedAt=Date.now();
   saveDraft(activeDate,draftSession);
   renderWeekGrid(); renderExerciseRows(session); updateSessionStatus();
@@ -2003,15 +2005,110 @@ function initApp(){
   renderDetail();
 }
 
-initTheme();
-if(needsOnboarding()){
-  showOnboarding();
-} else {
+// ── Auth screen ───────────────────────────────────────────────────────────────
+let _authMode = 'login';
+
+function authSwitchTab(mode){
+  _authMode = mode;
+  document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('auth-tab-register').classList.toggle('active', mode==='register');
+  document.getElementById('auth-name-wrap').style.display = mode==='register'?'':'none';
+  document.getElementById('auth-password').autocomplete = mode==='login'?'current-password':'new-password';
+  document.getElementById('auth-submit-btn').textContent = mode==='login'?'Log In':'Create Account';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+async function authSubmit(){
+  const btn   = document.getElementById('auth-submit-btn');
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = _authMode==='login'?'Signing in…':'Creating account…';
+
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+
+  try {
+    if(_authMode==='login'){
+      if(!email||!password) throw new Error('Email and password required');
+      await apiLogin(email, password);
+    } else {
+      const name = document.getElementById('auth-name').value.trim();
+      if(!name||!email||!password) throw new Error('All fields required');
+      await apiRegister(name, email, password);
+    }
+    await _hydrateAndLaunch();
+  } catch(e){
+    errEl.textContent = e.message;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = _authMode==='login'?'Log In':'Create Account';
+  }
+}
+
+function _hydrateLocalStorage(settings, sessions){
+  const profile = settings.profile || 'Me';
+  let profiles = loadProfiles();
+  if(!profiles.includes(profile)){ profiles.push(profile); saveProfiles(profiles); }
+  setActiveProfile(profile);
+  if(settings.goal)         setGoal(settings.goal);
+  if(settings.dpw)          setDaysPerWeek(settings.dpw);
+  if(settings.weightUnit)   setWeightUnit(settings.weightUnit);
+  if(settings.cardioLevel)  setCardioLevel(settings.cardioLevel);
+  if(settings.equipment)    setEquipment(settings.equipment);
+  if(settings.disliked)     saveDisliked(settings.disliked);
+  if(settings.weekTemplate) setWeekTemplate(settings.weekTemplate);
+  if(settings.aiPlan)       setAIPlan(settings.aiPlan);
+  saveSessions(sessions);
   localStorage.setItem('wt_onboarded','1');
+}
+
+async function _hydrateAndLaunch(){
+  const { settings, sessions } = await apiLoadUserData();
+  _hydrateLocalStorage(settings, sessions);
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = '';
   initApp();
 }
 
+function logout(){
+  clearAuthToken();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  // reset tab to login
+  _authMode = 'login';
+  document.getElementById('auth-tab-login').classList.add('active');
+  document.getElementById('auth-tab-register').classList.remove('active');
+  document.getElementById('auth-submit-btn').textContent = 'Log In';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-name-wrap').style.display = 'none';
+  closeProfileDropdown();
+}
+
+async function _boot(){
+  initTheme();
+  const token = getAuthToken();
+  if(token){
+    try {
+      await _hydrateAndLaunch();
+      return;
+    } catch(e){
+      if(e.status===401) clearAuthToken();
+      else {
+        // network error — fall back to cached localStorage
+        if(needsOnboarding()) showOnboarding();
+        else { document.getElementById('app').style.display=''; initApp(); }
+        return;
+      }
+    }
+  }
+  document.getElementById('auth-screen').style.display = 'flex';
+  setTimeout(()=>document.getElementById('auth-email').focus(), 100);
+}
+
+_boot();
+
 document.addEventListener('click',e=>{
   const sel=document.getElementById('profile-selector');
-  if(!sel.contains(e.target)) closeProfileDropdown();
+  if(sel&&!sel.contains(e.target)) closeProfileDropdown();
 });
