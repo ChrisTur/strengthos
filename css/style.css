@@ -844,3 +844,16 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   .ob-title{ font-size:19px; }
   .workout-hero{ height:110px; }
 }
+
+/* ── Auth screen ────────────────────────────────────────────────────────────── */
+#auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:340px;max-width:calc(100vw - 32px)}
+.auth-logo{font-size:22px;font-weight:800;color:var(--accent);text-align:center;margin-bottom:24px;letter-spacing:-0.5px}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:20px;gap:3px}
+.auth-tab{flex:1;padding:7px;font-size:13px;font-weight:600;background:none;border:none;border-radius:6px;cursor:pointer;color:var(--text2);transition:background .15s,color .15s}
+.auth-tab.active{background:var(--accent);color:#fff}
+.auth-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);margin-bottom:10px;outline:none;transition:border-color .15s;font-family:inherit}
+.auth-input:focus{border-color:var(--accent)}
+.auth-error{font-size:12px;color:var(--red);margin-bottom:8px;text-align:center}
+.auth-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity .15s}
+.auth-btn:disabled{opacity:0.55;cursor:not-allowed}

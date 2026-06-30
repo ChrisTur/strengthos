@@ -12,6 +12,26 @@
 </head>
 <body>
 
+<!-- ── Auth screen (login / register — shown when no valid token) ──────────── -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">⚡ StrengthOS</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-login"    onclick="authSwitchTab('login')">Log In</button>
+      <button class="auth-tab"        id="auth-tab-register" onclick="authSwitchTab('register')">Create Account</button>
+    </div>
+    <div id="auth-name-wrap" style="display:none">
+      <input type="text" class="auth-input" id="auth-name" placeholder="Your name"
+        autocomplete="name" onkeydown="if(event.key==='Enter')authSubmit()">
+    </div>
+    <input type="email"    class="auth-input" id="auth-email"    placeholder="Email"    autocomplete="email">
+    <input type="password" class="auth-input" id="auth-password" placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')authSubmit()">
+    <div class="auth-error" id="auth-error" style="display:none"></div>
+    <button class="auth-btn" id="auth-submit-btn" onclick="authSubmit()">Log In</button>
+  </div>
+</div>
+
 <!-- ── Onboarding (first-launch wizard) ───────────────────────────────────── -->
 <div id="onboarding" style="display:none">
   <!-- Step 1: Name -->
@@ -288,6 +308,9 @@
   </div>
 </div>
 
+<!-- ── Main app (hidden until auth) ───────────────────────────────────────── -->
+<div id="app" style="display:none">
+
 <!-- ── Header ── -->
 <div class="header">
   <div>
@@ -308,6 +331,8 @@
         <div class="profile-option profile-new" onclick="openGoalModal()">🎯 Set goal</div>
         <div class="profile-option profile-new" onclick="openPrefsModal()">⚙️ Training preferences</div>
         <div class="profile-option profile-new" onclick="openProfileModal()">+ New profile</div>
+        <div class="profile-divider"></div>
+        <div class="profile-option profile-new" onclick="logout()" style="color:var(--red)">Sign out</div>
       </div>
     </div>
     <!-- Theme toggle -->
@@ -364,8 +389,11 @@
   <div id="history-list"></div>
 </div>
 
+</div><!-- #app -->
+
   <script src="js/data.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
