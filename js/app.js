@@ -778,12 +778,14 @@ function saveCustomDay(){
   // Clear all future stale drafts for this dayIdx so every upcoming
   // occurrence of this workout picks up the updated template.
   _clearDraftsForDayIdx(_customDayIdx);
+  apiSyncSettings({ customDays: getCustomDays() }); // persist to Postgres
   closeCustomDayModal();
   renderWeekGrid(); renderDetail();
 }
 function resetCustomDay(){
   if(!confirm('Remove custom template and revert to the program default?')) return;
   clearCustomDay(_customDayIdx);
+  apiSyncSettings({ customDays: getCustomDays() }); // persist removal to Postgres
   closeCustomDayModal();
   renderWeekGrid(); renderDetail();
 }
@@ -2059,6 +2061,7 @@ function _hydrateLocalStorage(settings, sessions){
   if(settings.disliked)     saveDisliked(settings.disliked);
   if(settings.weekTemplate) setWeekTemplate(settings.weekTemplate);
   if(settings.aiPlan)       setAIPlan(settings.aiPlan);
+  if(settings.customDays && Object.keys(settings.customDays).length) setCustomDays(settings.customDays);
   saveSessions(sessions);
   localStorage.setItem('wt_onboarded','1');
 }

@@ -43,5 +43,16 @@ exports.handler = async (event) => {
     ]
   );
 
+  // Persist custom day templates (full replace — send all or omit to leave unchanged)
+  if (body.customDays !== undefined) {
+    await pool.query('DELETE FROM custom_days WHERE user_id = $1', [user.id]);
+    for (const [idx, dayData] of Object.entries(body.customDays || {})) {
+      await pool.query(
+        `INSERT INTO custom_days (user_id, day_idx, day_data) VALUES ($1,$2,$3)`,
+        [user.id, parseInt(idx, 10), JSON.stringify(dayData)]
+      );
+    }
+  }
+
   return ok({ ok: true });
 };
