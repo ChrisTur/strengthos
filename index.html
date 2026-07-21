@@ -332,6 +332,16 @@
 <!-- ── Main app (hidden until auth) ───────────────────────────────────────── -->
 <div id="app" style="display:none">
 
+<!-- ── Rest timer pill ── -->
+<div id="rest-timer" style="display:none">
+  <div class="rest-timer-track"><div class="rest-timer-fill" id="rest-timer-fill"></div></div>
+  <div class="rest-timer-inner">
+    <span class="rest-timer-label">Rest</span>
+    <span class="rest-timer-count" id="rest-timer-count">1:30</span>
+    <button class="rest-timer-skip" onclick="skipRestTimer()">Skip ↗</button>
+  </div>
+</div>
+
 <!-- ── Header ── -->
 <div class="header">
   <div>

@@ -741,6 +741,19 @@ const MUSCLE_COLORS={
   Triceps:'#d4a45b',Quads:'#4ab6a0',Hamstrings:'#4ab6a0',Glutes:'#e05b9b',
   Calves:'#888',Core:'#e05555',Cardio:'#e05555',
 };
+// Evidence-based weekly set volume targets (min = minimum effective, max = maximum adaptive)
+const MUSCLE_VOLUME_TARGETS={
+  Chest:      {min:8,  max:20},
+  Back:       {min:10, max:25},
+  Shoulders:  {min:8,  max:20},
+  Biceps:     {min:6,  max:20},
+  Triceps:    {min:6,  max:20},
+  Quads:      {min:8,  max:20},
+  Hamstrings: {min:6,  max:16},
+  Glutes:     {min:6,  max:20},
+  Calves:     {min:6,  max:16},
+  Core:       {min:6,  max:16},
+};
 
 const EXERCISE_LIBRARY={
   Chest:[

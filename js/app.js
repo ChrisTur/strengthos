@@ -990,10 +990,18 @@ function initDraft(dayIdx,date){
     .filter(ex=>!disliked.includes(ex.name))
     .map(ex=>({name:ex.name,sets:[{reps:'',weight:'',done:false}],goalAdded:true}));
   const day=getActiveDay(dayIdx);
+  // Pre-fill weights from the most recent session on this same day slot
+  const lastSession=loadSessions().filter(s=>s.dayIdx===dayIdx).slice(-1)[0]||null;
+  function prefillSets(exName){
+    if(!lastSession) return [{reps:'',weight:'',done:false}];
+    const lastEx=lastSession.exercises.find(e=>e.name===exName);
+    if(!lastEx||!lastEx.sets.length) return [{reps:'',weight:'',done:false}];
+    return lastEx.sets.map(s=>({reps:'',weight:s.weight||'',done:false,warmup:s.warmup||false}));
+  }
   if(!day) return{dayIdx,date,exercises:[...extras],notes:'',startedAt:Date.now()};
   return{dayIdx,date,
     exercises:[
-      ...day.exercises.filter(ex=>!disliked.includes(ex.name)).map(ex=>({name:ex.name,sets:[{reps:'',weight:'',done:false}]})),
+      ...day.exercises.filter(ex=>!disliked.includes(ex.name)).map(ex=>({name:ex.name,sets:prefillSets(ex.name)})),
       ...extras
     ],
     notes:'',startedAt:Date.now()};
@@ -1264,10 +1272,43 @@ function renderSets(ei){
 }
 
 function _markModified(){ delete draftSession.savedAt; }
-// A set is considered done if weight+reps are both filled — no checkbox needed.
 function isSetDone(s){ return parseFloat(s.weight)>0 && parseInt(s.reps)>0; }
-// A working set is done and not marked as a warm-up set.
 function isWorkingSet(s){ return isSetDone(s) && !s.warmup; }
+
+// ── Rest timer ────────────────────────────────────────────────────────────────
+let _restTimerInterval=null, _restTimerEnd=0, _restTimerTotal=0;
+function startRestTimer(){
+  const ms=Math.round(getRestPeriod()*60000);
+  _restTimerTotal=ms; _restTimerEnd=Date.now()+ms;
+  const el=document.getElementById('rest-timer');
+  if(el) el.style.display='';
+  clearInterval(_restTimerInterval);
+  _restTimerInterval=setInterval(_tickRestTimer,250);
+  _tickRestTimer();
+}
+function _tickRestTimer(){
+  const remaining=Math.max(0,_restTimerEnd-Date.now());
+  const secs=Math.ceil(remaining/1000);
+  const pct=_restTimerTotal>0?(remaining/_restTimerTotal)*100:0;
+  const countEl=document.getElementById('rest-timer-count');
+  const fillEl=document.getElementById('rest-timer-fill');
+  if(countEl) countEl.textContent=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
+  if(fillEl){
+    fillEl.style.width=`${pct}%`;
+    fillEl.style.background=pct>50?'var(--green)':pct>20?'var(--amber)':'var(--red)';
+  }
+  if(remaining<=0){
+    clearInterval(_restTimerInterval);
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    if(countEl){ countEl.textContent='Go!'; countEl.style.color='var(--green)'; }
+    setTimeout(()=>{ skipRestTimer(); if(countEl) countEl.style.color=''; },2500);
+  }
+}
+function skipRestTimer(){
+  clearInterval(_restTimerInterval);
+  const el=document.getElementById('rest-timer');
+  if(el) el.style.display='none';
+}
 
 function toggleSetWarmup(ei,si){
   const s=draftSession.exercises[ei].sets[si];
@@ -1304,8 +1345,11 @@ function saveDayNoteFromUI(dayIdx, val){
 }
 
 function updateSet(ei,si,field,val){
-  draftSession.exercises[ei].sets[si][field]=val; _markModified();
+  const set=draftSession.exercises[ei].sets[si];
+  const wasDone=isWorkingSet(set);
+  set[field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
+  if(!wasDone && isWorkingSet(set)) startRestTimer();
 }
 function toggleSetDone(ei,si){
   draftSession.exercises[ei].sets[si].done=!draftSession.exercises[ei].sets[si].done; _markModified();
@@ -1420,6 +1464,47 @@ function discardDraft(){
   clearDraft(activeDate); draftSession=initDraft(activeDayIdx,activeDate); renderDetail();
 }
 
+// ── Muscle volume tracker ─────────────────────────────────────────────────────
+function calcWeeklyMuscleSets(){
+  const now=new Date();
+  const dow=now.getDay();
+  const toMon=dow===0?-6:1-dow;
+  const weekStart=new Date(now);
+  weekStart.setDate(now.getDate()+toMon);
+  weekStart.setHours(0,0,0,0);
+  const weekStartStr=weekStart.toISOString().slice(0,10);
+  const sets={};
+  loadSessions().filter(s=>s.date>=weekStartStr).forEach(s=>{
+    s.exercises.forEach(ex=>{
+      const m=getExerciseMuscle(ex.name);
+      if(!m||!MUSCLE_VOLUME_TARGETS[m]) return;
+      const count=ex.sets.filter(isWorkingSet).length;
+      if(count>0) sets[m]=(sets[m]||0)+count;
+    });
+  });
+  return sets;
+}
+function renderMuscleVolumeSection(){
+  const weekSets=calcWeeklyMuscleSets();
+  const rows=Object.entries(MUSCLE_VOLUME_TARGETS).map(([m,t])=>{
+    const sets=weekSets[m]||0;
+    const color=MUSCLE_COLORS[m]||'#888';
+    const pct=Math.min(100,(sets/t.max)*100);
+    const minPct=(t.min/t.max)*100;
+    const statusColor=sets===0?'var(--text3)':sets<t.min?'var(--amber)':sets<=t.max?'var(--green)':'var(--red)';
+    return`<div class="mvol-row">
+      <div class="mvol-label" style="color:${color}">${m}</div>
+      <div class="mvol-track">
+        <div class="mvol-fill" style="width:${pct}%;background:${color}"></div>
+        <div class="mvol-min-line" style="left:${minPct}%"></div>
+      </div>
+      <div class="mvol-count" style="color:${statusColor}">${sets}</div>
+      <div class="mvol-range">${t.min}–${t.max}</div>
+    </div>`;
+  }).join('');
+  return`<div class="mvol-legend"><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--amber)"></span>Under minimum</span><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--green)"></span>In range</span><span class="mvol-leg-item" style="font-size:10px;color:var(--text3)">Line = minimum target</span></div><div class="mvol-grid">${rows}</div>`;
+}
+
 // ── Progress page ─────────────────────────────────────────────────────────────
 function renderDashboard(){
   const sessions=loadSessions();
@@ -1498,6 +1583,9 @@ function renderDashboard(){
 
     <div class="dash-section-title">Weekly Volume — Last 8 Weeks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(${getWeightUnit()} × reps, completed sets)</span></div>
     <div class="chart-wrap">${volSVG}</div>
+
+    <div class="dash-section-title">Muscle Volume — This Week <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(working sets)</span></div>
+    <div class="chart-wrap">${renderMuscleVolumeSection()}</div>
 
     <div class="dash-section-title">Body Weight</div>
     <div class="chart-wrap">
