@@ -25,6 +25,9 @@ function toggleDisliked(name){
   return d.includes(name);
 }
 
+function getRestPeriod(){ return parseFloat(localStorage.getItem('wt_rest')||'1.5'); }
+function setRestPeriod(v){ localStorage.setItem('wt_rest', String(parseFloat(v)||1.5)); }
+
 
 // ── Profile helpers ───────────────────────────────────────────────────────────
 function loadProfiles(){ try{return JSON.parse(localStorage.getItem(PROFILES_KEY))||[]}catch{return[]} }
@@ -60,7 +63,7 @@ function clearDraftsForDayIdx(dayIdx,fromDate){
 }
 
 // ── Day notes ─────────────────────────────────────────────────────────────────
-function getDayNote(i){ return localStorage.getItem(noteKey(i,getActiveProfile()))||(getActiveDay(i)||DAYS[i]||{}).defaultNote||'' }
+function getDayNote(i){ return localStorage.getItem(noteKey(i,getActiveProfile()))||'' }
 function saveDayNote(i,v){ localStorage.setItem(noteKey(i,getActiveProfile()),v) }
 
 // ── Deload ────────────────────────────────────────────────────────────────────

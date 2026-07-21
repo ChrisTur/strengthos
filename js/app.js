@@ -680,11 +680,13 @@ function renderSwapGrid(){
     const typeClass=e.type==='Compound'?'badge-compound':'badge-isolation';
     return `<div class="swap-card" onclick="selectLibraryExercise('${safe}')">
       <div class="swap-card-name">${e.name}</div>
+      ${e.targets?`<div class="swap-card-targets">🎯 ${e.targets}</div>`:''}
       <div class="swap-card-meta">
         ${groupBadge}
         <span class="badge-type ${typeClass}">${e.type}</span>
         <span class="badge-equip">${e.equipment}</span>
       </div>
+      ${e.cue?`<div class="swap-card-cue">${e.cue}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -702,7 +704,7 @@ function selectLibraryExercise(name){
     _markModified(); saveDraft(activeDate,draftSession);
     _syncDraftToTemplate(); // persist the add to next week's template
     closeSwapModal();
-    const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
+    const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus(); updateDetailSub();
     setTimeout(()=>{ const rows=document.querySelectorAll('.ex-row'); if(rows.length) rows[rows.length-1].scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
   } else {
     if(_swapEI<0) return;
@@ -800,6 +802,102 @@ function resetCustomDay(){
   apiSyncSettings({ customDays: getCustomDays() }); // persist removal to Postgres
   closeCustomDayModal();
   renderWeekGrid(); renderDetail();
+}
+
+// ── Week Plan Modal ───────────────────────────────────────────────────────────
+function openWeekPlanModal(){
+  const dates=getWeekDates(weekOffset);
+  const label=document.getElementById('week-plan-label');
+  if(label) label.textContent=fmtShort(dates[0])+' – '+fmtShort(dates[6]);
+  renderWeekPlanDays(dates);
+  document.getElementById('week-plan-modal').style.display='flex';
+}
+function closeWeekPlanModal(){
+  document.getElementById('week-plan-modal').style.display='none';
+}
+
+function renderWeekPlanDays(dates){
+  const container=document.getElementById('week-plan-days');
+  const dowLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  container.innerHTML='';
+  dates.forEach((date,i)=>{
+    const dayIdx=getWorkoutForDate(date);
+    const isRest=dayIdx===REST_DAY;
+    const day=isRest?null:(getActiveDay(dayIdx)||null);
+    const isCustom=!!getCustomDay(dayIdx);
+    const draft=getDraft(date);
+    const div=document.createElement('div');
+    div.className='wp-day-card';
+    if(isRest){
+      div.innerHTML=`<div class="wp-day-header"><span class="wp-dow">${dowLabels[i]}</span><span class="wp-day-name" style="color:var(--text3)">Rest Day</span></div>`;
+    } else if(!day){
+      div.innerHTML=`<div class="wp-day-header"><span class="wp-dow">${dowLabels[i]}</span><span class="wp-day-name" style="color:var(--text3)">No workout</span></div>`;
+    } else {
+      const exList=day.exercises||[];
+      const draftExList=draft?draft.exercises:null;
+      const hasDraft=draftExList&&draftExList.length;
+      div.innerHTML=`
+        <div class="wp-day-header">
+          <div>
+            <span class="wp-dow">${dowLabels[i]}</span>
+            <span class="wp-day-name">${day.name}</span>
+            ${isCustom?'<span class="wp-custom-badge">custom</span>':''}
+          </div>
+          <button class="btn btn-sm" onclick="closeWeekPlanModal();setActiveDate('${date}');renderWeekGrid();openCustomDayModal(${dayIdx})" title="Edit this day's exercises">✏️ Edit</button>
+        </div>
+        ${hasDraft?`<div class="wp-draft-note">📝 This week has a draft — <button class="wp-link" onclick="promoteWeekDraft('${date}',${dayIdx})">copy draft exercises to template</button></div>`:''}
+        <div class="wp-ex-list">
+          ${exList.map(e=>`<div class="wp-ex-row"><span class="wp-ex-name">${e.name}</span><span class="wp-ex-struct">${e.structure||''}</span></div>`).join('')}
+          ${!exList.length?'<div style="color:var(--text3);font-size:12px">No exercises configured</div>':''}
+        </div>`;
+    }
+    container.appendChild(div);
+  });
+}
+
+function promoteWeekDraft(date, dayIdx){
+  const draft=getDraft(date);
+  if(!draft||!draft.exercises.length) return;
+  const base=getActiveDay(dayIdx)||DAYS[dayIdx]||{};
+  setCustomDay(dayIdx,{
+    ...base,
+    exercises:draft.exercises.map(e=>({name:e.name,structure:e.structure||'',note:e.note||''})),
+  });
+  apiSyncSettings({customDays:getCustomDays()});
+  openWeekPlanModal();
+}
+
+function applyWeekAsTemplate(){
+  const dates=getWeekDates(weekOffset);
+  let changed=0;
+  dates.forEach(date=>{
+    const dayIdx=getWorkoutForDate(date);
+    if(dayIdx===REST_DAY) return;
+    const day=getActiveDay(dayIdx);
+    if(!day) return;
+    const draft=getDraft(date);
+    const exercises=draft&&draft.exercises.length
+      ? draft.exercises.map(e=>({name:e.name,structure:e.structure||'',note:e.note||''}))
+      : (day.exercises||[]).map(e=>({name:e.name,structure:e.structure||'',note:e.note||''}));
+    const base=getActiveDay(dayIdx)||DAYS[dayIdx]||{};
+    setCustomDay(dayIdx,{...base, exercises});
+    changed++;
+  });
+  if(!changed){ alert('No workout days in this week to apply.'); return; }
+  apiSyncSettings({customDays:getCustomDays()});
+  renderWeekGrid(); renderDetail();
+  openWeekPlanModal();
+  const btn=document.querySelector('[onclick="applyWeekAsTemplate()"]');
+  if(btn){ btn.textContent='✅ Applied!'; setTimeout(()=>{ btn.textContent='✅ Use this week as default'; },2000); }
+}
+
+function confirmResetWeekTemplates(){
+  if(!confirm('Reset all custom day templates and revert every day to the built-in programme?')) return;
+  const activeDays=getActiveDays();
+  activeDays.forEach((_,i)=>clearCustomDay(i));
+  apiSyncSettings({customDays:{}});
+  renderWeekGrid(); renderDetail();
+  openWeekPlanModal();
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -948,7 +1046,6 @@ function renderDetail(){
   const lastSession=sessions.length?sessions[sessions.length-1]:null;
   const note=getDayNote(activeDayIdx);
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
-  const coachingNote=GOAL_COACHING[goal]||'';
   const heroUrl=typeof getWorkoutImageUrl==='function'?getWorkoutImageUrl(day):null;
   const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${day.name}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
 
@@ -960,7 +1057,7 @@ function renderDetail(){
           <span class="detail-title" id="detail-day-title">${day.name}</span>
           <span class="rename-hint">✎</span>
         </div>
-        <div class="detail-sub">${day.exercises.length} exercises · 45–60 min${lastSession?` · Last logged ${formatDate(lastSession.date)}`:''}</div>
+        <div class="detail-sub" id="detail-sub">${draftSession.exercises.length} exercise${draftSession.exercises.length!==1?'s':''} · ~${estimateWorkoutMinutes()} min${lastSession?` · Last: ${formatDate(lastSession.date)}`:''}</div>
         <div class="tags">${day.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}</div>
       </div>
       <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap">
@@ -985,8 +1082,7 @@ function renderDetail(){
     <div class="add-ex-wrap">
       <button class="add-ex-btn" onclick="openAddExModal()">+ Add Exercise</button>
     </div>
-    <div class="note-edit">${note}</div>
-    ${coachingNote?`<div style="margin:0 12px 10px;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;background:var(--amber-bg);border-left:3px solid var(--amber);color:var(--amber)">${coachingNote}</div>`:''}
+    <textarea class="note-edit" id="day-note-ta" rows="2" placeholder="Day notes — cues, focus areas, target weights…" oninput="saveDayNoteFromUI(${activeDayIdx},this.value)">${note}</textarea>
     <div class="session-notes-wrap">
       <textarea class="session-notes" id="session-notes"
         placeholder="Session notes (how you felt, PRs, adjustments…)"
@@ -997,7 +1093,8 @@ function renderDetail(){
         <div class="session-date" id="session-status">Draft — not saved</div>
         <div id="session-timer" style="font-size:10px;color:var(--text3);margin-top:2px"></div>
       </div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label class="rest-label">Rest <select class="rest-select" onchange="setRestPeriod(parseFloat(this.value));updateDetailSub()">${restSelectHTML()}</select></label>
         <button class="btn btn-sm btn-red" onclick="discardDraft()">Discard</button>
         <button class="btn btn-sm btn-green" onclick="saveSession()">Save workout</button>
       </div>
@@ -1151,7 +1248,8 @@ function renderSets(ei){
   container.innerHTML='';
   const sets=draftSession.exercises[ei].sets;
   sets.forEach((set,si)=>{
-    const row=document.createElement('div'); row.className='set-row';
+    const row=document.createElement('div');
+    row.className=`set-row${set.warmup?' warmup-set':''}`;
     row.innerHTML=`
       <span class="set-label">S${si+1}</span>
       <input class="set-input" type="text" inputmode="decimal" placeholder="${getWeightUnit()}"
@@ -1159,6 +1257,7 @@ function renderSets(ei){
       <span class="set-x">×</span>
       <input class="set-input" type="text" inputmode="numeric" placeholder="reps"
         value="${set.reps}" oninput="updateSet(${ei},${si},'reps',this.value)">
+      <button class="set-warmup-btn${set.warmup?' active':''}" onclick="toggleSetWarmup(${ei},${si})" title="${set.warmup?'Mark as working set':'Mark as warm-up set'}">W</button>
       ${sets.length>1?`<span class="add-set-btn" onclick="removeSet(${ei},${si})" style="color:var(--red);font-size:14px;padding:0 2px">×</span>`:''}`;
     container.appendChild(row);
   });
@@ -1167,6 +1266,43 @@ function renderSets(ei){
 function _markModified(){ delete draftSession.savedAt; }
 // A set is considered done if weight+reps are both filled — no checkbox needed.
 function isSetDone(s){ return parseFloat(s.weight)>0 && parseInt(s.reps)>0; }
+// A working set is done and not marked as a warm-up set.
+function isWorkingSet(s){ return isSetDone(s) && !s.warmup; }
+
+function toggleSetWarmup(ei,si){
+  const s=draftSession.exercises[ei].sets[si];
+  s.warmup=!s.warmup; _markModified();
+  saveDraft(activeDate,draftSession); renderSets(ei); updateDetailSub();
+}
+
+function restSelectHTML(){
+  const v=getRestPeriod();
+  return [['0.75','45s'],['1','1 min'],['1.5','90s'],['2','2 min'],['3','3 min']]
+    .map(([val,lbl])=>`<option value="${val}"${Math.abs(getRestPeriod()-parseFloat(val))<0.01?' selected':''}>${lbl}</option>`)
+    .join('');
+}
+
+function estimateWorkoutMinutes(){
+  const sets=draftSession.exercises.reduce((a,e)=>a+e.sets.length,0);
+  const workingSets=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(s=>!s.warmup).length,0);
+  return Math.max(10, Math.round(sets*0.75 + workingSets*getRestPeriod()));
+}
+
+function updateDetailSub(){
+  const el=document.getElementById('detail-sub'); if(!el) return;
+  const n=draftSession.exercises.length;
+  const mins=estimateWorkoutMinutes();
+  el.textContent=`${n} exercise${n!==1?'s':''} · ~${mins} min`;
+}
+
+function saveDayNoteFromUI(dayIdx, val){
+  saveDayNote(dayIdx, val);
+  const base=getActiveDay(dayIdx)||DAYS[dayIdx]||{};
+  setCustomDay(dayIdx, {...base, defaultNote: val,
+    exercises:(base.exercises||[])});
+  apiSyncSettings({customDays: getCustomDays()});
+}
+
 function updateSet(ei,si,field,val){
   draftSession.exercises[ei].sets[si][field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
@@ -1177,16 +1313,16 @@ function toggleSetDone(ei,si){
 }
 function addSet(ei){
   draftSession.exercises[ei].sets.push({reps:'',weight:'',done:false}); _markModified();
-  saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus();
+  saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus(); updateDetailSub();
 }
 function removeSet(ei,si){
   draftSession.exercises[ei].sets.splice(si,1); _markModified();
-  saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus();
+  saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus(); updateDetailSub();
 }
 function removeExerciseToday(ei){
   draftSession.exercises.splice(ei,1); _markModified();
   saveDraft(activeDate,draftSession);
-  const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
+  const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus(); updateDetailSub();
 }
 function moveExercise(ei,dir){
   const j=ei+dir;
@@ -1205,7 +1341,7 @@ function submitAddEx(){
   draftSession.exercises.push({name:inp.value.trim(),sets:[{reps:'',weight:'',done:false}],custom:true}); _markModified();
   saveDraft(activeDate,draftSession); inp.value='';
   _syncDraftToTemplate(); // persist the add to next week's template
-  const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
+  const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus(); updateDetailSub();
   setTimeout(()=>{ const rows=document.querySelectorAll('.ex-row'); if(rows.length) rows[rows.length-1].scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
 }
 function _lastSavedSession(){
@@ -1242,18 +1378,18 @@ function saveSession(){
 }
 
 function showCompletionSummary(session,prevPRs){
-  const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(isSetDone).length,0);
+  const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);
   if(doneSets===0) return; // nothing logged, skip the summary
   const totalSets=session.exercises.reduce((a,e)=>a+e.sets.length,0);
   const volume=session.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>{
-    if(!isSetDone(s)) return b;
+    if(!isWorkingSet(s)) return b;
     return b+(parseFloat(s.weight)||0)*(parseFloat(s.reps)||0);
   },0),0);
   const newPRs=[];
   session.exercises.forEach(ex=>{
     let bestW=0,bestReps=0;
     ex.sets.forEach(s=>{
-      if(!isSetDone(s)) return;
+      if(!isWorkingSet(s)) return;
       const w=parseFloat(s.weight);
       if(w>bestW){bestW=w;bestReps=parseInt(s.reps)||0;}
     });
@@ -1579,7 +1715,7 @@ function calcWeeklyData(sessions,numWeeks){
     sessions.forEach(s=>{
       if(s.date<wsStr||s.date>=weStr) return; count++;
       s.exercises.forEach(ex=>ex.sets.forEach(set=>{
-        if(!isSetDone(set)) return;
+        if(!isWorkingSet(set)) return;
         vol+=(parseFloat(set.weight)||0)*(parseFloat(set.reps)||0);
       }));
     });
@@ -1593,7 +1729,7 @@ function calcPRs(sessions){
   [...sessions].sort((a,b)=>a.date.localeCompare(b.date)).forEach(session=>{
     session.exercises.forEach(ex=>{
       ex.sets.forEach(set=>{
-        if(!isSetDone(set)) return;
+        if(!isWorkingSet(set)) return;
         const w=parseFloat(set.weight); if(isNaN(w)||w<=0) return;
         const r=parseInt(set.reps)||0;
         const e1rm=Math.round(w*(1+r/30)*4)/4;
@@ -1648,9 +1784,9 @@ function renderHistory(){
             <div class="hist-ex-name">${ex.name}</div>
             <div class="hist-sets">
               ${ex.sets.map((s,i)=>{
-                const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&isSetDone(s);
-                return`<span class="hist-set-chip ${isSetDone(s)?'done':''} ${isPR?'pr':''}">
-                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${isPR?' 🏆':''}
+                const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&isWorkingSet(s);
+                return`<span class="hist-set-chip ${isSetDone(s)?'done':''} ${s.warmup?'warmup':''} ${isPR?'pr':''}">
+                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${s.warmup?' W':''}${isPR?' 🏆':''}
                 </span>`;
               }).join('')}
             </div>
@@ -1669,7 +1805,7 @@ function getExerciseHistory(name){
     .sort((a,b)=>a.date.localeCompare(b.date))
     .map(s=>{
       const ex=s.exercises.find(e=>e.name===name);
-      const done=ex.sets.filter(isSetDone);
+      const done=ex.sets.filter(isWorkingSet);
       if(!done.length) return null;
       // Best set = highest estimated 1RM (captures both weight and rep improvements)
       const bestSet=done.reduce((best,set)=>{
@@ -1737,7 +1873,7 @@ function buildPRsByDate(allSessions){
     const newPRs={};
     session.exercises.forEach(ex=>{
       ex.sets.forEach(set=>{
-        if(!isSetDone(set)) return;
+        if(!isWorkingSet(set)) return;
         const w=parseFloat(set.weight); if(isNaN(w)||w<=0) return;
         if(!running[ex.name]||w>running[ex.name]){
           running[ex.name]=w; newPRs[ex.name]=w;
@@ -1758,7 +1894,7 @@ function deleteSession(id){
   saveSessions(loadSessions().filter(s=>s.id!==id));
   renderWeekGrid(); renderHistory();
 }
-function countDoneSets(session){ return session.exercises.reduce((a,e)=>a+e.sets.filter(isSetDone).length,0) }
+function countDoneSets(session){ return session.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0) }
 
 function shareSession(id){
   const session=loadSessions().find(s=>s.id===id); if(!session) return;
