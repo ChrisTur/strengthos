@@ -156,6 +156,10 @@ function clearCustomDay(idx){ const d=getCustomDays(); delete d[String(idx)]; se
 function getAPIKey(){ return localStorage.getItem('wt_api_key')||'' }
 function setAPIKey(k){ if(k) localStorage.setItem('wt_api_key',k.trim()); else localStorage.removeItem('wt_api_key') }
 
+// ── RapidAPI key (ExerciseDB exercise images/GIFs) ────────────────────────────
+function getRapidAPIKey(){ return localStorage.getItem('wt_rapidapi_key')||'' }
+function setRapidAPIKey(k){ if(k) localStorage.setItem('wt_rapidapi_key',k.trim()); else localStorage.removeItem('wt_rapidapi_key') }
+
 // ── AI-generated workout plan ─────────────────────────────────────────────────
 function getAIPlan(){ try{return JSON.parse(localStorage.getItem('wt_aiplan_'+getActiveProfile()))||null}catch{return null} }
 function setAIPlan(plan){ localStorage.setItem('wt_aiplan_'+getActiveProfile(),JSON.stringify(plan)) }

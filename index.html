@@ -45,11 +45,11 @@
     <button class="ob-btn" onclick="obNext(2)">Continue →</button>
   </div>
 
-  <!-- Step 2: Program Selection -->
+  <!-- Step 2: Persona Selection -->
   <div class="ob-card ob-card-wide" id="ob-step-2" style="display:none">
     <div class="ob-back" onclick="obBack(1)">← Back</div>
-    <h2 class="ob-title">Choose your program</h2>
-    <p class="ob-sub">Pick a pre-built program to start immediately, or build your own.</p>
+    <h2 class="ob-title">Which sounds most like you?</h2>
+    <p class="ob-sub">We'll build your starting plan around your answer.</p>
     <div class="ob-programs" id="ob-program-grid"></div>
     <button class="ob-btn" id="ob-program-btn" disabled onclick="obNext(3)">Continue →</button>
   </div>
@@ -159,6 +159,10 @@
       <button id="ai-clear-btn" class="btn btn-sm" style="display:none;color:var(--red)" onclick="clearAIPlanAndRefresh()">✕ Remove Plan</button>
     </div>
     <div id="ai-gen-status" style="font-size:12px;min-height:18px"></div>
+
+    <div class="ai-section-divider">🎬 Exercise Demo GIFs</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Replaces muscle-group photos with per-exercise animated GIFs showing exact form. Requires a free <a href="https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb" target="_blank" rel="noopener" style="color:var(--accent)">RapidAPI key</a> (ExerciseDB — 10k req/month free).</div>
+    <input type="password" id="rapidapi-key-input" class="ai-key-input" placeholder="Paste RapidAPI key…" autocomplete="off" oninput="saveRapidAPIKeyFromInput()">
 
     <div class="modal-actions" style="margin-top:18px">
       <button class="btn btn-sm btn-green" onclick="closePrefsModal()">Done</button>

@@ -299,6 +299,8 @@ function renderPrefsModal(){
   }
   const keyInput=document.getElementById('api-key-input');
   if(keyInput) keyInput.value=getAPIKey();
+  const rapidKeyInput=document.getElementById('rapidapi-key-input');
+  if(rapidKeyInput) rapidKeyInput.value=getRapidAPIKey();
   const plan=getAIPlan();
   const clearBtn=document.getElementById('ai-clear-btn');
   if(clearBtn) clearBtn.style.display=plan?'':'none';
@@ -315,6 +317,9 @@ function restoreExercise(name){
 }
 function saveAPIKeyFromInput(){
   setAPIKey(document.getElementById('api-key-input').value);
+}
+function saveRapidAPIKeyFromInput(){
+  setRapidAPIKey(document.getElementById('rapidapi-key-input').value);
 }
 
 // ── AI plan generation ────────────────────────────────────────────────────────
@@ -410,7 +415,7 @@ function clearAIPlanAndRefresh(){
 }
 
 // ── Onboarding wizard ─────────────────────────────────────────────────────────
-let _obDPW=5, _obGoal='', _obProgram=null, _obEquipment=null;
+let _obDPW=4, _obGoal='', _obProgram=null, _obEquipment=null, _obCardioLevel='moderate';
 
 function needsOnboarding(){
   if(localStorage.getItem('wt_onboarded')) return false;
@@ -427,31 +432,32 @@ function showOnboarding(){
 function renderProgramCards(){
   const grid=document.getElementById('ob-program-grid');
   if(!grid) return;
-  grid.innerHTML=ONBOARDING_PROGRAMS.map(p=>{
+  grid.innerHTML=PERSONAS.map(p=>{
     const isCustom=p.type==='custom';
-    const imgUrl=p.imgId?`https://images.unsplash.com/photo-${p.imgId}?auto=format&fit=crop&w=600&h=240&q=80`:'';
-    return `<div class="ob-prog-card${isCustom?' ob-prog-custom':''}" data-id="${p.id}" onclick="obSelectProgram('${p.id}')">
-      ${imgUrl?`<img src="${imgUrl}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">`:''}
-      <div class="ob-prog-grad"></div>
-      <div class="ob-prog-check">✓</div>
-      <div class="ob-prog-body">
-        <div class="ob-prog-tags">${p.tags.map(t=>`<span class="ob-prog-tag">${t}</span>`).join('')}</div>
-        <div class="ob-prog-name">${isCustom?'✏️ ':''}${p.name}</div>
-        <div class="ob-prog-badge">${p.badge}</div>
+    return `<div class="ob-persona-card${isCustom?' ob-persona-custom':''}" data-id="${p.id}" onclick="obSelectProgram('${p.id}')">
+      <div class="ob-persona-check">✓</div>
+      <div class="ob-persona-stripe" style="background:${p.color}"></div>
+      <div class="ob-persona-content">
+        <div class="ob-persona-icon">${p.icon}</div>
+        <div class="ob-persona-headline">${p.headline}</div>
+        <div class="ob-persona-tagline">${p.tagline}</div>
+        <ul class="ob-persona-bullets">
+          ${p.bullets.map(b=>`<li>${b}</li>`).join('')}
+        </ul>
+        <div class="ob-persona-tags">${p.tags.map(t=>`<span class="ob-persona-tag">${t}</span>`).join('')}</div>
       </div>
     </div>`;
   }).join('');
 }
 
 function obSelectProgram(id){
-  _obProgram=ONBOARDING_PROGRAMS.find(p=>p.id===id)||null;
-  document.querySelectorAll('.ob-prog-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
-  const btn=document.getElementById('ob-program-btn');
-  if(btn) btn.disabled=false;
-  // show description below grid
-  let desc=document.getElementById('ob-prog-desc-row');
-  if(!desc){ desc=document.createElement('p'); desc.id='ob-prog-desc-row'; desc.className='ob-sub ob-prog-selected-desc'; document.getElementById('ob-program-grid').after(desc); }
-  desc.textContent=_obProgram?_obProgram.desc:'';
+  _obProgram=PERSONAS.find(p=>p.id===id)||null;
+  if(!_obProgram) return;
+  _obGoal=_obProgram.goal||'';
+  _obDPW=_obProgram.dpw||4;
+  _obCardioLevel=_obProgram.id==='fat_loss'?'high':_obProgram.id==='lift_and_run'?'moderate':'moderate';
+  document.querySelectorAll('.ob-persona-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
+  document.getElementById('ob-program-btn').disabled=false;
 }
 
 function renderObConfigure(){
@@ -476,27 +482,26 @@ function renderObConfigure(){
     if(confBtn) confBtn.disabled=true;
     renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
     const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
-  } else if(p.type==='cardio'){
-    _obGoal=p.goal; _obDPW=p.dpw||4;
-    el.innerHTML=`
-      <h2 class="ob-title">How many days per week?</h2>
-      <p class="ob-sub">${p.name} · choose your frequency.</p>
-      <div class="dpw-row" id="ob-dpw-row"></div>
-      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`;
-    if(confBtn) confBtn.disabled=false;
-    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
-    const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
   } else {
-    _obGoal=p.goal; _obDPW=p.dpw;
-    const eq=ALL_EQUIPMENT;
+    // Non-custom: confirm equipment + optionally adjust days
+    const defaultEquip=p.id==='new_lifter'||p.id==='general_health'||p.id==='build_muscle'||p.id==='fat_loss'||p.id==='lift_and_run'?[...ALL_EQUIPMENT]:['Dumbbell','Bodyweight'];
+    _obEquipment=[...defaultEquip];
+    const showDPW=(p.type==='cardio'||p.type==='hybrid');
     el.innerHTML=`
-      <h2 class="ob-title">What equipment do you have?</h2>
-      <p class="ob-sub">We'll filter exercises to match your gym. Tap to toggle.</p>
-      <div class="ob-equip-grid">${eq.map(e=>`<button class="ob-equip-btn active" data-eq="${e}" onclick="obToggleEquip(this)">${e}</button>`).join('')}</div>
-      <p class="ob-sub" style="margin-top:16px">Training days / week</p>
-      <div class="dpw-row" id="ob-dpw-row"></div>`;
+      <div class="ob-persona-confirm-header" style="border-left:3px solid ${p.color};padding-left:12px;margin-bottom:16px">
+        <div style="font-size:20px;margin-bottom:2px">${p.icon} <strong>${p.headline}</strong></div>
+        <div style="font-size:12px;color:var(--text3)">${p.tagline}</div>
+      </div>
+      <p class="ob-sub" style="text-align:left;margin-bottom:8px">What equipment do you have access to?</p>
+      <div class="ob-equip-grid">${ALL_EQUIPMENT.map(e=>`<button class="ob-equip-btn${defaultEquip.includes(e)?' active':''}" data-eq="${e}" onclick="obToggleEquip(this)">${e}</button>`).join('')}</div>
+      ${showDPW?`<p class="ob-sub" style="text-align:left;margin-top:16px;margin-bottom:6px">Sessions per week</p>
+      <div class="dpw-row" id="ob-dpw-row"></div>
+      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`:''}`;
     if(confBtn) confBtn.disabled=false;
-    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+    if(showDPW){
+      renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+      const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
+    }
   }
 }
 
@@ -544,11 +549,14 @@ function obBack(step){
 function renderObPlanPreview(){
   const name=(document.getElementById('ob-name-input').value.trim())||'there';
   document.getElementById('ob-name-preview').textContent=name;
+  const persona=_obProgram;
   const goalObj=GOALS.find(g=>g.id===_obGoal)||GOALS[0];
-  const progName=_obProgram&&_obProgram.type!=='custom'?_obProgram.name:goalObj.label;
-  document.getElementById('ob-plan-desc').textContent=progName+' · '+_obDPW+' days/week';
+  const progName=persona&&persona.type!=='custom'?persona.headline:goalObj.label;
+  document.getElementById('ob-plan-desc').textContent=progName+(_obDPW?` · ${_obDPW} days/week`:'');
   let days;
-  if(_obGoal==='cardio'){
+  if(persona&&persona.type==='hybrid'){
+    days=HYBRID_PROGRAMS[_obDPW]||HYBRID_PROGRAMS[4];
+  } else if(_obGoal==='cardio'){
     const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);
     const cpKey=CARDIO_PROGRAMS[_obDPW]?_obDPW:cpKeys.reduce((a,b)=>Math.abs(b-_obDPW)<Math.abs(a-_obDPW)?b:a);
     days=CARDIO_PROGRAMS[cpKey];
@@ -556,9 +564,10 @@ function renderObPlanPreview(){
     days=PROGRAMS[_obDPW]||(DAYS.length>=_obDPW?DAYS.slice(0,_obDPW):DAYS);
   }
   const preview=document.getElementById('ob-plan-preview');
-  preview.innerHTML=(days||[]).slice(0,_obDPW).map(day=>`
+  preview.innerHTML=(days||[]).slice(0,_obDPW||7).map(day=>`
     <div class="ob-day-pill" style="background:${(day.dots&&day.dots[0])||'#555'}">
-      <span>${day.short||day.name||'Day'}</span>
+      <div style="font-size:16px;margin-bottom:2px">${day.short||day.name||'Day'}</div>
+      ${day.tags?`<div style="font-size:9px;opacity:.75">${day.tags.slice(0,2).join(' · ')}</div>`:''}
     </div>`).join('');
 }
 
@@ -571,6 +580,7 @@ function completeOnboarding(){
   if(_obDPW) setDaysPerWeek(_obDPW);
   if(_obGoal) setGoal(_obGoal);
   if(_obEquipment&&_obEquipment.length) setEquipment(_obEquipment);
+  setCardioLevel(_obCardioLevel);
   localStorage.setItem('wt_onboarded','1');
   document.getElementById('onboarding').style.display='none';
   initApp();
@@ -678,15 +688,22 @@ function renderSwapGrid(){
     const groupBadge=showGroup&&m
       ?`<span style="font-size:9px;font-weight:700;color:#fff;background:${color};border-radius:3px;padding:1px 5px;text-transform:uppercase">${m}</span>`:'';
     const typeClass=e.type==='Compound'?'badge-compound':'badge-isolation';
+    const imgUrl=getExerciseImgUrl(m);
+    const imgHTML=imgUrl
+      ?`<div class="swap-card-img"><img src="${imgUrl}" loading="lazy" alt="" onerror="this.parentElement.style.display='none'"><div class="swap-card-img-label" style="border-color:${color};color:${color}">${m||''}</div></div>`
+      :'';
     return `<div class="swap-card" onclick="selectLibraryExercise('${safe}')">
-      <div class="swap-card-name">${e.name}</div>
-      ${e.targets?`<div class="swap-card-targets">🎯 ${e.targets}</div>`:''}
-      <div class="swap-card-meta">
-        ${groupBadge}
-        <span class="badge-type ${typeClass}">${e.type}</span>
-        <span class="badge-equip">${e.equipment}</span>
+      ${imgHTML}
+      <div class="swap-card-body">
+        <div class="swap-card-name">${e.name}</div>
+        ${e.targets?`<div class="swap-card-targets">🎯 ${e.targets}</div>`:''}
+        <div class="swap-card-meta">
+          ${groupBadge}
+          <span class="badge-type ${typeClass}">${e.type}</span>
+          <span class="badge-equip">${e.equipment}</span>
+        </div>
+        ${e.cue?`<div class="swap-card-cue">${e.cue}</div>`:''}
       </div>
-      ${e.cue?`<div class="swap-card-cue">${e.cue}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -1211,7 +1228,7 @@ function renderExerciseRows(lastSession){
     const safeName=ex.name.replace(/'/g,"\\'");
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
-    const ytQ=encodeURIComponent(ex.name+' exercise form shorts');
+    const tkQ=encodeURIComponent(ex.name+' exercise tutorial how to');
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
     const daysSince=muscle!==null?recovery[muscle]:undefined;
@@ -1227,7 +1244,7 @@ function renderExerciseRows(lastSession){
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
-              <a href="https://www.youtube.com/results?search_query=${ytQ}" target="_blank" rel="noopener" class="yt-demo-link">▶ Demo</a>
+              <a href="https://www.tiktok.com/search?q=${tkQ}" target="_blank" rel="noopener" class="yt-demo-link">♪ Demo</a>
               <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>

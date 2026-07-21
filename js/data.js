@@ -632,6 +632,11 @@ function getActiveDays(){
   const ai=getAIPlan();
   if(ai&&Array.isArray(ai.days)&&ai.days.length) return ai.days;
   const dpw=getDaysPerWeek(),goal=getGoal();
+  // Hybrid goal → dedicated strength+cardio rotation
+  if(goal==='hybrid'){
+    const base=HYBRID_PROGRAMS[dpw]||HYBRID_PROGRAMS[4];
+    return base.map((d,i)=>getCustomDay(i)||d);
+  }
   // Pure cardio goal → use dedicated cardio-only schedule
   if(goal==='cardio'){
     const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);
@@ -655,6 +660,10 @@ function getGoalWeekDefaults(){
   const custom=getWeekTemplate();
   if(custom&&custom.length===7) return custom;
   const dpw=getDaysPerWeek(),goal=getGoal();
+  if(goal==='hybrid'){
+    // Mon=0(Upper), Tue=rest, Wed=1(Cardio), Thu=rest, Fri=2(Lower), Sat=3(Conditioning), Sun=rest
+    return [0,REST_DAY,1,REST_DAY,2,3,REST_DAY];
+  }
   if(goal==='cardio'){
     const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);
     const cpKey=CARDIO_PROGRAMS[dpw]?dpw:cpKeys.reduce((a,b)=>Math.abs(b-dpw)<Math.abs(a-dpw)?b:a);
@@ -672,38 +681,143 @@ function getGoalWeekDefaults(){
 
 // ── Goals ─────────────────────────────────────────────────────────────────────
 const GOALS=[
-  {id:'muscle', icon:'🏋️', label:'Build Muscle',    desc:'Progressive overload, heavy compounds'},
-  {id:'fat_loss',icon:'🔥',label:'Fat Loss',        desc:'Higher reps, shorter rest, volume'},
-  {id:'cardio',  icon:'❤️', label:'Cardio Focus',   desc:'Endurance & active recovery priority'},
-  {id:'general', icon:'⚖️', label:'General Fitness',desc:'Balanced strength & health'},
+  {id:'muscle',  icon:'🏋️', label:'Build Muscle',       desc:'Progressive overload, heavy compounds'},
+  {id:'fat_loss',icon:'🔥', label:'Fat Loss',            desc:'Higher reps, shorter rest, volume'},
+  {id:'hybrid',  icon:'🏃', label:'Strength & Cardio',  desc:'Lift 2–3×/week, run or HIIT 2×/week'},
+  {id:'cardio',  icon:'❤️', label:'Cardio Focus',        desc:'Endurance & active recovery priority'},
+  {id:'general', icon:'⚖️', label:'General Fitness',     desc:'Balanced strength & health'},
 ];
 
-// ── Pre-built programs shown in onboarding ────────────────────────────────────
-const ONBOARDING_PROGRAMS=[
-  {id:'ppl_3',        name:'Push / Pull / Legs',   goal:'muscle',   dpw:3, type:'strength',
-   imgId:'1571019614242-c5c5dee9f50b',
-   badge:'3 days / week', tags:['Chest','Back','Legs'],
-   desc:'The classic 3-day split — chest/shoulders/triceps, back/biceps, and legs each get a dedicated session.'},
-  {id:'upper_lower',  name:'Upper / Lower',         goal:'muscle',   dpw:4, type:'strength',
-   imgId:'1534438327276-14e5300c3a48',
-   badge:'4 days / week', tags:['Upper Body','Lower Body'],
-   desc:'Alternate upper and lower body sessions twice each. Great frequency without burnout.'},
-  {id:'hypertrophy_5',name:'5-Day Hypertrophy',     goal:'muscle',   dpw:5, type:'strength',
-   imgId:'1583454110551-21f2fa2afe61',
-   badge:'5 days / week', tags:['Chest','Back','Shoulders','Arms','Legs'],
-   desc:'High-volume body-part split. Maximum muscle stimulus across the whole week.'},
-  {id:'cardio',       name:'Pure Cardio',            goal:'cardio',   dpw:4, type:'cardio',
-   imgId:'1476480862126-209bfaa8edc8',
-   badge:'3–7 days / week', tags:['Steady State','HIIT','Zone 2'],
-   desc:'Steady state, HIIT, and Zone 2 sessions. Build your aerobic engine and burn fat.'},
-  {id:'fat_loss',     name:'Fat Loss Circuit',       goal:'fat_loss', dpw:4, type:'strength',
-   imgId:'1601422407692-ec4eeec1d9b3',
-   badge:'4 days / week', tags:['Full Body','Cardio Finisher'],
-   desc:'Strength meets cardio. High reps, short rest, and a cardio finisher at the end of every session.'},
-  {id:'custom',       name:'Build My Own',           goal:null,       dpw:null, type:'custom',
-   imgId:null,
-   badge:'Any schedule',   tags:['Fully Customizable'],
-   desc:'Pick your goal, choose your days, then customize each session exactly how you want.'},
+// ── Hybrid strength + cardio programs ────────────────────────────────────────
+const HYBRID_PROGRAMS={
+  4:[
+    {dow:'Mon', name:'Upper Strength', short:'Upper', dots:[CORAL,BLUE,PURPLE],
+     tags:['Chest','Back','Shoulders'],
+     defaultNote:'Upper strength day — focus on compound presses and rows. Rest 90s–2 min between sets.',
+     exercises:[
+      {name:'Barbell Bench Press', structure:'4 × 5',  note:'Primary strength — add weight when all 5 reps are clean'},
+      {name:'Barbell Row',         structure:'4 × 6',  note:'Pull as hard as you push — flat back, drive elbows to hips'},
+      {name:'Overhead Press',      structure:'3 × 8',  note:'Strict press — no leg drive, keep ribs down'},
+      {name:'Lat Pulldown',        structure:'3 × 10', note:'Full stretch at top, squeeze lats at bottom'},
+      {name:'Dumbbell Curl',       structure:'3 × 12', note:'Slow eccentric — 3 seconds down'},
+     ]},
+    {dow:'Wed', name:'Cardio & Core', short:'Cardio', dots:[BLUE,GREEN],
+     tags:['Cardio','Core'],
+     defaultNote:'Cardio day — 25 min continuous effort then core circuit. Keep intensity sustainable throughout.',
+     exercises:[
+      {name:'Treadmill / Walk-Run',  structure:'25 min',     note:'Zone 2 — 60–70% max HR, conversational pace'},
+      {name:'Plank Hold',            structure:'3 × 60s',    note:'Hollow body — ribs down, glutes squeezed'},
+      {name:'Hanging Knee Raise',    structure:'3 × 15',     note:'Controlled — no swinging, squeeze at top'},
+      {name:'Dead Bug',              structure:'3 × 10 ea',  note:'Lower back stays flat — slow and deliberate'},
+     ]},
+    {dow:'Fri', name:'Lower Strength', short:'Lower', dots:[GREEN,AMBER],
+     tags:['Quads','Hamstrings','Glutes'],
+     defaultNote:'Lower strength day — squat and hinge are the stars. Full range of motion on every rep.',
+     exercises:[
+      {name:'Barbell Back Squat',    structure:'4 × 5',      note:'Primary strength — hit depth every rep, chest up'},
+      {name:'Romanian Deadlift',     structure:'4 × 8',      note:'Hip hinge — feel the hamstring stretch, not a squat'},
+      {name:'Leg Press',             structure:'3 × 10',     note:'Full ROM — don\'t cut depth to load more weight'},
+      {name:'Walking Lunges',        structure:'3 × 10 ea',  note:'Slow and controlled — feel the glute load'},
+      {name:'Standing Calf Raise',   structure:'4 × 15',     note:'Full stretch at bottom — pause 1s before rising'},
+     ]},
+    {dow:'Sat', name:'Conditioning', short:'HIIT', dots:[CORAL,AMBER],
+     tags:['HIIT','Full Body','Conditioning'],
+     defaultNote:'Conditioning day — short rest, high effort. This session builds your engine as much as your physique.',
+     exercises:[
+      {name:'Cardio Finisher (HIIT)',structure:'15 min',     note:'30s max effort / 30s rest × 15 rounds — true max effort'},
+      {name:'Kettlebell Swing',      structure:'4 × 20',     note:'Hip snap — not a squat, hinge and drive through hips'},
+      {name:'Dumbbell Thruster',     structure:'3 × 12',     note:'Squat to overhead press — one fluid movement, no pause'},
+      {name:'Farmers Carry',         structure:'3 × 40m',    note:'Chest tall, grip tight, walk fast — shoulders packed'},
+     ]},
+  ],
+};
+
+// ── Personas shown in onboarding step 2 ──────────────────────────────────────
+const PERSONAS=[
+  {
+    id:'new_lifter', type:'strength', goal:'general', dpw:3, name:'New to Lifting',
+    icon:'🌱', color:'#3aab6d',
+    headline:'New to Lifting',
+    tagline:'Start strong and build a habit that sticks',
+    bullets:[
+      '3 sessions/week — enough stimulus to grow, enough rest to recover',
+      'Push · Pull · Legs split — the most time-tested beginner structure',
+      'Every session teaches the fundamentals: squat, press, pull, hinge',
+    ],
+    tags:['Beginner','3 days/week','Full Body'],
+  },
+  {
+    id:'build_muscle', type:'strength', goal:'muscle', dpw:5, name:'5-Day Hypertrophy',
+    icon:'🏋️', color:'#8b6fd4',
+    headline:'Build Muscle',
+    tagline:'Maximum hypertrophy through progressive overload',
+    bullets:[
+      '5-day split — each muscle trained twice a week for optimal frequency',
+      'Heavy compounds backed by targeted isolation work',
+      'Log every top set and add weight or reps each session',
+    ],
+    tags:['Intermediate+','5 days/week','Hypertrophy'],
+  },
+  {
+    id:'fat_loss', type:'strength', goal:'fat_loss', dpw:4, name:'Fat Loss Circuit',
+    icon:'🔥', color:'#e05555',
+    headline:'Lose Body Fat',
+    tagline:'Strength + cardio finisher every session',
+    bullets:[
+      '4 days/week of strength circuits with built-in cardio finishers',
+      'Short rest keeps your heart rate elevated to maximize calorie burn',
+      'Muscle is preserved while fat drops — not just "burning calories"',
+    ],
+    tags:['Fat Loss','4 days/week','Circuit'],
+  },
+  {
+    id:'lift_and_run', type:'hybrid', goal:'hybrid', dpw:4, name:'Lift & Run',
+    icon:'🏃', color:'#5b9bd5',
+    headline:'Lift & Run',
+    tagline:'Two strength days, two cardio days — best of both',
+    bullets:[
+      'Mon/Fri: heavy compound lifts — bench, squat, deadlift, rows',
+      'Wed/Sat: cardio + conditioning — zone 2 running and HIIT circuits',
+      'You\'ll be stronger AND fitter — not forced to choose one',
+    ],
+    tags:['Hybrid','4 days/week','Strength + Cardio'],
+  },
+  {
+    id:'general_health', type:'strength', goal:'general', dpw:4, name:'Upper / Lower',
+    icon:'⚖️', color:'#c9963c',
+    headline:'General Health',
+    tagline:'Balanced strength and fitness for life',
+    bullets:[
+      '4-day upper/lower split — the most balanced programming structure',
+      'Every session hits both strength and movement quality',
+      'Sustainable pace — you can run this program for years',
+    ],
+    tags:['Balanced','4 days/week','Upper/Lower'],
+  },
+  {
+    id:'pure_cardio', type:'cardio', goal:'cardio', dpw:4, name:'Pure Cardio',
+    icon:'❤️', color:'#e05b9b',
+    headline:'Cardio Focus',
+    tagline:'Build your aerobic engine — steady state, HIIT & Zone 2',
+    bullets:[
+      'Steady state, HIIT, and Zone 2 sessions across the week',
+      'Evidence-based aerobic structure — not random treadmill time',
+      'Active recovery built in so you can sustain it long-term',
+    ],
+    tags:['Cardio','3–5 days/week','Endurance'],
+  },
+  {
+    id:'custom', type:'custom', goal:null, dpw:null, name:'Build My Own',
+    icon:'✏️', color:'#888',
+    headline:'Build My Own',
+    tagline:'Full control from day one',
+    bullets:[
+      'Choose your goal and how many days you want to train',
+      'Pick any exercises from the full library',
+      'Use the AI plan builder or set it up manually',
+    ],
+    tags:['Custom','Any schedule'],
+  },
 ];
 
 // Extra exercises appended to every session based on goal
@@ -715,15 +829,17 @@ const GOAL_EXERCISES={
   cardio:[
     {name:'Cardio — Steady State',  plan:'30 min treadmill or bike @ 60–70% max HR',       note:'LISS zone — you should be able to hold a conversation'},
   ],
-  muscle:[],  // no extra exercises; coaching note added to detail instead
+  hybrid:[],  // sessions vary — strength days vs cardio days baked into the plan
+  muscle:[],
   general:[],
 };
 
 // Per-goal coaching banner shown in the detail panel
 const GOAL_COACHING={
-  muscle: '💪 Muscle goal: rest 2–3 min between main sets. Aim to add weight or reps every session — track your top set.',
+  muscle:  '💪 Muscle goal: rest 90s–2 min between main sets. Aim to add weight or reps every session — that\'s the whole game.',
   fat_loss:'🔥 Fat loss goal: keep rest ≤60s between sets. Complete the cardio finisher at the end — this is where the goal is won.',
-  cardio:  '❤️ Cardio goal: finish every session with the steady-state block. Target 3-4 cardio sessions this week.',
+  hybrid:  '🏃 Hybrid goal: treat strength and cardio sessions as equal. Never skip either — the combination is what creates your results.',
+  cardio:  '❤️ Cardio goal: finish every session with the steady-state block. Target 3–4 cardio sessions this week.',
   general: '',
 };
 
@@ -731,6 +847,7 @@ const GOAL_COACHING={
 const GOAL_PLAN_TAG={
   muscle:  '<span style="font-size:10px;color:#8b6fd4;margin-top:3px;display:block">↑ add weight when all reps clean</span>',
   fat_loss:'<span style="font-size:10px;color:#e05555;margin-top:3px;display:block">⏱ rest ≤ 60s</span>',
+  hybrid:  '<span style="font-size:10px;color:#5b9bd5;margin-top:3px;display:block">💪+🏃 lift days & cardio days</span>',
   cardio:  '<span style="font-size:10px;color:#5b9bd5;margin-top:3px;display:block">⏱ superset if possible</span>',
   general: '',
 };
@@ -741,6 +858,28 @@ const MUSCLE_COLORS={
   Triceps:'#d4a45b',Quads:'#4ab6a0',Hamstrings:'#4ab6a0',Glutes:'#e05b9b',
   Calves:'#888',Core:'#e05555',Cardio:'#e05555',
 };
+
+// Curated Unsplash photo IDs per muscle group — used as swap-card thumbnails.
+// Each ID is a real Unsplash photo confirmed to show relevant exercise/muscle content.
+const MUSCLE_PHOTOS={
+  Chest:      '1571019614242-c5c5dee9f50b',
+  Back:       '1534438327276-14e5300c3a48',
+  Shoulders:  '1583454110551-21f2fa2afe61',
+  Biceps:     '1590507621108-433608c97823',
+  Triceps:    '1581009137042-c552e485697a',
+  Quads:      '1574680178050-55c6a516c152',
+  Hamstrings: '1566241440091-ec10de8db2e1',
+  Glutes:     '1601422407692-ec4eeec1d9b3',
+  Calves:     '1517838277536-f5f99be501cd',
+  Core:       '1571019613576-6c6a462f6a3b',
+  Cardio:     '1476480862126-209bfaa8edc8',
+};
+function getExerciseImgUrl(muscle,w=300,h=120){
+  const id=MUSCLE_PHOTOS[muscle];
+  if(!id) return null;
+  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&h=${h}&q=65`;
+}
+
 // Evidence-based weekly set volume targets (min = minimum effective, max = maximum adaptive)
 const MUSCLE_VOLUME_TARGETS={
   Chest:      {min:8,  max:20},

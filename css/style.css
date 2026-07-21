@@ -404,14 +404,15 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   font-size:10px;
   color:#fff;
   text-decoration:none;
-  background:#cc0000;
+  background:#111;
   border-radius:3px;
-  padding:1px 5px;
+  padding:1px 6px;
   margin-top:3px;
   white-space:nowrap;
   transition:color 0.15s,background 0.15s;
+  letter-spacing:.01em;
 }
-.yt-demo-link:hover{ background:#ff0000; color:#fff; }
+.yt-demo-link:hover{ background:#333; color:#fff; }
 
 /* ── AI plan section in prefs modal ─────────────────────────────────────────── */
 .ai-section-divider{
@@ -555,13 +556,14 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 }
 .ob-day-pill{
   border-radius:10px;
-  padding:9px 16px;
+  padding:10px 14px;
   font-size:13px;
-  font-weight:600;
+  font-weight:700;
   color:#fff;
   min-width:76px;
   text-align:center;
   letter-spacing:0.2px;
+  line-height:1.2;
 }
 
 /* ── Add Exercise button ─────────────────────────────────────────────────────── */
@@ -655,9 +657,6 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   transition:border-color 0.15s, transform 0.1s, box-shadow 0.15s;
   display:flex;
   flex-direction:column;
-  justify-content:center;
-  padding:10px 12px 9px;
-  min-height:56px;
 }
 .swap-card:hover{
   border-color:var(--accent);
@@ -665,8 +664,34 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   box-shadow:0 4px 12px rgba(0,0,0,0.22);
 }
 .swap-card:active{ transform:translateY(0); }
+.swap-card-img{
+  position:relative;
+  height:88px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.swap-card-img img{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+  filter:brightness(.72) saturate(.85);
+}
+.swap-card-img-label{
+  position:absolute;
+  bottom:5px;right:6px;
+  font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  border:1px solid;border-radius:3px;
+  padding:1px 5px;background:rgba(0,0,0,.55);
+}
+.swap-card-body{
+  padding:9px 11px 8px;
+  display:flex;flex-direction:column;
+  justify-content:center;
+  flex:1;
+}
 .swap-card-name{
-  font-size:14px;
+  font-size:13px;
   font-weight:600;
   color:var(--text1);
   line-height:1.3;
@@ -750,65 +775,58 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .cday-del{color:var(--red);border-color:var(--red-bg)}
 .cday-del:hover{background:var(--red-bg)}
 
-/* ── Onboarding program cards ──────────────────────────────────────────────── */
-.ob-card-wide{ max-width:700px; }
+/* ── Onboarding persona cards ──────────────────────────────────────────────── */
+.ob-card-wide{ max-width:720px; }
 .ob-programs{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
   width:100%;
 }
-.ob-prog-card{
+.ob-persona-card{
   position:relative;
   border-radius:12px;
   overflow:hidden;
-  height:160px;
   cursor:pointer;
-  border:2px solid transparent;
-  background:var(--bg3);
-  transition:border-color .15s, transform .15s, box-shadow .15s;
-  flex-shrink:0;
+  border:2px solid var(--border);
+  background:var(--bg2);
+  transition:border-color .15s, transform .12s, box-shadow .15s;
+  display:flex;
 }
-.ob-prog-card:hover{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,.4); }
-.ob-prog-card.selected{ border-color:var(--accent); }
-.ob-prog-card img{
-  width:100%; height:100%;
-  object-fit:cover;
-  display:block;
-  position:absolute; inset:0;
-  filter:brightness(.55) saturate(.8);
-}
-.ob-prog-grad{
-  position:absolute; inset:0;
-  background:linear-gradient(160deg,transparent 15%,rgba(0,0,0,.75) 100%);
-}
-.ob-prog-check{
+.ob-persona-card:hover{ transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.3); border-color:var(--border2); }
+.ob-persona-card.selected{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.ob-persona-check{
   position:absolute; top:8px; right:8px;
-  width:22px; height:22px; border-radius:50%;
+  width:20px; height:20px; border-radius:50%;
   background:var(--accent); color:#fff;
-  font-size:12px; font-weight:700;
+  font-size:11px; font-weight:700;
   display:none; align-items:center; justify-content:center;
 }
-.ob-prog-card.selected .ob-prog-check{ display:flex; }
-.ob-prog-body{
-  position:absolute; bottom:0; left:0; right:0;
-  padding:10px 12px;
+.ob-persona-card.selected .ob-persona-check{ display:flex; }
+.ob-persona-stripe{
+  width:4px; flex-shrink:0; border-radius:0;
 }
-.ob-prog-tags{ display:flex; flex-wrap:wrap; gap:3px; margin-bottom:5px; }
-.ob-prog-tag{
-  font-size:9px; color:rgba(255,255,255,.7);
-  background:rgba(255,255,255,.12); border-radius:4px; padding:2px 5px;
+.ob-persona-content{ padding:12px 13px; flex:1; }
+.ob-persona-icon{ font-size:22px; margin-bottom:4px; }
+.ob-persona-headline{ font-size:14px; font-weight:700; color:var(--text); line-height:1.2; margin-bottom:2px; }
+.ob-persona-tagline{ font-size:11px; color:var(--text3); margin-bottom:8px; }
+.ob-persona-bullets{
+  margin:0 0 8px 0; padding-left:14px;
+  display:flex; flex-direction:column; gap:3px;
 }
-.ob-prog-name{ font-size:13px; font-weight:700; color:#fff; line-height:1.2; }
-.ob-prog-badge{ font-size:10px; color:rgba(255,255,255,.6); margin-top:2px; }
-.ob-prog-custom{
-  background:linear-gradient(135deg,var(--bg3) 0%,var(--bg4) 100%);
-  border:2px dashed var(--border2);
-  display:flex; align-items:center; justify-content:center;
+.ob-persona-bullets li{ font-size:11px; color:var(--text2); line-height:1.4; }
+.ob-persona-tags{ display:flex; flex-wrap:wrap; gap:4px; }
+.ob-persona-tag{
+  font-size:9px; font-weight:600;
+  color:var(--text3); background:var(--bg4);
+  border-radius:4px; padding:2px 6px;
+  text-transform:uppercase; letter-spacing:.03em;
 }
-.ob-prog-custom .ob-prog-body{ position:static; padding:16px; text-align:center; }
-.ob-prog-custom .ob-prog-name{ color:var(--text); font-size:14px; }
-.ob-prog-custom .ob-prog-badge{ color:var(--text3); }
+.ob-persona-custom{
+  border-style:dashed;
+  background:var(--bg3);
+}
+.ob-persona-custom .ob-persona-content{ display:flex; flex-direction:column; justify-content:center; }
 .ob-prog-selected-desc{ max-width:100%; margin-top:2px !important; }
 
 /* Equipment toggles in onboarding configure step */
@@ -865,7 +883,7 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
 @media(max-width:600px){
   .ob-goals{ grid-template-columns:1fr 1fr; }
-  .ob-programs{ grid-template-columns:1fr 1fr; }
+  .ob-programs{ grid-template-columns:1fr; }
   #swap-exercise-grid{ grid-template-columns:1fr 1fr; }
   .ob-title{ font-size:19px; }
   .workout-hero{ height:110px; }
