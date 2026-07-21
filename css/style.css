@@ -59,6 +59,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;width:340px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.modal-box-wide{width:680px}
+/* Week plan modal */
+.wp-day-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.wp-day-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.wp-dow{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-right:8px;width:28px;display:inline-block;flex-shrink:0}
+.wp-day-name{font-size:14px;font-weight:600;color:var(--text)}
+.wp-custom-badge{display:inline-block;font-size:9px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-left:7px;vertical-align:middle;text-transform:uppercase;letter-spacing:.04em}
+.wp-ex-list{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.wp-ex-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px}
+.wp-ex-name{color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wp-ex-struct{color:var(--text3);font-size:11px;flex-shrink:0}
+.wp-draft-note{font-size:11px;color:var(--amber);margin-bottom:6px;background:var(--amber-bg);border-radius:4px;padding:5px 8px}
+.wp-link{background:none;border:none;color:var(--amber);text-decoration:underline;cursor:pointer;font-size:inherit;padding:0}
 .modal-title{font-size:15px;font-weight:600;margin-bottom:14px}
 .modal-input{width:100%;padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;margin-bottom:14px;font-family:inherit;transition:border-color .15s}
 .modal-input:focus{outline:none;border-color:var(--accent)}
@@ -151,23 +164,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Sets */
 .sets-container{display:flex;flex-direction:column;gap:5px}
 .set-row{display:flex;align-items:center;gap:5px}
+.set-row.warmup-set{opacity:.65}
 .set-label{font-size:11px;color:var(--text3);width:24px;flex-shrink:0}
 .set-input{width:54px;padding:4px 6px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;text-align:center}
 .set-input:focus{outline:none;border-color:var(--accent)}
 .set-input::placeholder{color:var(--text3)}
 .set-x{font-size:11px;color:var(--text3)}
-.set-done{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--bg4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:background .15s,border-color .15s}
-.set-done.checked{background:var(--green);border-color:var(--green);color:#fff}
 .add-set-btn{font-size:11px;color:var(--text3);cursor:pointer;background:none;border:none;padding:2px 0;transition:color .15s}
 .add-set-btn:hover{color:var(--accent)}
+/* Warm-up toggle */
+.set-warmup-btn{font-size:10px;font-weight:700;cursor:pointer;background:none;border:1px solid var(--border2);border-radius:3px;color:var(--text3);padding:2px 5px;line-height:1;transition:background .15s,color .15s,border-color .15s;flex-shrink:0}
+.set-warmup-btn.active{background:var(--blue-bg);border-color:var(--blue);color:var(--blue)}
 
-/* Editable note */
-.note-edit{display:block;margin:10px 12px;width:calc(100% - 24px);padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--blue-bg);color:#7eb8d4;font-size:12px;line-height:1.6;font-family:inherit;border-left:3px solid var(--blue)}
+/* Editable day note */
+.note-edit{display:block;margin:10px 12px;width:calc(100% - 24px);padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--blue-bg);color:#7eb8d4;font-size:12px;line-height:1.6;font-family:inherit;border-left:3px solid var(--blue);resize:vertical;min-height:40px}
+.note-edit:focus{outline:none;border-color:var(--blue);opacity:1}
+.note-edit::placeholder{color:var(--text3);font-style:italic}
 [data-theme="light"] .note-edit{color:#1a5070}
 
 /* Session bar */
 .session-bar{padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .session-date{font-size:12px;color:var(--text2)}
+/* Rest period selector */
+.rest-label{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.rest-select{font-size:11px;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer}
+.rest-select:focus{outline:none;border-color:var(--accent)}
 .session-notes-wrap{padding:0 12px 10px}
 .session-notes{width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;resize:vertical;min-height:54px;font-family:inherit}
 .session-notes:focus{outline:none;border-color:var(--accent)}
@@ -330,10 +351,10 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
   /* ── Set inputs: larger touch targets ── */
   .set-input{width:76px;padding:9px 8px;font-size:16px}
-  .set-done{width:44px;height:44px;font-size:18px;border-radius:9px}
   .set-row{gap:10px;margin-bottom:6px}
   .set-label{font-size:13px;width:28px}
   .add-set-btn{font-size:13px;padding:6px 0;display:inline-block}
+  .set-warmup-btn{padding:6px 9px;font-size:12px}
 
   /* Prevent iOS Safari auto-zoom (inputs must be ≥ 16px) */
   input[type="text"],input[type="number"],input[type="date"],select,textarea{font-size:16px}
@@ -341,8 +362,9 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
   /* ── Session bar: full-width action buttons ── */
   .session-bar{flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px}
-  .session-bar>div:last-child{display:flex;gap:8px}
+  .session-bar>div:last-child{display:flex;flex-wrap:wrap;gap:8px}
   .session-bar>div:last-child .btn{flex:1;padding:12px;font-size:14px}
+  .rest-label{width:100%;justify-content:flex-start;margin-bottom:0}
 
   /* ── Detail header: workout picker + date wrap gracefully ── */
   .detail-header{gap:8px}
@@ -665,6 +687,10 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .badge-compound{ background:rgba(58,171,109,0.18); color:var(--green); }
 .badge-isolation{ background:rgba(91,155,213,0.18); color:var(--blue); }
 .badge-equip{ background:var(--surface2); color:var(--text3); }
+.swap-card-targets{font-size:10px;color:var(--amber);margin-bottom:4px;font-weight:500}
+.swap-card-cue{font-size:10px;color:var(--text3);margin-top:5px;line-height:1.45;font-style:italic;border-top:1px solid var(--border);padding-top:5px}
+/* Warmup chip in history */
+.hist-set-chip.warmup{opacity:.6;font-style:italic}
 
 /* ── Exercise row: muscle tag + action row ───────────────────────────────────── */
 .ex-action-row{

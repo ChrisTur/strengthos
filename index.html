@@ -308,6 +308,27 @@
   </div>
 </div>
 
+<!-- ── Week Plan Modal ── -->
+<div id="week-plan-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeWeekPlanModal()">
+  <div class="modal-box modal-box-wide" onclick="event.stopPropagation()" style="max-width:680px;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-title" style="flex-shrink:0">
+      📋 Week Template
+      <span id="week-plan-label" style="font-size:13px;font-weight:400;color:var(--text3);margin-left:8px"></span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin:-4px 0 12px;padding:0 2px;flex-shrink:0">
+      These are the default exercises for each day — used for every future week. Edit any day to change it.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;flex-shrink:0">
+      <button class="btn btn-sm btn-green" onclick="applyWeekAsTemplate()" title="Promote current week's exercise lists to the default template for all future weeks">✅ Use this week as default</button>
+      <button class="btn btn-sm" style="color:var(--text3)" onclick="confirmResetWeekTemplates()" title="Clear all custom day overrides and revert to the built-in programme">↩ Reset to built-in plan</button>
+    </div>
+    <div id="week-plan-days" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px"></div>
+    <div class="modal-actions" style="flex-shrink:0">
+      <button class="btn btn-sm" onclick="closeWeekPlanModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Main app (hidden until auth) ───────────────────────────────────────── -->
 <div id="app" style="display:none">
 
@@ -359,6 +380,7 @@
     <span class="week-nav-label" id="week-nav-label"></span>
     <button class="btn btn-sm btn-today" onclick="jumpToToday()" title="Go to today">Today</button>
     <button class="btn btn-sm" onclick="openScheduleModal()" title="Edit this week's workout schedule">Edit</button>
+    <button class="btn btn-sm" onclick="openWeekPlanModal()" title="Plan exercises for the whole week">📋 Plan</button>
     <button class="btn btn-sm btn-icon" onclick="changeWeek(1)" title="Next week">›</button>
   </div>
   <div class="week-grid" id="week-grid"></div>
