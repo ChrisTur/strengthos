@@ -126,45 +126,32 @@
 
 <!-- Training preferences modal -->
 <div id="prefs-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closePrefsModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="width:400px;max-width:100%">
+  <div class="modal-box prefs-modal-box" onclick="event.stopPropagation()">
     <div class="modal-title">⚙️ Training Preferences</div>
 
-    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Available equipment</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Filters the exercise library to what you actually have access to.</div>
-    <div id="equip-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px"></div>
+    <div class="prefs-section-label">Available equipment</div>
+    <div class="prefs-section-sub">Filters the exercise library to what you actually have access to.</div>
+    <div id="equip-row" class="prefs-chip-row"></div>
 
-    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Weight unit</div>
-    <div class="dpw-row" id="unit-row" style="margin-bottom:18px">
+    <div class="prefs-section-label">Weight unit</div>
+    <div class="dpw-row" id="unit-row">
       <button class="dpw-btn" data-unit="lbs" onclick="selectWeightUnit('lbs')">lbs<br><span style="font-size:10px;font-weight:400">Pounds</span></button>
       <button class="dpw-btn" data-unit="kg" onclick="selectWeightUnit('kg')">kg<br><span style="font-size:10px;font-weight:400">Kilograms</span></button>
     </div>
 
-    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Cardio intensity</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Affects exercise selection on cardio days</div>
+    <div class="prefs-section-label" style="margin-top:16px">Cardio intensity</div>
+    <div class="prefs-section-sub">Affects exercise selection on cardio days.</div>
     <div class="dpw-row" id="cardio-level-row">
-      <button class="dpw-btn" data-level="low"      onclick="selectCardioLevel('low')">Low<br><span style="font-size:10px;font-weight:400">Easy walks &amp; recovery</span></button>
-      <button class="dpw-btn" data-level="moderate" onclick="selectCardioLevel('moderate')">Moderate<br><span style="font-size:10px;font-weight:400">Walk/jog + HIIT mix</span></button>
-      <button class="dpw-btn" data-level="high"     onclick="selectCardioLevel('high')">High<br><span style="font-size:10px;font-weight:400">HIIT &amp; sprint focus</span></button>
+      <button class="dpw-btn" data-level="low"      onclick="selectCardioLevel('low')">Low<br><span style="font-size:10px;font-weight:400">Walks &amp; recovery</span></button>
+      <button class="dpw-btn" data-level="moderate" onclick="selectCardioLevel('moderate')">Moderate<br><span style="font-size:10px;font-weight:400">Jog + HIIT mix</span></button>
+      <button class="dpw-btn" data-level="high"     onclick="selectCardioLevel('high')">High<br><span style="font-size:10px;font-weight:400">HIIT &amp; sprints</span></button>
     </div>
 
-    <div style="font-size:12px;font-weight:600;color:var(--text2);margin:18px 0 6px">Skipped exercises</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">These are hidden from your workouts. Tap Restore to bring one back.</div>
+    <div class="prefs-section-label" style="margin-top:16px">Skipped exercises</div>
+    <div class="prefs-section-sub">Hidden from your workouts. Tap Restore to bring one back.</div>
     <div id="prefs-disliked-list"></div>
 
-    <div class="ai-section-divider">✨ AI Workout Builder</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Claude generates a personalized plan based on your goal, cardio preference, and skipped exercises. Requires an <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--accent)">Anthropic API key</a>.</div>
-    <input type="password" id="api-key-input" class="ai-key-input" placeholder="sk-ant-api03-…" autocomplete="off" oninput="saveAPIKeyFromInput()">
-    <div style="display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap">
-      <button id="ai-gen-btn" class="btn btn-sm btn-green" onclick="generateAIPlan()">✨ Generate AI Plan</button>
-      <button id="ai-clear-btn" class="btn btn-sm" style="display:none;color:var(--red)" onclick="clearAIPlanAndRefresh()">✕ Remove Plan</button>
-    </div>
-    <div id="ai-gen-status" style="font-size:12px;min-height:18px"></div>
-
-    <div class="ai-section-divider">🎬 Exercise Demo GIFs</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Replaces muscle-group photos with per-exercise animated GIFs showing exact form. Requires a free <a href="https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb" target="_blank" rel="noopener" style="color:var(--accent)">RapidAPI key</a> (ExerciseDB — 10k req/month free).</div>
-    <input type="password" id="rapidapi-key-input" class="ai-key-input" placeholder="Paste RapidAPI key…" autocomplete="off" oninput="saveRapidAPIKeyFromInput()">
-
-    <div class="modal-actions" style="margin-top:18px">
+    <div class="modal-actions" style="margin-top:20px">
       <button class="btn btn-sm btn-green" onclick="closePrefsModal()">Done</button>
     </div>
   </div>

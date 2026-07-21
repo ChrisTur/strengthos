@@ -297,29 +297,11 @@ function renderPrefsModal(){
         <button class="btn btn-sm btn-green" onclick="restoreExercise('${name.replace(/'/g,"\\'")}')">Restore</button>
       </div>`).join('');
   }
-  const keyInput=document.getElementById('api-key-input');
-  if(keyInput) keyInput.value=getAPIKey();
-  const rapidKeyInput=document.getElementById('rapidapi-key-input');
-  if(rapidKeyInput) rapidKeyInput.value=getRapidAPIKey();
-  const plan=getAIPlan();
-  const clearBtn=document.getElementById('ai-clear-btn');
-  if(clearBtn) clearBtn.style.display=plan?'':'none';
-  const statusEl=document.getElementById('ai-gen-status');
-  if(statusEl&&plan&&!statusEl.textContent){
-    statusEl.textContent=`Active: "${plan.planName||'Custom Plan'}"`;
-    statusEl.style.color='var(--green)';
-  }
 }
 function restoreExercise(name){
   const d=loadDisliked().filter(n=>n!==name);
   saveDisliked(d);
   renderPrefsModal();
-}
-function saveAPIKeyFromInput(){
-  setAPIKey(document.getElementById('api-key-input').value);
-}
-function saveRapidAPIKeyFromInput(){
-  setRapidAPIKey(document.getElementById('rapidapi-key-input').value);
 }
 
 // ── AI plan generation ────────────────────────────────────────────────────────
@@ -360,16 +342,7 @@ Rules:
 
 async function generateAIPlan(){
   const key=getAPIKey();
-  if(!key){
-    alert('Enter your Anthropic API key in the field above first.');
-    document.getElementById('api-key-input').focus();
-    return;
-  }
-  const btn=document.getElementById('ai-gen-btn');
-  const statusEl=document.getElementById('ai-gen-status');
-  btn.disabled=true; btn.textContent='Generating…';
-  statusEl.textContent='Talking to Claude…'; statusEl.style.color='var(--text2)';
-
+  if(!key){ alert('No Anthropic API key stored.'); return; }
   try {
     const prompt=buildAIPlanPrompt(getGoal()||'muscle',getDaysPerWeek()||5,getCardioLevel(),loadDisliked());
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
@@ -393,24 +366,15 @@ async function generateAIPlan(){
     const plan=JSON.parse(m[1]);
     if(!Array.isArray(plan.days)||!plan.days.length) throw new Error('Plan missing days array');
     setAIPlan(plan);
-    statusEl.textContent=`✓ "${plan.planName||'Custom Plan'}" applied`;
-    statusEl.style.color='var(--green)';
-    document.getElementById('ai-clear-btn').style.display='';
     renderWeekGrid(); renderDetail();
   } catch(e){
-    statusEl.textContent='Error: '+e.message;
-    statusEl.style.color='var(--red)';
-  } finally {
-    btn.disabled=false; btn.textContent='✨ Generate AI Plan';
+    alert('AI plan error: '+e.message);
   }
 }
 
 function clearAIPlanAndRefresh(){
   if(!confirm('Remove the AI plan and return to the default program?')) return;
   clearAIPlan();
-  const statusEl=document.getElementById('ai-gen-status');
-  statusEl.textContent='Returned to default program.'; statusEl.style.color='var(--text2)';
-  document.getElementById('ai-clear-btn').style.display='none';
   renderWeekGrid(); renderDetail();
 }
 
@@ -1010,6 +974,11 @@ function initDraft(dayIdx,date){
   // Pre-fill weights from the most recent session on this same day slot
   const lastSession=loadSessions().filter(s=>s.dayIdx===dayIdx).slice(-1)[0]||null;
   function prefillSets(exName){
+    const isCardio=isCardioExercise(exName);
+    if(isCardio){
+      const lastEx=lastSession?.exercises.find(e=>e.name===exName);
+      return [{duration:lastEx?.sets?.[0]?.duration||'',done:false}];
+    }
     if(!lastSession) return [{reps:'',weight:'',done:false}];
     const lastEx=lastSession.exercises.find(e=>e.name===exName);
     if(!lastEx||!lastEx.sets.length) return [{reps:'',weight:'',done:false}];
@@ -1033,7 +1002,8 @@ function syncGoalExercises(){
   draftSession.exercises=draftSession.exercises.filter(ex=>!ex.goalAdded);
   extras.forEach(ex=>{
     const prev=existing.find(e=>e.name===ex.name);
-    draftSession.exercises.push(prev||{name:ex.name,sets:[{reps:'',weight:'',done:false}],goalAdded:true});
+    const blankSet=isCardioExercise(ex.name)?{duration:'',done:false}:{reps:'',weight:'',done:false};
+    draftSession.exercises.push(prev||{name:ex.name,sets:[blankSet],goalAdded:true});
   });
 }
 
@@ -1244,7 +1214,7 @@ function renderExerciseRows(lastSession){
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
-              <a href="https://www.tiktok.com/search?q=${tkQ}" target="_blank" rel="noopener" class="yt-demo-link">♪ Demo</a>
+              <a href="https://www.tiktok.com/search/video?q=${tkQ}" target="_blank" rel="noopener" class="yt-demo-link">♪ Demo</a>
               <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>
@@ -1261,7 +1231,7 @@ function renderExerciseRows(lastSession){
       <td class="ex-last-cell">${lastHTML}${overloadHint}</td>
       <td class="ex-log-cell">
         <div class="sets-container" id="sets-${ei}"></div>
-        <button class="add-set-btn" onclick="addSet(${ei})">+ add set</button>
+        ${isCardioExercise(ex.name)?'':`<button class="add-set-btn" onclick="addSet(${ei})">+ add set</button>`}
       </td>`;
     tbody.appendChild(tr);
     renderSets(ei);
@@ -1271,7 +1241,27 @@ function renderExerciseRows(lastSession){
 function renderSets(ei){
   const container=document.getElementById('sets-'+ei); if(!container) return;
   container.innerHTML='';
-  const sets=draftSession.exercises[ei].sets;
+  const ex=draftSession.exercises[ei];
+  const sets=ex.sets;
+
+  if(isCardioExercise(ex.name)){
+    // Ensure at least one cardio set exists
+    if(!sets.length) sets.push({duration:'',done:false});
+    const s=sets[0];
+    const row=document.createElement('div');
+    row.className=`cardio-row${s.done?' cardio-done':''}`;
+    row.innerHTML=`
+      <input class="cardio-dur-input" type="text" inputmode="decimal"
+        placeholder="min" value="${s.duration||''}"
+        oninput="updateCardioSet(${ei},this.value)">
+      <span class="cardio-unit">min</span>
+      <button class="cardio-done-btn${s.done?' active':''}" onclick="toggleCardioSetDone(${ei})">
+        ${s.done?'✓ Done':'Mark done'}
+      </button>`;
+    container.appendChild(row);
+    return;
+  }
+
   sets.forEach((set,si)=>{
     const row=document.createElement('div');
     row.className=`set-row${set.warmup?' warmup-set':''}`;
@@ -1288,8 +1278,22 @@ function renderSets(ei){
   });
 }
 
+function updateCardioSet(ei,duration){
+  const ex=draftSession.exercises[ei];
+  if(!ex.sets.length) ex.sets.push({duration:'',done:false});
+  ex.sets[0].duration=duration; _markModified();
+  saveDraft(activeDate,draftSession); updateSessionStatus();
+}
+function toggleCardioSetDone(ei){
+  const ex=draftSession.exercises[ei];
+  if(!ex.sets.length) ex.sets.push({duration:'',done:false});
+  ex.sets[0].done=!ex.sets[0].done; _markModified();
+  saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus();
+}
+
 function _markModified(){ delete draftSession.savedAt; }
-function isSetDone(s){ return parseFloat(s.weight)>0 && parseInt(s.reps)>0; }
+function isCardioExercise(name){ return getExerciseMuscle(name)==='Cardio'; }
+function isSetDone(s){ return (parseFloat(s.weight)>0 && parseInt(s.reps)>0) || !!s.done; }
 function isWorkingSet(s){ return isSetDone(s) && !s.warmup; }
 
 // ── Rest timer ────────────────────────────────────────────────────────────────
