@@ -700,6 +700,7 @@ function selectLibraryExercise(name){
   if(_swapMode==='add'){
     draftSession.exercises.push({name,sets:[{reps:'',weight:'',done:false}],custom:true});
     _markModified(); saveDraft(activeDate,draftSession);
+    _syncDraftToTemplate(); // persist the add to next week's template
     closeSwapModal();
     const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
     setTimeout(()=>{ const rows=document.querySelectorAll('.ex-row'); if(rows.length) rows[rows.length-1].scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
@@ -765,6 +766,17 @@ function openAddToCustomDay(){
   document.getElementById('custom-day-modal').style.display='none';
   _openLibraryModal();
 }
+function _syncDraftToTemplate(){
+  const dayIdx=draftSession.dayIdx;
+  if(dayIdx===undefined||dayIdx<0) return;
+  const base=getActiveDay(dayIdx)||DAYS[dayIdx]||{};
+  setCustomDay(dayIdx,{
+    ...base,
+    exercises:draftSession.exercises.map(e=>({name:e.name,structure:e.structure||'',note:''})),
+  });
+  apiSyncSettings({customDays:getCustomDays()});
+}
+
 function saveCustomDay(){
   const name=document.getElementById('custom-day-name').value.trim()||'Custom Day';
   const base=getActiveDay(_customDayIdx)||DAYS[_customDayIdx]||{};
@@ -1074,12 +1086,12 @@ function renderExerciseRows(lastSession){
     let lastHTML='<span style="font-size:11px;color:var(--text3)">—</span>';
     let overloadHint='';
     if(lastEx&&lastEx.sets.length){
-      const chips=lastEx.sets.filter(s=>s.done||(s.weight||s.reps)).map(s=>{
-        const isPR=allPRs[ex.name]&&parseFloat(s.weight)>=allPRs[ex.name].weight&&s.done;
+      const chips=lastEx.sets.filter(s=>s.weight||s.reps).map(s=>{
+        const isPR=allPRs[ex.name]&&parseFloat(s.weight)>=allPRs[ex.name].weight&&isSetDone(s);
         return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${isPR?' 🏆':''}</span>`;
       }).join('');
       if(chips) lastHTML=`<div class="last-set-row">${chips}</div>`;
-      const doneSets=lastEx.sets.filter(s=>s.done&&parseFloat(s.weight)>0);
+      const doneSets=lastEx.sets.filter(isSetDone);
       if(doneSets.length){
         const bestW=Math.max(...doneSets.map(s=>parseFloat(s.weight)));
         const inc=getWeightUnit()==='kg'?2.5:5;
@@ -1147,15 +1159,14 @@ function renderSets(ei){
       <span class="set-x">×</span>
       <input class="set-input" type="text" inputmode="numeric" placeholder="reps"
         value="${set.reps}" oninput="updateSet(${ei},${si},'reps',this.value)">
-      <div class="set-done ${set.done?'checked':''}" onclick="toggleSetDone(${ei},${si})">
-        ${set.done?'✓':''}
-      </div>
       ${sets.length>1?`<span class="add-set-btn" onclick="removeSet(${ei},${si})" style="color:var(--red);font-size:14px;padding:0 2px">×</span>`:''}`;
     container.appendChild(row);
   });
 }
 
 function _markModified(){ delete draftSession.savedAt; }
+// A set is considered done if weight+reps are both filled — no checkbox needed.
+function isSetDone(s){ return parseFloat(s.weight)>0 && parseInt(s.reps)>0; }
 function updateSet(ei,si,field,val){
   draftSession.exercises[ei].sets[si][field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
@@ -1193,6 +1204,7 @@ function submitAddEx(){
   const inp=document.getElementById('add-ex-input'); if(!inp||!inp.value.trim()) return;
   draftSession.exercises.push({name:inp.value.trim(),sets:[{reps:'',weight:'',done:false}],custom:true}); _markModified();
   saveDraft(activeDate,draftSession); inp.value='';
+  _syncDraftToTemplate(); // persist the add to next week's template
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
   setTimeout(()=>{ const rows=document.querySelectorAll('.ex-row'); if(rows.length) rows[rows.length-1].scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
 }
@@ -1207,8 +1219,8 @@ function updateSessionStatus(){
     el.textContent=`✓ Saved at ${t}`; el.style.color='var(--green)'; return;
   }
   const total=draftSession.exercises.reduce((a,e)=>a+e.sets.length,0);
-  const done=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);
-  el.textContent=done===0?'Draft — not saved':`${done} / ${total} sets completed · not saved`;
+  const done=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(isSetDone).length,0);
+  el.textContent=done===0?'Draft — not saved':`${done} / ${total} sets logged · not saved`;
   el.style.color='';
 }
 function saveSession(){
@@ -1216,6 +1228,8 @@ function saveSession(){
   const prevPRs=calcPRs(loadSessions());
   const sessions=loadSessions();
   const session=JSON.parse(JSON.stringify(draftSession));
+  // Mark every set that has data as done so DB/history are consistent
+  session.exercises.forEach(ex=>ex.sets.forEach(s=>{ s.done=isSetDone(s); }));
   session.id=Date.now();
   session.endedAt=Date.now();
   session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
@@ -1228,18 +1242,18 @@ function saveSession(){
 }
 
 function showCompletionSummary(session,prevPRs){
-  const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);
-  if(doneSets===0) return; // nothing completed, skip the summary
+  const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(isSetDone).length,0);
+  if(doneSets===0) return; // nothing logged, skip the summary
   const totalSets=session.exercises.reduce((a,e)=>a+e.sets.length,0);
   const volume=session.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>{
-    if(!s.done) return b;
+    if(!isSetDone(s)) return b;
     return b+(parseFloat(s.weight)||0)*(parseFloat(s.reps)||0);
   },0),0);
   const newPRs=[];
   session.exercises.forEach(ex=>{
     let bestW=0,bestReps=0;
     ex.sets.forEach(s=>{
-      if(!s.done||!s.weight) return;
+      if(!isSetDone(s)) return;
       const w=parseFloat(s.weight);
       if(w>bestW){bestW=w;bestReps=parseInt(s.reps)||0;}
     });
@@ -1388,7 +1402,7 @@ function renderProgressResults(){
   const unit=getWeightUnit();
   const loggedNames=new Set();
   sessions.forEach(s=>s.exercises.forEach(e=>{
-    if(e.sets&&e.sets.some(st=>st.done&&parseFloat(st.weight)>0)) loggedNames.add(e.name);
+    if(e.sets&&e.sets.some(isSetDone)) loggedNames.add(e.name);
   }));
   const q=_progressExSearch.trim().toLowerCase();
 
@@ -1565,7 +1579,7 @@ function calcWeeklyData(sessions,numWeeks){
     sessions.forEach(s=>{
       if(s.date<wsStr||s.date>=weStr) return; count++;
       s.exercises.forEach(ex=>ex.sets.forEach(set=>{
-        if(!set.done) return;
+        if(!isSetDone(set)) return;
         vol+=(parseFloat(set.weight)||0)*(parseFloat(set.reps)||0);
       }));
     });
@@ -1579,7 +1593,7 @@ function calcPRs(sessions){
   [...sessions].sort((a,b)=>a.date.localeCompare(b.date)).forEach(session=>{
     session.exercises.forEach(ex=>{
       ex.sets.forEach(set=>{
-        if(!set.done) return;
+        if(!isSetDone(set)) return;
         const w=parseFloat(set.weight); if(isNaN(w)||w<=0) return;
         const r=parseInt(set.reps)||0;
         const e1rm=Math.round(w*(1+r/30)*4)/4;
@@ -1634,8 +1648,8 @@ function renderHistory(){
             <div class="hist-ex-name">${ex.name}</div>
             <div class="hist-sets">
               ${ex.sets.map((s,i)=>{
-                const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&s.done;
-                return`<span class="hist-set-chip ${s.done?'done':''} ${isPR?'pr':''}">
+                const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&isSetDone(s);
+                return`<span class="hist-set-chip ${isSetDone(s)?'done':''} ${isPR?'pr':''}">
                   S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${isPR?' 🏆':''}
                 </span>`;
               }).join('')}
@@ -1655,7 +1669,7 @@ function getExerciseHistory(name){
     .sort((a,b)=>a.date.localeCompare(b.date))
     .map(s=>{
       const ex=s.exercises.find(e=>e.name===name);
-      const done=ex.sets.filter(set=>set.done&&parseFloat(set.weight)>0);
+      const done=ex.sets.filter(isSetDone);
       if(!done.length) return null;
       // Best set = highest estimated 1RM (captures both weight and rep improvements)
       const bestSet=done.reduce((best,set)=>{
@@ -1723,7 +1737,7 @@ function buildPRsByDate(allSessions){
     const newPRs={};
     session.exercises.forEach(ex=>{
       ex.sets.forEach(set=>{
-        if(!set.done) return;
+        if(!isSetDone(set)) return;
         const w=parseFloat(set.weight); if(isNaN(w)||w<=0) return;
         if(!running[ex.name]||w>running[ex.name]){
           running[ex.name]=w; newPRs[ex.name]=w;
@@ -1744,7 +1758,7 @@ function deleteSession(id){
   saveSessions(loadSessions().filter(s=>s.id!==id));
   renderWeekGrid(); renderHistory();
 }
-function countDoneSets(session){ return session.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0) }
+function countDoneSets(session){ return session.exercises.reduce((a,e)=>a+e.sets.filter(isSetDone).length,0) }
 
 function shareSession(id){
   const session=loadSessions().find(s=>s.id===id); if(!session) return;
@@ -1753,7 +1767,7 @@ function shareSession(id){
   session.exercises.forEach(ex=>{
     text+=`${ex.name}:\n`;
     ex.sets.forEach((s,i)=>{
-      text+=`  S${i+1}: ${s.weight||'—'} ${getWeightUnit()} × ${s.reps||'—'} reps${s.done?' ✓':''}\n`;
+      text+=`  S${i+1}: ${s.weight||'—'} ${getWeightUnit()} × ${s.reps||'—'} reps${isSetDone(s)?' ✓':''}\n`;
     });
     text+='\n';
   });
@@ -1772,7 +1786,7 @@ function exportCSV(){
     const day=(s.dayIdx>=0?(getActiveDay(s.dayIdx)||DAYS[s.dayIdx]):null)||{name:'Unknown'};
     s.exercises.forEach(ex=>{
       ex.sets.forEach((set,si)=>{
-        rows.push([s.date,day.name,ex.name,si+1,set.weight,set.reps,set.done?'Yes':'No',s.notes||'']);
+        rows.push([s.date,day.name,ex.name,si+1,set.weight,set.reps,isSetDone(set)?'Yes':'No',s.notes||'']);
       });
     });
   });
