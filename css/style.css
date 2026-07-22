@@ -175,6 +175,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .set-input:focus{outline:none;border-color:var(--accent)}
 .set-input::placeholder{color:var(--text3)}
 .set-x{font-size:11px;color:var(--text3)}
+.overload-nudge{font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;cursor:pointer;opacity:.65;white-space:nowrap;user-select:none;transition:opacity .15s}
+.overload-nudge:hover{opacity:1}
+.apply-all-btn{font-size:10px;color:var(--text3);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;cursor:pointer;opacity:.6;white-space:nowrap;user-select:none;transition:opacity .15s}
+.apply-all-btn:hover{opacity:1;color:var(--text);border-color:var(--text3)}
+.warmup-gen-btn{margin-left:4px;opacity:.7}
+.warmup-gen-btn:hover{opacity:1}
 .add-set-btn{font-size:11px;color:var(--text3);cursor:pointer;background:none;border:none;padding:2px 0;transition:color .15s}
 .add-set-btn:hover{color:var(--accent)}
 /* Warm-up toggle */
@@ -403,21 +409,6 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   .modal-overlay{padding:8px}
 }
 
-/* ── YouTube demo link ───────────────────────────────────────────────────────── */
-.yt-demo-link{
-  display:inline-block;
-  font-size:10px;
-  color:#fff;
-  text-decoration:none;
-  background:#111;
-  border-radius:3px;
-  padding:1px 6px;
-  margin-top:3px;
-  white-space:nowrap;
-  transition:color 0.15s,background 0.15s;
-  letter-spacing:.01em;
-}
-.yt-demo-link:hover{ background:#333; color:#fff; }
 
 /* ── AI plan section in prefs modal ─────────────────────────────────────────── */
 .ai-section-divider{
@@ -739,6 +730,50 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 }
 .cardio-done-btn.active{background:var(--green);border-color:var(--green);color:#fff}
 .cardio-done-btn:not(.active):hover{border-color:var(--green);color:var(--green)}
+
+/* ── Deload suggestion banner ────────────────────────────────────────────────── */
+.deload-suggest-banner{
+  background:color-mix(in srgb,var(--amber) 12%,var(--bg2));
+  border:1px solid var(--amber);border-radius:8px;
+  padding:10px 14px;margin:10px 16px 0;
+  font-size:12px;color:var(--text2);line-height:1.5;
+}
+.deload-suggest-actions{display:flex;gap:8px;margin-top:8px}
+
+/* ── Mood picker in completion modal ─────────────────────────────────────────── */
+.mood-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border2);text-align:center}
+.mood-label{font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+.mood-row{display:flex;justify-content:center;gap:10px}
+.mood-btn{
+  width:44px;height:44px;border-radius:50%;border:2px solid var(--border2);
+  background:var(--bg3);font-size:20px;cursor:pointer;
+  transition:border-color .15s,transform .1s;
+}
+.mood-btn:hover{border-color:var(--accent);transform:scale(1.1)}
+.mood-btn.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--bg3))}
+
+/* ── Milestone badges ────────────────────────────────────────────────────────── */
+.milestone-grid{display:flex;flex-wrap:wrap;gap:8px}
+.milestone-badge{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 12px;border-radius:8px;min-width:72px;
+  border:1px solid var(--border2);background:var(--bg3);
+}
+.milestone-badge.earned{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 8%,var(--bg3))}
+.milestone-badge.locked{opacity:.45}
+.milestone-icon{font-size:22px;line-height:1}
+.milestone-label{font-size:10px;color:var(--text3);text-align:center;line-height:1.3}
+
+/* ── Monthly summary ─────────────────────────────────────────────────────────── */
+.monthly-grid{display:flex;gap:10px;flex-wrap:wrap}
+.monthly-stat{
+  flex:1;min-width:90px;padding:12px 14px;border-radius:8px;
+  background:var(--bg3);border:1px solid var(--border2);
+}
+.monthly-val{font-size:22px;font-weight:700;color:var(--text);line-height:1.1}
+.monthly-trend{font-size:14px;margin-left:4px}
+.monthly-lbl{font-size:11px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.monthly-sub{font-size:10px;color:var(--text3);margin-top:2px}
 
 /* ── Exercise row: muscle tag + action row ───────────────────────────────────── */
 .ex-action-row{

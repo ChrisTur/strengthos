@@ -160,6 +160,12 @@ function setAPIKey(k){ if(k) localStorage.setItem('wt_api_key',k.trim()); else l
 function getRapidAPIKey(){ return localStorage.getItem('wt_rapidapi_key')||'' }
 function setRapidAPIKey(k){ if(k) localStorage.setItem('wt_rapidapi_key',k.trim()); else localStorage.removeItem('wt_rapidapi_key') }
 
+// ── Workout reminders ─────────────────────────────────────────────────────────
+function getReminderEnabled(){ return localStorage.getItem('wt_remind_on')==='1' }
+function setReminderEnabled(v){ localStorage.setItem('wt_remind_on',v?'1':'0') }
+function getReminderTime(){ return localStorage.getItem('wt_remind_time')||'08:00' }
+function setReminderTime(t){ localStorage.setItem('wt_remind_time',t) }
+
 // ── AI-generated workout plan ─────────────────────────────────────────────────
 function getAIPlan(){ try{return JSON.parse(localStorage.getItem('wt_aiplan_'+getActiveProfile()))||null}catch{return null} }
 function setAIPlan(plan){ localStorage.setItem('wt_aiplan_'+getActiveProfile(),JSON.stringify(plan)) }

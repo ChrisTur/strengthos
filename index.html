@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#0f0f0f">
   <title>StrengthOS</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
@@ -145,6 +146,17 @@
       <button class="dpw-btn" data-level="low"      onclick="selectCardioLevel('low')">Low<br><span style="font-size:10px;font-weight:400">Walks &amp; recovery</span></button>
       <button class="dpw-btn" data-level="moderate" onclick="selectCardioLevel('moderate')">Moderate<br><span style="font-size:10px;font-weight:400">Jog + HIIT mix</span></button>
       <button class="dpw-btn" data-level="high"     onclick="selectCardioLevel('high')">High<br><span style="font-size:10px;font-weight:400">HIIT &amp; sprints</span></button>
+    </div>
+
+    <div class="prefs-section-label" style="margin-top:16px">Workout reminders</div>
+    <div class="prefs-section-sub">Get notified when it's time to train (requires notification permission).</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap">
+      <button id="reminder-toggle-btn" class="btn btn-sm" onclick="toggleReminder()">Enable reminders</button>
+      <div id="reminder-time-wrap" style="display:none;font-size:13px;color:var(--text2)">
+        at <input type="time" id="reminder-time-input" value="08:00"
+          onchange="updateReminderTime(this.value)"
+          style="padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;margin-left:4px">
+      </div>
     </div>
 
     <div class="prefs-section-label" style="margin-top:16px">Skipped exercises</div>

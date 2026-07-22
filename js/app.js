@@ -287,6 +287,15 @@ function renderPrefsModal(){
     btn.classList.toggle('selected',btn.dataset.level===level);
   });
   const disliked=loadDisliked();
+  // Reminders
+  const remEnabled=getReminderEnabled();
+  const remBtn=document.getElementById('reminder-toggle-btn');
+  const remTimeWrap=document.getElementById('reminder-time-wrap');
+  const remTimeInput=document.getElementById('reminder-time-input');
+  if(remBtn){remBtn.textContent=remEnabled?'Disable':'Enable reminders';remBtn.className=`btn btn-sm${remEnabled?' btn-green':''}`;}
+  if(remTimeWrap) remTimeWrap.style.display=remEnabled?'':'none';
+  if(remTimeInput) remTimeInput.value=getReminderTime();
+
   const el=document.getElementById('prefs-disliked-list');
   if(!disliked.length){
     el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">No exercises skipped yet. Use the Skip button on any exercise to hide it.</div>';
@@ -555,6 +564,7 @@ let _swapEI=-1, _swapMode='swap', _swapMuscleFilter=null;
 let _progressMuscle=null, _progressExSearch='';
 let _customDayIdx=-1, _customDayExercises=[], _customDayName='';
 let _durationTimer=null;
+let _completionSessionId=null;
 
 function _openLibraryModal(){
   document.getElementById('swap-search').value='';
@@ -888,6 +898,7 @@ let activeDate=TODAY;
 let activeDayIdx=0; // kept in sync via setActiveDate()
 let weekOffset=0;
 let draftSession=null;
+let _lastSession=null;
 
 function setActiveDate(date){
   activeDate=date;
@@ -972,7 +983,8 @@ function initDraft(dayIdx,date){
     .map(ex=>({name:ex.name,sets:[{reps:'',weight:'',done:false}],goalAdded:true}));
   const day=getActiveDay(dayIdx);
   // Pre-fill weights from the most recent session on this same day slot
-  const lastSession=loadSessions().filter(s=>s.dayIdx===dayIdx).slice(-1)[0]||null;
+  const lastSession=loadSessions().filter(s=>s.dayIdx===dayIdx&&s.date!==date).slice(-1)[0]||null;
+  _lastSession=lastSession;
   function prefillSets(exName){
     const isCardio=isCardioExercise(exName);
     if(isCardio){
@@ -1039,6 +1051,18 @@ function renderDetail(){
   syncGoalExercises();
   const sessions=loadSessions().filter(s=>s.dayIdx===activeDayIdx);
   const lastSession=sessions.length?sessions[sessions.length-1]:null;
+  const allStats=calcStats(loadSessions());
+  const showDeloadBanner=allStats.weekStreak>=4&&!isDeload()&&
+    Number(localStorage.getItem('wt_deload_dismiss')||0)<allStats.weekStreak;
+  const deloadBannerHTML=showDeloadBanner
+    ?`<div class="deload-suggest-banner" id="deload-suggest-banner">
+        💪 <strong>${allStats.weekStreak} weeks straight</strong> — your body may benefit from a deload week.
+        <div class="deload-suggest-actions">
+          <button class="btn btn-sm btn-amber" onclick="toggleDeload()">Enable Deload</button>
+          <button class="btn btn-sm" onclick="dismissDeloadSuggest()">Dismiss</button>
+        </div>
+      </div>`
+    :'';
   const note=getDayNote(activeDayIdx);
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
   const heroUrl=typeof getWorkoutImageUrl==='function'?getWorkoutImageUrl(day):null;
@@ -1046,6 +1070,7 @@ function renderDetail(){
 
   panel.innerHTML=`
     ${heroHTML}
+    ${deloadBannerHTML}
     <div class="detail-header">
       <div>
         <div class="detail-title-wrap" onclick="startDayRename(${activeDayIdx})" title="Click to rename this day">
@@ -1090,6 +1115,7 @@ function renderDetail(){
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <label class="rest-label">Rest <select class="rest-select" onchange="setRestPeriod(parseFloat(this.value));updateDetailSub()">${restSelectHTML()}</select></label>
+        ${_lastSession?`<button class="btn btn-sm" onclick="copyLastWorkout()" title="Copy weights & reps from last session">📋 Copy last</button>`:''}
         <button class="btn btn-sm btn-red" onclick="discardDraft()">Discard</button>
         <button class="btn btn-sm btn-green" onclick="saveSession()">Save workout</button>
       </div>
@@ -1198,7 +1224,6 @@ function renderExerciseRows(lastSession){
     const safeName=ex.name.replace(/'/g,"\\'");
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
-    const tkQ=encodeURIComponent(ex.name+' exercise tutorial how to');
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
     const daysSince=muscle!==null?recovery[muscle]:undefined;
@@ -1214,8 +1239,7 @@ function renderExerciseRows(lastSession){
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
-              <a href="https://www.tiktok.com/search/video?q=${tkQ}" target="_blank" rel="noopener" class="yt-demo-link">♪ Demo</a>
-              <button class="yt-demo-link" style="background:none;border:none;cursor:pointer;padding:0" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
+<button style="background:none;border:none;cursor:pointer;padding:0;font-size:14px" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
             </div>
           </div>
           <div class="ex-controls">
@@ -1231,7 +1255,7 @@ function renderExerciseRows(lastSession){
       <td class="ex-last-cell">${lastHTML}${overloadHint}</td>
       <td class="ex-log-cell">
         <div class="sets-container" id="sets-${ei}"></div>
-        ${isCardioExercise(ex.name)?'':`<button class="add-set-btn" onclick="addSet(${ei})">+ add set</button>`}
+        ${isCardioExercise(ex.name)?'':`<button class="add-set-btn" onclick="addSet(${ei})">+ add set</button><button class="add-set-btn warmup-gen-btn" onclick="generateWarmupSets(${ei})">🔥 warmups</button>`}
       </td>`;
     tbody.appendChild(tr);
     renderSets(ei);
@@ -1262,13 +1286,24 @@ function renderSets(ei){
     return;
   }
 
+  const lastEx=_lastSession?.exercises?.find(e=>e.name===ex.name);
+  const inc=getWeightUnit()==='kg'?1.25:2.5;
   sets.forEach((set,si)=>{
+    const lastW=parseFloat(lastEx?.sets?.[si]?.weight)||0;
+    const nudgeW=lastW>0?lastW+inc:0;
+    const nudge=nudgeW>0&&!set.weight
+      ?`<span class="overload-nudge" onclick="applyOverloadNudge(${ei},${si},${nudgeW})" title="Try ${nudgeW} ${getWeightUnit()}">↑${nudgeW}</span>`
+      :'';
+    const applyAll=sets.length>1&&set.weight
+      ?`<span class="apply-all-btn" onclick="applyWeightToAllSets(${ei},${si})" title="Copy to all sets">↓all</span>`
+      :'';
     const row=document.createElement('div');
     row.className=`set-row${set.warmup?' warmup-set':''}`;
     row.innerHTML=`
       <span class="set-label">S${si+1}</span>
       <input class="set-input" type="text" inputmode="decimal" placeholder="${getWeightUnit()}"
         value="${set.weight}" oninput="updateSet(${ei},${si},'weight',this.value)">
+      ${nudge}${applyAll}
       <span class="set-x">×</span>
       <input class="set-input" type="text" inputmode="numeric" placeholder="reps"
         value="${set.reps}" oninput="updateSet(${ei},${si},'reps',this.value)">
@@ -1278,6 +1313,36 @@ function renderSets(ei){
   });
 }
 
+function applyWeightToAllSets(ei,si){
+  const ex=draftSession.exercises[ei];
+  const w=ex.sets[si].weight;
+  if(!w) return;
+  ex.sets.forEach(s=>{s.weight=w;});
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderSets(ei); updateSessionStatus();
+}
+function generateWarmupSets(ei){
+  const ex=draftSession.exercises[ei];
+  const workingSets=ex.sets.filter(s=>!s.warmup&&parseFloat(s.weight)>0);
+  if(!workingSets.length){alert('Enter a working weight first, then generate warmups.');return;}
+  const maxW=Math.max(...workingSets.map(s=>parseFloat(s.weight)));
+  const snap=getWeightUnit()==='kg'?1.25:2.5;
+  const warmups=[
+    {pct:.4,reps:10},{pct:.6,reps:6},{pct:.8,reps:3}
+  ].map(({pct,reps})=>({
+    weight:String(Math.round(maxW*pct/snap)*snap),
+    reps:String(reps),done:false,warmup:true
+  }));
+  ex.sets=[...warmups,...ex.sets.filter(s=>!s.warmup)];
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderSets(ei); updateSessionStatus();
+}
+function applyOverloadNudge(ei,si,weight){
+  const ex=draftSession.exercises[ei];
+  ex.sets[si].weight=String(weight);
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderSets(ei); updateSessionStatus();
+}
 function updateCardioSet(ei,duration){
   const ex=draftSession.exercises[ei];
   if(!ex.sets.length) ex.sets.push({duration:'',done:false});
@@ -1366,11 +1431,12 @@ function saveDayNoteFromUI(dayIdx, val){
 }
 
 function updateSet(ei,si,field,val){
-  const set=draftSession.exercises[ei].sets[si];
+  const ex=draftSession.exercises[ei];
+  const set=ex.sets[si];
   const wasDone=isWorkingSet(set);
   set[field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
-  if(!wasDone && isWorkingSet(set)) startRestTimer();
+  if(!wasDone && isWorkingSet(set) && si < ex.sets.length - 1) startRestTimer();
 }
 function toggleSetDone(ei,si){
   draftSession.exercises[ei].sets[si].done=!draftSession.exercises[ei].sets[si].done; _markModified();
@@ -1462,9 +1528,15 @@ function showCompletionSummary(session,prevPRs){
       newPRs.push({name:ex.name,weight:bestW,reps:bestReps});
   });
   const day=getActiveDay(session.dayIdx)||{name:'Workout'};
+  _completionSessionId=session.id;
   const prsHTML=newPRs.length
     ?`<div class="completion-prs"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">New PRs 🏆</div>${newPRs.map(p=>`<div class="completion-pr-chip">${p.name} — ${p.weight} ${getWeightUnit()} × ${p.reps}</div>`).join('')}</div>`
     :'';
+  const moodEmojis=[{v:'great',e:'💪'},{v:'good',e:'😊'},{v:'tired',e:'😴'},{v:'rough',e:'😓'}];
+  const moodHTML=`<div class="mood-section">
+    <div class="mood-label">How did it feel?</div>
+    <div class="mood-row">${moodEmojis.map(m=>`<button class="mood-btn" data-mood="${m.v}" onclick="saveMood('${m.v}')" title="${m.v}">${m.e}</button>`).join('')}</div>
+  </div>`;
   document.getElementById('completion-content').innerHTML=`
     <div style="font-size:44px;margin-bottom:6px">${newPRs.length?'🏆':'✅'}</div>
     <div style="font-size:17px;font-weight:700;margin-bottom:3px">${day.name} Done!</div>
@@ -1474,7 +1546,8 @@ function showCompletionSummary(session,prevPRs){
       ${volume>0?`<div><div class="completion-stat-val">${volume.toLocaleString()}</div><div class="completion-stat-lbl">${getWeightUnit()} Vol</div></div>`:''}
       ${session.duration>0?`<div><div class="completion-stat-val">${session.duration}</div><div class="completion-stat-lbl">Min</div></div>`:''}
     </div>
-    ${prsHTML}`;
+    ${prsHTML}
+    ${moodHTML}`;
   document.getElementById('completion-modal').style.display='flex';
 }
 function closeCompletionModal(){
@@ -1524,6 +1597,123 @@ function renderMuscleVolumeSection(){
     </div>`;
   }).join('');
   return`<div class="mvol-legend"><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--amber)"></span>Under minimum</span><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--green)"></span>In range</span><span class="mvol-leg-item" style="font-size:10px;color:var(--text3)">Line = minimum target</span></div><div class="mvol-grid">${rows}</div>`;
+}
+
+// ── Copy last workout ─────────────────────────────────────────────────────────
+function copyLastWorkout(){
+  if(!_lastSession){alert('No previous session found for this day.');return;}
+  if(!confirm('Copy all weights and reps from your last session?')) return;
+  draftSession.exercises.forEach(ex=>{
+    const lastEx=_lastSession.exercises.find(e=>e.name===ex.name);
+    if(!lastEx||!lastEx.sets.length) return;
+    ex.sets=lastEx.sets.map(s=>({...s,done:false}));
+  });
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderExerciseRows(_lastSession); updateSessionStatus();
+}
+
+// ── Deload suggestion ─────────────────────────────────────────────────────────
+function dismissDeloadSuggest(){
+  const streak=calcStats(loadSessions()).weekStreak;
+  localStorage.setItem('wt_deload_dismiss',String(streak));
+  document.getElementById('deload-suggest-banner')?.remove();
+}
+
+// ── Session mood ──────────────────────────────────────────────────────────────
+function saveMood(mood){
+  const sessions=loadSessions();
+  const s=sessions.find(s=>s.id===_completionSessionId);
+  if(s){s.mood=mood;saveSessions(sessions);}
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.toggle('active',b.dataset.mood===mood));
+}
+
+// ── Milestone badges ──────────────────────────────────────────────────────────
+const MILESTONES=[
+  {id:'s1',   icon:'🎯', label:'First Session',  check:(sc)=>sc>=1},
+  {id:'s10',  icon:'💪', label:'10 Sessions',    check:(sc)=>sc>=10},
+  {id:'s25',  icon:'🔥', label:'25 Sessions',    check:(sc)=>sc>=25},
+  {id:'s50',  icon:'🏅', label:'50 Sessions',    check:(sc)=>sc>=50},
+  {id:'s100', icon:'🏆', label:'100 Sessions',   check:(sc)=>sc>=100},
+  {id:'pr1',  icon:'🥇', label:'First PR',       check:(_,pc)=>pc>0},
+  {id:'w4',   icon:'🔥', label:'4-Week Streak',  check:(_,__,w)=>w>=4},
+  {id:'w8',   icon:'⚡', label:'8-Week Streak',  check:(_,__,w)=>w>=8},
+  {id:'w12',  icon:'🌟', label:'12-Week Streak', check:(_,__,w)=>w>=12},
+];
+function renderMilestoneBadges(){
+  const sessions=loadSessions();
+  const prs=calcPRs(sessions);
+  const {weekStreak}=calcStats(sessions);
+  const sc=sessions.length, pc=Object.keys(prs).length;
+  const earned=MILESTONES.filter(m=>m.check(sc,pc,weekStreak));
+  const nextLocked=MILESTONES.filter(m=>!m.check(sc,pc,weekStreak)).slice(0,3);
+  if(!earned.length&&!nextLocked.length) return'<div class="empty-state">Complete workouts to earn badges.</div>';
+  const badge=(m,locked)=>`<div class="milestone-badge${locked?' locked':''}" title="${m.label}">
+    <div class="milestone-icon">${locked?'🔒':m.icon}</div>
+    <div class="milestone-label">${m.label}</div>
+  </div>`;
+  return`<div class="milestone-grid">${earned.map(m=>badge(m,false)).join('')}${nextLocked.map(m=>badge(m,true)).join('')}</div>`;
+}
+
+// ── Year heatmap ──────────────────────────────────────────────────────────────
+function renderYearHeatmap(){
+  const sessions=loadSessions();
+  const countByDate={};
+  sessions.forEach(s=>{countByDate[s.date]=(countByDate[s.date]||0)+1;});
+  const today=new Date(TODAY+'T00:00:00');
+  const start=new Date(today);
+  start.setDate(today.getDate()-364);
+  // Align start to Sunday
+  start.setDate(start.getDate()-start.getDay());
+  const cells=[];
+  const d=new Date(start);
+  while(d<=today){
+    const ds=d.toISOString().slice(0,10);
+    cells.push({date:ds,count:countByDate[ds]||0});
+    d.setDate(d.getDate()+1);
+  }
+  const weeks=[];
+  for(let i=0;i<cells.length;i+=7) weeks.push(cells.slice(i,i+7));
+  const SZ=11,GAP=2,W=(SZ+GAP)*weeks.length,H=(SZ+GAP)*7+18;
+  const fills=['var(--border2)','#3aab6d66','#3aab6d','#2d8a56'];
+  const rects=weeks.map((week,wi)=>week.map((day,di)=>{
+    const x=wi*(SZ+GAP),y=di*(SZ+GAP)+16;
+    const fill=fills[Math.min(day.count,3)];
+    return`<rect x="${x}" y="${y}" width="${SZ}" height="${SZ}" rx="2" fill="${fill}"><title>${day.date}${day.count?' — '+day.count+' session'+(day.count>1?'s':''):''}</title></rect>`;
+  }).join('')).join('');
+  const labels=[];
+  weeks.forEach((week,wi)=>{
+    if(!week[0]) return;
+    const d2=new Date(week[0].date+'T00:00:00');
+    if(d2.getDate()<=7) labels.push(`<text x="${wi*(SZ+GAP)}" y="11" font-size="9" fill="var(--text3)">${d2.toLocaleDateString([],{month:'short'})}</text>`);
+  });
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;overflow:visible">${labels.join('')}${rects}</svg>`;
+}
+
+// ── Monthly summary ───────────────────────────────────────────────────────────
+function renderMonthlySummary(){
+  const sessions=loadSessions();
+  const now=new Date();
+  const thisMonthStr=now.toISOString().slice(0,7);
+  const lastMonthStr=new Date(now.getFullYear(),now.getMonth()-1,1).toISOString().slice(0,7);
+  const thisM=sessions.filter(s=>s.date.startsWith(thisMonthStr));
+  const lastM=sessions.filter(s=>s.date.startsWith(lastMonthStr));
+  const calcVol=arr=>Math.round(arr.reduce((t,sess)=>t+sess.exercises.reduce((a,ex)=>a+ex.sets.reduce((b,s)=>{
+    return isWorkingSet(s)?b+(parseFloat(s.weight)||0)*(parseFloat(s.reps)||0):b;
+  },0),0),0));
+  const thisSets=thisM.reduce((t,s)=>t+s.exercises.reduce((a,ex)=>a+ex.sets.filter(isWorkingSet).length,0),0);
+  const thisVol=calcVol(thisM);
+  const prsBase=calcPRs(sessions.filter(s=>!s.date.startsWith(thisMonthStr)));
+  const prsNow=calcPRs(sessions);
+  const newPRs=Object.keys(prsNow).filter(n=>!prsBase[n]||prsNow[n].weight>prsBase[n].weight).length;
+  const trend=thisM.length>lastM.length?'↑':thisM.length<lastM.length?'↓':'→';
+  const trendColor=thisM.length>=lastM.length?'var(--green)':'var(--red)';
+  const monthName=now.toLocaleDateString([],{month:'long',year:'numeric'});
+  return`<div class="monthly-grid">
+    <div class="monthly-stat"><div class="monthly-val">${thisM.length}<span class="monthly-trend" style="color:${trendColor}">${trend}</span></div><div class="monthly-lbl">Sessions</div><div class="monthly-sub">vs ${lastM.length} last month</div></div>
+    <div class="monthly-stat"><div class="monthly-val">${thisSets}</div><div class="monthly-lbl">Working Sets</div></div>
+    ${thisVol>0?`<div class="monthly-stat"><div class="monthly-val">${thisVol.toLocaleString()}</div><div class="monthly-lbl">${getWeightUnit()} Volume</div></div>`:''}
+    ${newPRs>0?`<div class="monthly-stat"><div class="monthly-val">${newPRs} 🏆</div><div class="monthly-lbl">New PRs</div></div>`:''}
+  </div>`;
 }
 
 // ── Progress page ─────────────────────────────────────────────────────────────
@@ -1605,8 +1795,17 @@ function renderDashboard(){
     <div class="dash-section-title">Weekly Volume — Last 8 Weeks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(${getWeightUnit()} × reps, completed sets)</span></div>
     <div class="chart-wrap">${volSVG}</div>
 
+    <div class="dash-section-title">This Month</div>
+    <div class="chart-wrap">${renderMonthlySummary()}</div>
+
     <div class="dash-section-title">Muscle Volume — This Week <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(working sets)</span></div>
     <div class="chart-wrap">${renderMuscleVolumeSection()}</div>
+
+    <div class="dash-section-title">Training Year</div>
+    <div class="chart-wrap" style="overflow-x:auto">${renderYearHeatmap()}</div>
+
+    <div class="dash-section-title">Milestones</div>
+    <div class="chart-wrap">${renderMilestoneBadges()}</div>
 
     <div class="dash-section-title">Body Weight</div>
     <div class="chart-wrap">
@@ -1877,7 +2076,7 @@ function renderHistory(){
     div.innerHTML=`
       <div class="hist-session-header" onclick="toggleCollapse(this.parentElement)">
         <div>
-          <div class="hist-session-title">${day.dow} — ${day.name}</div>
+          <div class="hist-session-title">${day.dow} — ${day.name}${{great:'💪',good:'😊',tired:'😴',rough:'😓'}[session.mood]?' <span style="font-size:13px">'+{great:'💪',good:'😊',tired:'😴',rough:'😓'}[session.mood]+'</span>':''}</div>
           <div class="hist-session-date">${formatDate(session.date)}${session.duration?` · ${session.duration} min`:''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -2264,6 +2463,7 @@ function initApp(){
   document.getElementById('deload-banner').style.display=isDeload()?'':'none';
   renderWeekGrid();
   renderDetail();
+  initNotifications();
 }
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
@@ -2366,6 +2566,53 @@ async function _boot(){
   }
   document.getElementById('auth-screen').style.display = 'flex';
   setTimeout(()=>document.getElementById('auth-email').focus(), 100);
+}
+
+// ── Push notifications ────────────────────────────────────────────────────────
+async function initNotifications(){
+  if(!('serviceWorker' in navigator)) return;
+  try{ await navigator.serviceWorker.register('/sw.js'); }catch(e){ console.warn('SW:',e); }
+  if(Notification.permission==='granted'&&getReminderEnabled()) checkWorkoutReminder();
+}
+async function checkWorkoutReminder(){
+  if(!getReminderEnabled()||Notification.permission!=='granted') return;
+  const today=new Date().toISOString().slice(0,10);
+  if(localStorage.getItem('wt_notified')===today) return;
+  if(activeDayIdx===REST_DAY) return;
+  const [rh,rm]=getReminderTime().split(':').map(Number);
+  const now=new Date();
+  if(now.getHours()<rh||(now.getHours()===rh&&now.getMinutes()<rm)) return;
+  const day=getActiveDay(activeDayIdx)||DAYS[activeDayIdx]||{name:'Workout'};
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification('StrengthOS 🏋️',{
+      body:`Time for ${day.name}! Tap to open your workout.`,
+      tag:'workout-reminder',
+      renotify:false,
+    });
+    localStorage.setItem('wt_notified',today);
+  }catch(e){console.warn('Notification:',e);}
+}
+async function enableNotifications(){
+  if(!('Notification' in window)){alert('Notifications not supported on this device.');return;}
+  const perm=await Notification.requestPermission();
+  if(perm==='granted'){
+    setReminderEnabled(true);
+    renderPrefsModal();
+    checkWorkoutReminder();
+  } else {
+    setReminderEnabled(false);
+    renderPrefsModal();
+    alert('Permission denied — please enable notifications in your browser/system settings.');
+  }
+}
+function toggleReminder(){
+  if(getReminderEnabled()){setReminderEnabled(false);renderPrefsModal();}
+  else enableNotifications();
+}
+function updateReminderTime(t){
+  setReminderTime(t);
+  localStorage.removeItem('wt_notified');
 }
 
 _boot();
