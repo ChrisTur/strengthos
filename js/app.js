@@ -1433,10 +1433,10 @@ function saveDayNoteFromUI(dayIdx, val){
 function updateSet(ei,si,field,val){
   const ex=draftSession.exercises[ei];
   const set=ex.sets[si];
-  const wasDone=isWorkingSet(set);
+  const wasDone=isSetDone(set);
   set[field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
-  if(!wasDone && isWorkingSet(set) && si < ex.sets.length - 1) startRestTimer();
+  if(!wasDone && isSetDone(set) && si < ex.sets.length - 1) startRestTimer();
 }
 function toggleSetDone(ei,si){
   draftSession.exercises[ei].sets[si].done=!draftSession.exercises[ei].sets[si].done; _markModified();
@@ -1485,9 +1485,12 @@ function updateSessionStatus(){
     const t=new Date(draftSession.savedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     el.textContent=`✓ Saved at ${t}`; el.style.color='var(--green)'; return;
   }
-  const total=draftSession.exercises.reduce((a,e)=>a+e.sets.length,0);
-  const done=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(isSetDone).length,0);
-  el.textContent=done===0?'Draft — not saved':`${done} / ${total} sets logged · not saved`;
+  const workingSets=e=>e.sets.filter(s=>!s.warmup);
+  const total=draftSession.exercises.reduce((a,e)=>a+workingSets(e).length,0);
+  const done=draftSession.exercises.reduce((a,e)=>a+workingSets(e).filter(isSetDone).length,0);
+  const warmupDone=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.warmup&&isSetDone(s)).length,0);
+  const warmupNote=warmupDone>0?` · ${warmupDone}W`:'';
+  el.textContent=done===0&&warmupDone===0?'Draft — not saved':`${done} / ${total} sets logged${warmupNote} · not saved`;
   el.style.color='';
 }
 function saveSession(){
@@ -1511,7 +1514,7 @@ function saveSession(){
 function showCompletionSummary(session,prevPRs){
   const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);
   if(doneSets===0) return; // nothing logged, skip the summary
-  const totalSets=session.exercises.reduce((a,e)=>a+e.sets.length,0);
+  const totalSets=session.exercises.reduce((a,e)=>a+e.sets.filter(s=>!s.warmup).length,0);
   const volume=session.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>{
     if(!isWorkingSet(s)) return b;
     return b+(parseFloat(s.weight)||0)*(parseFloat(s.reps)||0);
