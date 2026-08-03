@@ -644,7 +644,7 @@ function renderSwapGrid(){
     }
   }
 
-  if(isSearch) pool=pool.filter(e=>e.name.toLowerCase().includes(q));
+  if(isSearch) pool=pool.filter(e=>e.name.toLowerCase().includes(q)||(getExerciseMuscle(e.name)||'').toLowerCase().includes(q));
   // Filter by user's available equipment
   const avail=getAvailableEquipment();
   pool=pool.filter(e=>avail.includes(e.equipment));
