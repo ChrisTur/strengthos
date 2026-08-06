@@ -7,6 +7,35 @@ let _completionSessionId=null;
 const REP_CEILING=10;
 let draftSession=null;
 let _lastSession=null;
+// Superset grouping: exercises chained via linkedToNext form a group, labeled A1/A2/…, B1/B2/…
+const SUPERSET_COLORS=['var(--accent)','var(--blue)','var(--green)','var(--amber)'];
+function computeSupersetLabels(exercises){
+  const labels=new Array(exercises.length).fill(null);
+  const colors=new Array(exercises.length).fill(null);
+  let groupIdx=0, i=0;
+  while(i<exercises.length){
+    if(exercises[i].linkedToNext){
+      const color=SUPERSET_COLORS[groupIdx%SUPERSET_COLORS.length];
+      let j=i, n=1;
+      labels[j]=String.fromCharCode(65+groupIdx)+n; colors[j]=color;
+      while(exercises[j]&&exercises[j].linkedToNext&&j+1<exercises.length){
+        j++; n++;
+        labels[j]=String.fromCharCode(65+groupIdx)+n; colors[j]=color;
+      }
+      groupIdx++;
+      i=j+1;
+    } else {
+      i++;
+    }
+  }
+  return exercises.map((_,idx)=>labels[idx]?{label:labels[idx],color:colors[idx]}:null);
+}
+function toggleSuperset(ei){
+  const ex=draftSession.exercises[ei];
+  ex.linkedToNext=!ex.linkedToNext;
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderExerciseRows(_lastSavedSession()); updateSessionStatus();
+}
 function initDraft(dayIdx,date){
   date=date||activeDate;
   const goal=getGoal();
@@ -214,6 +243,7 @@ function renderExerciseRows(lastSession){
   const planTag=GOAL_PLAN_TAG[goal]||'';
   const useStructure=sessions.length===0||getDaysPerWeek()<7;
   const recovery=buildMuscleRecovery();
+  const supersetLabels=computeSupersetLabels(draftSession.exercises);
 
   draftSession.exercises.forEach((ex,ei)=>{
     const isGoalEx=!!ex.goalAdded;
@@ -259,8 +289,10 @@ function renderExerciseRows(lastSession){
       :planTag;
 
     const safeName=ex.name.replace(/'/g,"\\'");
+    const superset=supersetLabels[ei];
     const tr=document.createElement('tr');
-    tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'');
+    tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'')+(superset?' superset-row':'');
+    if(superset) tr.style.borderLeft=`3px solid ${superset.color}`;
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
     const daysSince=muscle!==null?recovery[muscle]:undefined;
@@ -273,11 +305,13 @@ function renderExerciseRows(lastSession){
       <td class="ex-name-cell">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
           <div>
+            ${superset?`<span class="superset-badge" style="background:${superset.color}" title="Part of a superset — logged back-to-back with no rest until the group is done">${superset.label}</span>`:''}
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
 <button style="background:none;border:none;cursor:pointer;padding:0;font-size:14px" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
 <button class="variant-btn${ex.variantNote?' active':''}" onclick="markExerciseVariant(${ei})" title="${ex.variantNote?('Different setup: '+ex.variantNote.replace(/"/g,'&quot;')):'Flag a different setup today (e.g. different machine) — click to add a note'}">${ex.variantNote?'⚠️':'🔀'}</button>
+${ei<draftSession.exercises.length-1?`<button class="superset-btn${ex.linkedToNext?' active':''}" onclick="toggleSuperset(${ei})" title="${ex.linkedToNext?'Unlink from next exercise':'Superset with next exercise — no rest until the pair is done'}">🔗</button>`:''}
             </div>
           </div>
           <div class="ex-controls">
@@ -487,7 +521,7 @@ function updateSet(ei,si,field,val){
   const wasDone=isSetDone(set);
   set[field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
-  if(!wasDone && isSetDone(set) && si < ex.sets.length - 1) startRestTimer();
+  if(!wasDone && isSetDone(set) && si < ex.sets.length - 1 && !ex.linkedToNext) startRestTimer();
 }
 function toggleSetDone(ei,si){
   draftSession.exercises[ei].sets[si].done=!draftSession.exercises[ei].sets[si].done; _markModified();
@@ -502,6 +536,7 @@ function removeSet(ei,si){
   saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus(); updateDetailSub();
 }
 function removeExerciseToday(ei){
+  if(ei>0) draftSession.exercises[ei-1].linkedToNext=false; // avoid accidentally linking to whatever now follows
   draftSession.exercises.splice(ei,1); _markModified();
   saveDraft(activeDate,draftSession);
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus(); updateDetailSub();
@@ -514,6 +549,7 @@ function moveExercise(ei,dir){
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
 }
 function removeCustomExercise(ei){
+  if(ei>0) draftSession.exercises[ei-1].linkedToNext=false; // avoid accidentally linking to whatever now follows
   draftSession.exercises.splice(ei,1); _markModified();
   saveDraft(activeDate,draftSession);
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
