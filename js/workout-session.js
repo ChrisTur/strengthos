@@ -3,8 +3,19 @@
 let _durationTimer=null;
 let _completionSessionId=null;
 // Double-progression rule: below this rep count, nudge reps up at the same weight;
-// at/above it, nudge weight up instead.
+// at/above it, nudge weight up instead. RPE (if logged) overrides this: an easy set
+// (RPE ≤7, roughly 3+ reps in reserve) pushes weight regardless of rep count, and a
+// near-max set (RPE ≥9.5) suggests holding rather than pushing further.
 const REP_CEILING=10;
+function suggestProgression(weight,reps,rpe,inc){
+  const r=parseFloat(rpe);
+  if(!isNaN(r)){
+    if(r<=7) return {type:'weight',value:weight+inc};
+    if(r>=9.5) return {type:'hold',value:null};
+  }
+  if(reps>0&&reps<REP_CEILING) return {type:'reps',value:reps+1};
+  return {type:'weight',value:weight+inc};
+}
 let draftSession=null;
 let _lastSession=null;
 // Superset grouping: exercises chained via linkedToNext form a group, labeled A1/A2/…, B1/B2/…
@@ -264,7 +275,7 @@ function renderExerciseRows(lastSession){
     if(lastEx&&lastEx.sets.length){
       const chips=lastEx.sets.filter(s=>s.weight||s.reps).map(s=>{
         const isPR=allPRs[ex.name]&&parseFloat(s.weight)>=allPRs[ex.name].weight&&isSetDone(s);
-        return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${isPR?' 🏆':''}</span>`;
+        return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${s.rpe?' @'+s.rpe:''}${isPR?' 🏆':''}</span>`;
       }).join('');
       if(chips) lastHTML=`<div class="last-set-row">${chips}</div>`;
       if(lastEx.variantNote){
@@ -273,13 +284,14 @@ function renderExerciseRows(lastSession){
         const doneSets=lastEx.sets.filter(isSetDone);
         if(doneSets.length){
           const bestW=Math.max(...doneSets.map(s=>parseFloat(s.weight)||0));
-          const topReps=Math.max(...doneSets.filter(s=>parseFloat(s.weight)===bestW).map(s=>parseInt(s.reps)||0));
-          if(topReps>0&&topReps<REP_CEILING){
-            overloadHint=`<span class="overload-hint">↑ Try ${topReps+1} reps</span>`;
-          } else {
-            const inc=getWeightUnit()==='kg'?2.5:5;
-            overloadHint=`<span class="overload-hint">↑ Try ${bestW+inc} ${getWeightUnit()}</span>`;
-          }
+          const topSets=doneSets.filter(s=>parseFloat(s.weight)===bestW);
+          const topReps=Math.max(...topSets.map(s=>parseInt(s.reps)||0));
+          const topRpe=topSets.find(s=>parseInt(s.reps)===topReps)?.rpe;
+          const inc=getWeightUnit()==='kg'?2.5:5;
+          const sug=suggestProgression(bestW,topReps,topRpe,inc);
+          if(sug.type==='reps') overloadHint=`<span class="overload-hint">↑ Try ${sug.value} reps</span>`;
+          else if(sug.type==='weight') overloadHint=`<span class="overload-hint">↑ Try ${sug.value} ${getWeightUnit()}</span>`;
+          else overloadHint=`<span class="overload-hint" style="color:var(--text3)">≈ Hold — near max last time</span>`;
         }
       }
     }
@@ -365,13 +377,12 @@ function renderSets(ei){
     const lastR=parseInt(lastSet?.reps)||0;
     let nudge='';
     if(lastW>0&&!set.weight&&!set.warmup){
-      if(lastR>0&&lastR<REP_CEILING){
-        const nudgeR=lastR+1;
-        nudge=`<span class="overload-nudge" onclick="applyRepNudge(${ei},${si},${lastW},${nudgeR})" title="Same weight, try ${nudgeR} reps">↑${nudgeR}rep</span>`;
-      } else {
-        const nudgeW=lastW+inc;
-        nudge=`<span class="overload-nudge" onclick="applyOverloadNudge(${ei},${si},${nudgeW})" title="Try ${nudgeW} ${getWeightUnit()}">↑${nudgeW}</span>`;
-      }
+      const sug=suggestProgression(lastW,lastR,lastSet?.rpe,inc);
+      if(sug.type==='reps')
+        nudge=`<span class="overload-nudge" onclick="applyRepNudge(${ei},${si},${lastW},${sug.value})" title="Same weight, try ${sug.value} reps">↑${sug.value}rep</span>`;
+      else if(sug.type==='weight')
+        nudge=`<span class="overload-nudge" onclick="applyOverloadNudge(${ei},${si},${sug.value})" title="Try ${sug.value} ${getWeightUnit()}">↑${sug.value}</span>`;
+      // 'hold': that set was near-max last time — no productive nudge to show
     }
     const applyAll=sets.length>1&&set.weight&&!set.warmup
       ?`<span class="apply-all-btn" onclick="applyWeightToAllSets(${ei},${si})" title="Copy to all working sets">↓all</span>`
@@ -386,6 +397,9 @@ function renderSets(ei){
       <span class="set-x">×</span>
       <input class="set-input" type="text" inputmode="numeric" placeholder="reps"
         value="${set.reps}" oninput="updateSet(${ei},${si},'reps',this.value)">
+      ${set.warmup?'':`<span class="set-x" title="Rate of perceived exertion">@</span>
+      <input class="set-input set-rpe-input" type="text" inputmode="decimal" placeholder="RPE" title="Rate of perceived exertion (6–10) — how hard that set felt"
+        value="${set.rpe||''}" oninput="updateSet(${ei},${si},'rpe',this.value)">`}
       <button class="set-warmup-btn${set.warmup?' active':''}" onclick="toggleSetWarmup(${ei},${si})" title="${set.warmup?'Mark as working set':'Mark as warm-up set'}">W</button>
       ${sets.length>1?`<span class="add-set-btn" onclick="removeSet(${ei},${si})" style="color:var(--red);font-size:14px;padding:0 2px">×</span>`:''}`;
     container.appendChild(row);
@@ -477,6 +491,8 @@ function _tickRestTimer(){
   if(remaining<=0){
     clearInterval(_restTimerInterval);
     if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    playRestBeep();
+    notifyRestDone();
     if(countEl){ countEl.textContent='Go!'; countEl.style.color='var(--green)'; }
     setTimeout(()=>{ skipRestTimer(); if(countEl) countEl.style.color=''; },2500);
   }
@@ -485,6 +501,31 @@ function skipRestTimer(){
   clearInterval(_restTimerInterval);
   const el=document.getElementById('rest-timer');
   if(el) el.style.display='none';
+}
+// Audible cue — always plays, mirrors the existing unconditional vibrate() above.
+// No audio asset needed: a short synthesized beep via Web Audio.
+function playRestBeep(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type='sine'; osc.frequency.value=880;
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    osc.start(); osc.stop(ctx.currentTime+0.4);
+  }catch(e){}
+}
+// OS-level notification for when rest ends while the tab is backgrounded/locked —
+// only fires if notification permission is already granted (never prompts from here;
+// that stays in the existing Prefs "Enable reminders" flow) and the page isn't visible,
+// so it doesn't double up with the on-screen "Go!" state when you're already looking at it.
+async function notifyRestDone(){
+  if(!document.hidden||typeof Notification==='undefined'||Notification.permission!=='granted') return;
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification('Rest over 💪',{body:'Time for your next set.',tag:'rest-timer',renotify:true});
+  }catch(e){}
 }
 function toggleSetWarmup(ei,si){
   const s=draftSession.exercises[ei].sets[si];

@@ -44,7 +44,7 @@ function renderHistory(){
               ${ex.sets.map((s,i)=>{
                 const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&isWorkingSet(s);
                 return`<span class="hist-set-chip ${isSetDone(s)?'done':''} ${s.warmup?'warmup':''} ${isPR?'pr':''}">
-                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${s.warmup?' W':''}${isPR?' 🏆':''}
+                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${s.rpe?' @'+s.rpe:''}${s.warmup?' W':''}${isPR?' 🏆':''}
                 </span>`;
               }).join('')}
             </div>

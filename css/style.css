@@ -176,6 +176,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .set-input:focus{outline:none;border-color:var(--accent)}
 .set-input::placeholder{color:var(--text3)}
 .set-x{font-size:11px;color:var(--text3)}
+.set-rpe-input{width:38px}
 .overload-nudge{font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;cursor:pointer;opacity:.65;white-space:nowrap;user-select:none;transition:opacity .15s}
 .overload-nudge:hover{opacity:1}
 .apply-all-btn{font-size:10px;color:var(--text3);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;cursor:pointer;opacity:.6;white-space:nowrap;user-select:none;transition:opacity .15s}
@@ -366,6 +367,7 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
   /* ── Set inputs: larger touch targets ── */
   .set-input{width:76px;padding:9px 8px;font-size:16px}
+  .set-rpe-input{width:52px}
   .set-row{gap:10px;margin-bottom:6px}
   .set-label{font-size:13px;width:28px}
   .add-set-btn{font-size:13px;padding:6px 0;display:inline-block}

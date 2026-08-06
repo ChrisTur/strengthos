@@ -627,21 +627,43 @@ const WEEK_DEFAULTS={
   3:[0,REST_DAY,1,REST_DAY,2,REST_DAY,REST_DAY],
 };
 
+// Swap out exercises the user's equipment can't do for an equivalent from the same
+// muscle group (matching Compound/Isolation type where possible). Only ever applied to
+// default template days — a day the user has explicitly customized (getCustomDay) is
+// left untouched, since that's their own deliberate choice.
+function filterDayForEquipment(day,availEquip){
+  if(!day||!Array.isArray(day.exercises)||!availEquip) return day;
+  const usedNames=new Set(day.exercises.map(e=>e.name));
+  let changed=false;
+  const exercises=day.exercises.map(ex=>{
+    const info=getExerciseInfo(ex.name);
+    if(!info||availEquip.includes(info.equipment)) return ex;
+    const muscle=getExerciseMuscle(ex.name);
+    const pool=(EXERCISE_LIBRARY[muscle]||[]).filter(e=>availEquip.includes(e.equipment)&&!usedNames.has(e.name));
+    const sub=pool.find(e=>e.type===info.type)||pool[0];
+    if(!sub) return ex; // no equipment-compatible substitute in this muscle group — leave as-is
+    usedNames.delete(ex.name); usedNames.add(sub.name); changed=true;
+    return {...ex,name:sub.name};
+  });
+  return changed?{...day,exercises}:day;
+}
 function getActiveDays(){
   // AI-generated plan takes priority when present
   const ai=getAIPlan();
   if(ai&&Array.isArray(ai.days)&&ai.days.length) return ai.days;
   const dpw=getDaysPerWeek(),goal=getGoal();
+  const avail=getAvailableEquipment();
+  const applyOverrides=base=>base.map((d,i)=>getCustomDay(i)||filterDayForEquipment(d,avail));
   // Hybrid goal → dedicated strength+cardio rotation
   if(goal==='hybrid'){
     const base=HYBRID_PROGRAMS[dpw]||HYBRID_PROGRAMS[4];
-    return base.map((d,i)=>getCustomDay(i)||d);
+    return applyOverrides(base);
   }
   // Pure cardio goal → use dedicated cardio-only schedule
   if(goal==='cardio'){
     const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);
     const cpKey=CARDIO_PROGRAMS[dpw]?dpw:cpKeys.reduce((a,b)=>Math.abs(b-dpw)<Math.abs(a-dpw)?b:a);
-    return CARDIO_PROGRAMS[cpKey].map((d,i)=>getCustomDay(i)||d);
+    return applyOverrides(CARDIO_PROGRAMS[cpKey]);
   }
   let base;
   if(PROGRAMS[dpw]) base=PROGRAMS[dpw];
@@ -651,7 +673,7 @@ function getActiveDays(){
   // Fat loss goal with a frequency-based program → inject a dedicated cardio day
   if(goal==='fat_loss'&&PROGRAMS[dpw]) base=[...base,getCardioDay()];
   // Apply per-slot custom day overrides
-  return base.map((d,i)=>getCustomDay(i)||d);
+  return applyOverrides(base);
 }
 function getActiveDay(idx){ return getActiveDays()[idx]||null }
 
