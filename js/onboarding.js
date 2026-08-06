@@ -1,9 +1,7 @@
 // ── Onboarding flow, goal/prefs modals, AI plan generation ──────────────────────────────────────────────
 
 let _selectedGoal='';
-function openGoalModal(){
-  closeProfileDropdown();
-  _selectedGoal=getGoal();
+function renderGoalGrid(){
   const grid=document.getElementById('goal-grid');
   grid.innerHTML=GOALS.map(g=>`
     <button class="goal-opt${_selectedGoal===g.id?' selected':''}" onclick="selectGoalOpt('${g.id}')">
@@ -11,19 +9,16 @@ function openGoalModal(){
       <span class="go-label">${g.label}</span>
       <span class="go-desc">${g.desc}</span>
     </button>`).join('');
+}
+function openGoalModal(){
+  closeProfileDropdown();
+  _selectedGoal=getGoal();
+  renderGoalGrid();
   document.getElementById('goal-modal').style.display='flex';
 }
 function selectGoalOpt(id){
   _selectedGoal=id;
-  document.querySelectorAll('.goal-opt').forEach(b=>b.classList.toggle('selected',b.onclick.toString().includes("'"+id+"'")));
-  // simpler re-render
-  const grid=document.getElementById('goal-grid');
-  grid.innerHTML=GOALS.map(g=>`
-    <button class="goal-opt${_selectedGoal===g.id?' selected':''}" onclick="selectGoalOpt('${g.id}')">
-      <span class="go-icon">${g.icon}</span>
-      <span class="go-label">${g.label}</span>
-      <span class="go-desc">${g.desc}</span>
-    </button>`).join('');
+  renderGoalGrid();
 }
 function saveGoal(){ if(_selectedGoal) setGoal(_selectedGoal); closeGoalModal(); renderProfileSelector(); if(currentView()==='dashboard') renderDashboard(); }
 function closeGoalModal(){ document.getElementById('goal-modal').style.display='none' }
@@ -224,10 +219,12 @@ function renderObConfigure(){
     renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
     const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
   } else {
-    // Non-custom: confirm equipment + optionally adjust days
-    const defaultEquip=p.id==='new_lifter'||p.id==='general_health'||p.id==='build_muscle'||p.id==='fat_loss'||p.id==='lift_and_run'?[...ALL_EQUIPMENT]:['Dumbbell','Bodyweight'];
+    // Non-custom: confirm equipment + adjust days. Default to every equipment type checked —
+    // the toggle grid is fully editable either way, so there's no good reason to start any
+    // persona narrower than another (previously only "Pure Cardio" defaulted to Dumbbell+
+    // Bodyweight, which didn't even match what cardio exercises actually use).
+    const defaultEquip=[...ALL_EQUIPMENT];
     _obEquipment=[...defaultEquip];
-    const showDPW=(p.type==='cardio'||p.type==='hybrid');
     el.innerHTML=`
       <div class="ob-persona-confirm-header" style="border-left:3px solid ${p.color};padding-left:12px;margin-bottom:16px">
         <div style="font-size:20px;margin-bottom:2px">${p.icon} <strong>${p.headline}</strong></div>
@@ -235,14 +232,12 @@ function renderObConfigure(){
       </div>
       <p class="ob-sub" style="text-align:left;margin-bottom:8px">What equipment do you have access to?</p>
       <div class="ob-equip-grid">${ALL_EQUIPMENT.map(e=>`<button class="ob-equip-btn${defaultEquip.includes(e)?' active':''}" data-eq="${e}" onclick="obToggleEquip(this)">${e}</button>`).join('')}</div>
-      ${showDPW?`<p class="ob-sub" style="text-align:left;margin-top:16px;margin-bottom:6px">Sessions per week</p>
+      <p class="ob-sub" style="text-align:left;margin-top:16px;margin-bottom:6px">Sessions per week</p>
       <div class="dpw-row" id="ob-dpw-row"></div>
-      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`:''}`;
+      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`;
     if(confBtn) confBtn.disabled=false;
-    if(showDPW){
-      renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
-      const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
-    }
+    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+    const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
   }
 }
 function obToggleEquip(btn){
