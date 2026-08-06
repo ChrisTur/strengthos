@@ -3,12 +3,12 @@
 // ── Export / Import ───────────────────────────────────────────────────────────
 function exportCSV(){
   const sessions=loadSessions(); if(!sessions.length){alert('No sessions to export.');return}
-  const rows=[['Date','Day','Exercise','Set',`Weight (${getWeightUnit()})`,'Reps','Completed','Session Notes']];
+  const rows=[['Date','Day','Exercise','Set',`Weight (${getWeightUnit()})`,'Reps','RPE','Completed','Session Notes']];
   sessions.forEach(s=>{
     const day=(s.dayIdx>=0?(getActiveDay(s.dayIdx)||DAYS[s.dayIdx]):null)||{name:'Unknown'};
     s.exercises.forEach(ex=>{
       ex.sets.forEach((set,si)=>{
-        rows.push([s.date,day.name,ex.name,si+1,set.weight,set.reps,isSetDone(set)?'Yes':'No',s.notes||'']);
+        rows.push([s.date,day.name,ex.name,si+1,set.weight,set.reps,set.rpe||'',isSetDone(set)?'Yes':'No',s.notes||'']);
       });
     });
   });
