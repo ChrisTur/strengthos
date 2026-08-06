@@ -1,5 +1,8 @@
-const CACHE = 'strengthos-v1';
-const ASSETS = ['/', '/index.html', '/css/style.css', '/js/app.js', '/js/data.js', '/js/storage.js', '/js/api.js'];
+const CACHE = 'strengthos-v2';
+const ASSETS = ['/', '/index.html', '/css/style.css', '/js/data.js', '/js/storage.js', '/js/api.js',
+  '/js/profile.js', '/js/onboarding.js', '/js/exercise-picker.js', '/js/week-plan.js',
+  '/js/workout-session.js', '/js/dashboard.js', '/js/progress.js', '/js/history.js',
+  '/js/import-export.js', '/js/app.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{})));
