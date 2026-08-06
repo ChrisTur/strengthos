@@ -55,8 +55,8 @@ function renderProfileDropdown(){
   profiles.forEach(name=>{
     const div=document.createElement('div');
     div.className='profile-option'+(name===active?' current':'');
-    const safe=name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    div.innerHTML=`<span>${name}${name===active?' ✓':''}</span>
+    const safe=escapeJsAttr(name);
+    div.innerHTML=`<span>${escapeHtml(name)}${name===active?' ✓':''}</span>
       <span style="display:flex;gap:4px">
         <button class="profile-del-btn" onclick="event.stopPropagation();openRenameModal('${safe}')" title="Rename" style="opacity:0">✎</button>
         ${profiles.length>1?`<button class="profile-del-btn" onclick="event.stopPropagation();deleteProfile('${safe}')" title="Delete">✕</button>`:''}

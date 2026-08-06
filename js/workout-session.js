@@ -94,7 +94,7 @@ function renderDetail(){
   const panel=document.getElementById('detail-panel');
   const activeDays=getActiveDays();
   const workoutOpts=`<option value="${REST_DAY}"${activeDayIdx===REST_DAY?' selected':''}>Rest / Off</option>`
-    +activeDays.map((d,i)=>`<option value="${i}"${i===activeDayIdx?' selected':''}>${d.dow} — ${d.name}</option>`).join('');
+    +activeDays.map((d,i)=>`<option value="${i}"${i===activeDayIdx?' selected':''}>${d.dow} — ${escapeHtml(d.name)}</option>`).join('');
 
   if(activeDayIdx===REST_DAY){
     panel.innerHTML=`
@@ -137,7 +137,7 @@ function renderDetail(){
   const note=getDayNote(activeDayIdx);
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
   const heroUrl=typeof getWorkoutImageUrl==='function'?getWorkoutImageUrl(day):null;
-  const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${day.name}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
+  const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${escapeHtml(day.name)}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
 
   panel.innerHTML=`
     ${heroHTML}
@@ -145,7 +145,7 @@ function renderDetail(){
     <div class="detail-header">
       <div>
         <div class="detail-title-wrap" onclick="startDayRename(${activeDayIdx})" title="Click to rename this day">
-          <span class="detail-title" id="detail-day-title">${day.name}</span>
+          <span class="detail-title" id="detail-day-title">${escapeHtml(day.name)}</span>
           <span class="rename-hint">✎</span>
         </div>
         <div class="detail-sub" id="detail-sub">${draftSession.exercises.length} exercise${draftSession.exercises.length!==1?'s':''} · ~${estimateWorkoutMinutes()} min${lastSession?` · Last: ${formatDate(lastSession.date)}`:''}</div>
@@ -174,12 +174,12 @@ function renderDetail(){
       <button class="add-ex-btn" onclick="openAddExModal()">+ Add Exercise</button>
     </div>
     <div class="note-label">📋 Day plan — same every time you do this day</div>
-    <textarea class="note-edit" id="day-note-ta" rows="2" placeholder="Day notes — cues, focus areas, target weights…" oninput="saveDayNoteFromUI(${activeDayIdx},this.value)">${note}</textarea>
+    <textarea class="note-edit" id="day-note-ta" rows="2" placeholder="Day notes — cues, focus areas, target weights…" oninput="saveDayNoteFromUI(${activeDayIdx},this.value)">${escapeHtml(note)}</textarea>
     <div class="session-notes-wrap">
       <div class="note-label">📝 This session — ${formatDate(draftSession.date)}</div>
       <textarea class="session-notes" id="session-notes"
         placeholder="Session notes (how you felt, PRs, adjustments…)"
-        oninput="draftSession.notes=this.value;saveDraft(activeDate,draftSession)">${draftSession.notes}</textarea>
+        oninput="draftSession.notes=this.value;saveDraft(activeDate,draftSession)">${escapeHtml(draftSession.notes)}</textarea>
     </div>
     <div class="session-bar">
       <div>
@@ -203,7 +203,7 @@ function startDayRename(dayIdx){
   if(!wrap) return;
   const cur=(getActiveDay(dayIdx)||DAYS[dayIdx]||{}).name||'';
   wrap.outerHTML=`<input class="detail-title-input" id="day-rename-input"
-    value="${cur.replace(/"/g,'&quot;')}"
+    value="${escapeHtml(cur)}"
     onblur="commitDayRename(this,${dayIdx})"
     onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this._cancel=true;this.blur()}">`;
   const inp=document.getElementById('day-rename-input');
@@ -279,7 +279,7 @@ function renderExerciseRows(lastSession){
       }).join('');
       if(chips) lastHTML=`<div class="last-set-row">${chips}</div>`;
       if(lastEx.variantNote){
-        lastHTML+=`<div class="variant-flag" title="${lastEx.variantNote.replace(/"/g,'&quot;')}">⚠️ different setup last time</div>`;
+        lastHTML+=`<div class="variant-flag" title="${escapeHtml(lastEx.variantNote)}">⚠️ different setup last time</div>`;
       } else {
         const doneSets=lastEx.sets.filter(isSetDone);
         if(doneSets.length){
@@ -300,7 +300,7 @@ function renderExerciseRows(lastSession){
       ?`<span style="font-size:10px;color:var(--accent);margin-top:3px;display:block">${GOALS.find(g=>g.id===goal)?.icon||''} Goal exercise</span>`
       :planTag;
 
-    const safeName=ex.name.replace(/'/g,"\\'");
+    const safeName=escapeJsAttr(ex.name);
     const superset=supersetLabels[ei];
     const tr=document.createElement('tr');
     tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'')+(superset?' superset-row':'');
@@ -318,11 +318,11 @@ function renderExerciseRows(lastSession){
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
           <div>
             ${superset?`<span class="superset-badge" style="background:${superset.color}" title="Part of a superset — logged back-to-back with no rest until the group is done">${superset.label}</span>`:''}
-            <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${ex.name}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
+            <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${escapeHtml(ex.name)}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
               ${swapTag}
 <button style="background:none;border:none;cursor:pointer;padding:0;font-size:14px" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
-<button class="variant-btn${ex.variantNote?' active':''}" onclick="markExerciseVariant(${ei})" title="${ex.variantNote?('Different setup: '+ex.variantNote.replace(/"/g,'&quot;')):'Flag a different setup today (e.g. different machine) — click to add a note'}">${ex.variantNote?'⚠️':'🔀'}</button>
+<button class="variant-btn${ex.variantNote?' active':''}" onclick="markExerciseVariant(${ei})" title="${ex.variantNote?('Different setup: '+escapeHtml(ex.variantNote)):'Flag a different setup today (e.g. different machine) — click to add a note'}">${ex.variantNote?'⚠️':'🔀'}</button>
 ${ei<draftSession.exercises.length-1?`<button class="superset-btn${ex.linkedToNext?' active':''}" onclick="toggleSuperset(${ei})" title="${ex.linkedToNext?'Unlink from next exercise':'Superset with next exercise — no rest until the pair is done'}">🔗</button>`:''}
             </div>
           </div>
@@ -628,7 +628,9 @@ function saveSession(){
   const session=JSON.parse(JSON.stringify(draftSession));
   // Mark every set that has data as done so DB/history are consistent
   session.exercises.forEach(ex=>ex.sets.forEach(s=>{ s.done=isSetDone(s); }));
-  session.id=Date.now();
+  // Random suffix on top of the timestamp so two sessions (same or different users)
+  // saved in the same millisecond can't collide on this globally-unique id.
+  session.id=Date.now()*1000+Math.floor(Math.random()*1000);
   session.endedAt=Date.now();
   session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
   sessions.push(session); saveSessions(sessions);
@@ -660,7 +662,7 @@ function showCompletionSummary(session,prevPRs){
   const day=getActiveDay(session.dayIdx)||{name:'Workout'};
   _completionSessionId=session.id;
   const prsHTML=newPRs.length
-    ?`<div class="completion-prs"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">New PRs 🏆</div>${newPRs.map(p=>`<div class="completion-pr-chip">${p.name} — ${p.weight} ${getWeightUnit()} × ${p.reps}</div>`).join('')}</div>`
+    ?`<div class="completion-prs"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">New PRs 🏆</div>${newPRs.map(p=>`<div class="completion-pr-chip">${escapeHtml(p.name)} — ${p.weight} ${getWeightUnit()} × ${p.reps}</div>`).join('')}</div>`
     :'';
   const moodEmojis=[{v:'great',e:'💪'},{v:'good',e:'😊'},{v:'tired',e:'😴'},{v:'rough',e:'😓'}];
   const moodHTML=`<div class="mood-section">
@@ -669,7 +671,7 @@ function showCompletionSummary(session,prevPRs){
   </div>`;
   document.getElementById('completion-content').innerHTML=`
     <div style="font-size:44px;margin-bottom:6px">${newPRs.length?'🏆':'✅'}</div>
-    <div style="font-size:17px;font-weight:700;margin-bottom:3px">${day.name} Done!</div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:3px">${escapeHtml(day.name)} Done!</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:12px">${new Date().toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'})}</div>
     <div class="completion-stats">
       <div><div class="completion-stat-val">${doneSets}/${totalSets}</div><div class="completion-stat-lbl">Sets Done</div></div>

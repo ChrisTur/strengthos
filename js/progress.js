@@ -51,11 +51,11 @@ function renderProgressResults(){
           <div class="pr-group-label">${mg}</div>
           <table class="pr-table"><thead><tr><th>Exercise</th><th>Best Set</th><th>Est. 1RM</th><th>Date</th><th></th></tr></thead>
           <tbody>${rows.map(r=>`<tr>
-            <td><button class="pr-ex-link" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')"><strong>${r.name}</strong></button></td>
+            <td><button class="pr-ex-link" onclick="openProgressModal('${escapeJsAttr(r.name)}')"><strong>${escapeHtml(r.name)}</strong></button></td>
             <td class="pr-weight">${r.weight} ${unit} × ${r.reps||'—'}</td>
             <td class="pr-orm">${r.e1rm} ${unit}</td>
             <td style="color:var(--text3);font-size:11px">${formatDateShort(r.date)}</td>
-            <td><button class="pr-chart-btn" onclick="openProgressModal('${r.name.replace(/'/g,"\\'")}')">📈</button></td>
+            <td><button class="pr-chart-btn" onclick="openProgressModal('${escapeJsAttr(r.name)}')">📈</button></td>
           </tr>`).join('')}</tbody></table>
         </div>`;
       }).join('');
@@ -69,13 +69,13 @@ function renderProgressResults(){
     const e1rm=pr?Math.round(parseFloat(pr.weight)*(1+(parseInt(pr.reps)||0)/30)*4)/4:null;
     const muscle=getExerciseMuscle(name)||(_progressMuscle||'');
     const color=MUSCLE_COLORS[muscle]||'#888';
-    const safe=name.replace(/'/g,"\\'");
+    const safe=escapeJsAttr(name);
     const trend=history.length>=2?(history[history.length-1].e1rm>history[0].e1rm?'↑':'→'):'';
     const trendColor=trend==='↑'?'var(--green)':'var(--text3)';
     return`<div class="prog-ex-card" onclick="openProgressModal('${safe}')">
       <div class="prog-ex-card-header">
         <div style="flex:1;min-width:0">
-          <div class="prog-ex-card-name">${name}</div>
+          <div class="prog-ex-card-name">${escapeHtml(name)}</div>
           <div class="prog-ex-card-meta">
             <span style="color:${color};font-size:10px;font-weight:700;text-transform:uppercase">${muscle}</span>
             ${pr?`<span style="color:var(--text3)">·</span><span>PR: <strong>${pr.weight} ${unit} × ${pr.reps}</strong></span>`:''}

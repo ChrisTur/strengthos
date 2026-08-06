@@ -64,3 +64,10 @@ function apiSyncSettings(patch) {
     body: JSON.stringify(patch),
   }).catch(() => {});
 }
+
+// Fire-and-forget — logout should feel instant regardless of network; this just
+// revokes the token server-side in the background so it can't be replayed later.
+function apiLogout() {
+  if (!getAuthToken()) return;
+  fetch(API + '/auth-logout', { method: 'POST', headers: _headers() }).catch(() => {});
+}
