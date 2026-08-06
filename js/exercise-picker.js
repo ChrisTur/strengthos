@@ -163,8 +163,8 @@ function renderCustomDayModal(){
   }
   list.innerHTML=_customDayExercises.map((ex,i)=>`
     <div class="custom-day-row">
-      <span class="custom-day-name-txt">${ex.name}</span>
-      <input class="custom-day-struct" value="${ex.structure}" placeholder="e.g. 3×10"
+      <span class="custom-day-name-txt">${escapeHtml(ex.name)}</span>
+      <input class="custom-day-struct" value="${escapeHtml(ex.structure)}" placeholder="e.g. 3×10"
         oninput="_customDayExercises[${i}].structure=this.value">
       <div style="display:flex;gap:4px;flex-shrink:0">
         <button class="cday-btn" onclick="moveCustomEx(${i},-1)" ${i===0?'disabled':''}>↑</button>

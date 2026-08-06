@@ -1,7 +1,7 @@
 // POST /api/auth-register  { name, email, password }
 const bcrypt = require('bcryptjs');
 const { getPool }  = require('./_db');
-const { signToken, ok, err } = require('./_auth');
+const { createSession, ok, err } = require('./_auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, body: '' };
@@ -28,6 +28,6 @@ exports.handler = async (event) => {
     [user.id]
   );
 
-  const token = signToken(user.id);
+  const token = await createSession(user.id);
   return ok({ token, user: { id: user.id, name: name.trim(), email: email.toLowerCase().trim() } }, 201);
 };

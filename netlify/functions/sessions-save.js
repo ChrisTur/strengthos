@@ -16,6 +16,10 @@ exports.handler = async (event) => {
   if (!session || !session.id) return err('session required');
 
   const pool = getPool();
+  // The WHERE guard is load-bearing: `id` is a client-generated timestamp, not scoped
+  // per-user, so without it any authenticated user could overwrite another user's
+  // session by guessing/colliding on an id. This makes a cross-owner conflict a silent
+  // no-op instead of an overwrite.
   await pool.query(
     `INSERT INTO workout_sessions
        (id, user_id, date, day_idx, exercises, notes, started_at, ended_at, duration)
@@ -24,7 +28,8 @@ exports.handler = async (event) => {
        exercises  = EXCLUDED.exercises,
        notes      = EXCLUDED.notes,
        ended_at   = EXCLUDED.ended_at,
-       duration   = EXCLUDED.duration`,
+       duration   = EXCLUDED.duration
+     WHERE workout_sessions.user_id = EXCLUDED.user_id`,
     [
       session.id, user.id, session.date, session.dayIdx ?? 0,
       JSON.stringify(session.exercises ?? []),

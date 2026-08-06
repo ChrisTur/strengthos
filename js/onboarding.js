@@ -74,8 +74,8 @@ function renderPrefsModal(){
   } else {
     el.innerHTML=disliked.map(name=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:13px">${name}</span>
-        <button class="btn btn-sm btn-green" onclick="restoreExercise('${name.replace(/'/g,"\\'")}')">Restore</button>
+        <span style="font-size:13px">${escapeHtml(name)}</span>
+        <button class="btn btn-sm btn-green" onclick="restoreExercise('${escapeJsAttr(name)}')">Restore</button>
       </div>`).join('');
   }
 }

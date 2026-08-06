@@ -1,3 +1,26 @@
+// ── HTML escaping ────────────────────────────────────────────────────────────
+// User-controlled free text (exercise/day/profile names, notes) is rendered via
+// innerHTML template strings throughout the app — always pass it through this
+// before interpolating, or it's a stored-XSS vector.
+function escapeHtml(str){
+  if(str==null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+// For user text embedded as a single-quoted JS string literal inside an onclick="..."
+// (or similar) HTML attribute. Needs escaping in both the JS-string layer (so a quote
+// in the text can't terminate the string early) AND the surrounding HTML-attribute
+// layer (so the browser's attribute-value HTML-decoding doesn't undo the JS escaping) —
+// in that order. A plain escapeHtml() alone is not sufficient here.
+function escapeJsAttr(str){
+  const jsEscaped=String(str==null?'':str).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return escapeHtml(jsEscaped);
+}
+
 // ── Colours ─────────────────────────────────────────────────────────────────
 const CORAL='#e07b39',PURPLE='#8b6fd4',BLUE='#5b9bd5',
       GREEN='#5aaa5a',AMBER='#c9963c',GRAY='#888';
