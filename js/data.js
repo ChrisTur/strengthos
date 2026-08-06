@@ -965,13 +965,13 @@ const EXERCISE_LIBRARY={
     {name:'Neutral-Grip Pull-Up',           type:'Compound',  equipment:'Bodyweight',targets:'Lats + Brachialis',     cue:'Palms facing each other; easiest on wrists, strong lat stretch'},
     // ── Deadlift / hinge ──────────────────────────────────────────────────────
     {name:'Deadlift',                       type:'Compound',  equipment:'Barbell',   targets:'Full Posterior Chain',  cue:'Bar over mid-foot; brace, hinge, push floor away — don\'t pull'},
-    {name:'Romanian Deadlift',              type:'Compound',  equipment:'Barbell',   targets:'Hamstrings + Lower Back',cue:'Soft knees, push hips back; bar skims legs, feel hamstring stretch'},
+    {name:'Romanian Deadlift (Back Focus)', type:'Compound',  equipment:'Barbell',   targets:'Hamstrings + Lower Back',cue:'Soft knees, push hips back; bar skims legs, feel hamstring stretch'},
     {name:'Rack Pull',                      type:'Compound',  equipment:'Barbell',   targets:'Upper Back / Traps',    cue:'Bar starts at knee height; overloads upper back and trap engagement'},
     // ── Isolation ─────────────────────────────────────────────────────────────
     {name:'Straight-Arm Pulldown',          type:'Isolation', equipment:'Cable',     targets:'Lats (long head)',      cue:'Arms straight, hinge at shoulder; best lat stretch-to-squeeze exercise'},
     {name:'Face Pull',                      type:'Isolation', equipment:'Cable',     targets:'Rear Delts + Traps',    cue:'Cable at face height; pull to forehead, externally rotate at end'},
     {name:'Hyperextension',                 type:'Compound',  equipment:'Bodyweight',targets:'Lower Back + Glutes',   cue:'Controlled; don\'t hyperextend the lumbar — stop at neutral'},
-    {name:'Good Morning',                   type:'Compound',  equipment:'Barbell',   targets:'Lower Back + Hamstrings',cue:'Bar on upper back; hinge until back is ~45°, feel hamstring load'},
+    {name:'Good Morning (Back Focus)',      type:'Compound',  equipment:'Barbell',   targets:'Lower Back + Hamstrings',cue:'Bar on upper back; hinge until back is ~45°, feel hamstring load'},
     // ── Additional back ───────────────────────────────────────────────────────
     {name:'Chest-Supported Row',            type:'Compound',  equipment:'Dumbbell',  targets:'Mid Back (strict)',     cue:'Chest flat on incline bench; eliminates lower back — pure back row'},
     {name:'Landmine Row',                   type:'Compound',  equipment:'Barbell',   targets:'Lats + Mid Back',       cue:'Hinge and row the sleeve end; elbow tracks close to body'},
@@ -981,7 +981,7 @@ const EXERCISE_LIBRARY={
     {name:'Trap Bar Deadlift',              type:'Compound',  equipment:'Barbell',   targets:'Full Posterior Chain',  cue:'Neutral grip handles; more quad-friendly than conventional deadlift'},
     {name:'Deficit Deadlift',               type:'Compound',  equipment:'Barbell',   targets:'Hamstrings + Lower Back',cue:'Stand on plate 1–2″; increases ROM at the bottom for hamstring stretch'},
     {name:'Banded Pull-Apart',              type:'Isolation', equipment:'Bodyweight',targets:'Rear Delts + Traps',    cue:'Arms straight; pull band to chest with control — great for posture'},
-    {name:'Cable Pull-Through',             type:'Compound',  equipment:'Cable',     targets:'Glutes + Hamstrings',   cue:'Hinge not squat; let hips drive forward, arms stay straight'},
+    {name:'Cable Pull-Through (Back Focus)',type:'Compound',  equipment:'Cable',     targets:'Glutes + Hamstrings',   cue:'Hinge not squat; let hips drive forward, arms stay straight'},
   ],
   Shoulders:[
     // ── Press ─────────────────────────────────────────────────────────────────
@@ -992,7 +992,7 @@ const EXERCISE_LIBRARY={
     {name:'Arnold Press',             type:'Compound',  equipment:'Dumbbell'},
     {name:'Z-Press',                  type:'Compound',  equipment:'Barbell'},
     {name:'Push Press',               type:'Compound',  equipment:'Barbell'},
-    {name:'Landmine Press',           type:'Compound',  equipment:'Barbell'},
+    {name:'Landmine Press (Shoulder Focus)', type:'Compound',  equipment:'Barbell'},
     {name:'Kettlebell Press',         type:'Compound',  equipment:'Equipment'},
     {name:'Bradford Press',           type:'Compound',  equipment:'Barbell'},
     {name:'Behind-the-Neck Press',    type:'Compound',  equipment:'Barbell'},
@@ -1016,7 +1016,6 @@ const EXERCISE_LIBRARY={
     {name:'Plate Front Raise',        type:'Isolation', equipment:'Barbell'},
     {name:'Upright Row',              type:'Compound',  equipment:'Barbell'},
     {name:'Dumbbell Upright Row',     type:'Compound',  equipment:'Dumbbell'},
-    {name:'Barbell Shrug',            type:'Isolation', equipment:'Barbell'},
     {name:'Shoulder External Rotation',type:'Isolation',equipment:'Cable'},
   ],
   Biceps:[
@@ -1059,7 +1058,7 @@ const EXERCISE_LIBRARY={
     {name:'Single-Arm Pushdown',        type:'Isolation', equipment:'Cable'},
     {name:'Reverse-Grip Pushdown',      type:'Isolation', equipment:'Cable'},
     {name:'Straight-Bar Pushdown',      type:'Isolation', equipment:'Cable'},
-    {name:'Cable Kickback',             type:'Isolation', equipment:'Cable'},
+    {name:'Cable Tricep Kickback',      type:'Isolation', equipment:'Cable'},
     {name:'Lying Cable Extension',      type:'Isolation', equipment:'Cable'},
     // ── Overhead extensions ───────────────────────────────────────────────────
     {name:'Overhead Tricep Extension',  type:'Isolation', equipment:'Cable'},
@@ -1071,10 +1070,10 @@ const EXERCISE_LIBRARY={
     {name:'EZ-Bar Skull Crusher',       type:'Isolation', equipment:'Barbell'},
     {name:'Incline Skull Crusher',      type:'Isolation', equipment:'Barbell'},
     {name:'Dumbbell Skull Crusher',     type:'Isolation', equipment:'Dumbbell'},
-    {name:'Close-Grip Bench Press',     type:'Compound',  equipment:'Barbell'},
+    {name:'Close-Grip Bench Press (Tricep Focus)',     type:'Compound',  equipment:'Barbell'},
     {name:'Close-Grip EZ Press',        type:'Compound',  equipment:'Barbell'},
     {name:'JM Press',                   type:'Compound',  equipment:'Barbell'},
-    {name:'Floor Press',                type:'Compound',  equipment:'Barbell'},
+    {name:'Floor Press (Tricep Focus)', type:'Compound',  equipment:'Barbell'},
     {name:'Board Press',                type:'Compound',  equipment:'Barbell'},
     // ── Machine / dips ────────────────────────────────────────────────────────
     {name:'Tricep Dips (machine)',      type:'Compound',  equipment:'Machine'},
@@ -1105,10 +1104,12 @@ const EXERCISE_LIBRARY={
     {name:'Hang Clean',                 type:'Compound',  equipment:'Barbell'},
     {name:'Power Shrug',                type:'Compound',  equipment:'Barbell'},
     {name:'High Pull',                  type:'Compound',  equipment:'Barbell'},
+    {name:'Dumbbell High Pull',         type:'Compound',  equipment:'Dumbbell'},
+    {name:'Cable High Pull',            type:'Compound',  equipment:'Cable'},
     {name:'Snatch-Grip High Pull',      type:'Compound',  equipment:'Barbell'},
     {name:'Snatch-Grip Deadlift',       type:'Compound',  equipment:'Barbell'},
     // ── Heavy pulls ───────────────────────────────────────────────────────────
-    {name:'Rack Pull',                  type:'Compound',  equipment:'Barbell'},
+    {name:'Rack Pull (Trap Focus)',     type:'Compound',  equipment:'Barbell'},
     {name:'Farmer\'s Carry',           type:'Compound',  equipment:'Dumbbell'},
     {name:'Suitcase Carry',             type:'Compound',  equipment:'Dumbbell'},
     {name:'Trap Bar Farmer\'s Carry',  type:'Compound',  equipment:'Barbell'},
@@ -1128,7 +1129,7 @@ const EXERCISE_LIBRARY={
     {name:'Safety Bar Squat',         type:'Compound',  equipment:'Barbell'},
     {name:'Zercher Squat',            type:'Compound',  equipment:'Barbell'},
     {name:'Landmine Squat',           type:'Compound',  equipment:'Barbell'},
-    {name:'Good Morning',             type:'Compound',  equipment:'Barbell'},
+    {name:'Good Morning (Quad Emphasis)', type:'Compound',  equipment:'Barbell'},
     // ── Machine ───────────────────────────────────────────────────────────────
     {name:'Leg Press',                type:'Compound',  equipment:'Machine'},
     {name:'Leg Press — Narrow Stance',type:'Compound',  equipment:'Machine'},
@@ -1210,6 +1211,9 @@ const EXERCISE_LIBRARY={
     {name:'Leg Press Calf Raise',      type:'Isolation', equipment:'Machine'},
     {name:'Single-Leg Calf Raise',     type:'Isolation', equipment:'Bodyweight'},
     {name:'Donkey Calf Raise',         type:'Isolation', equipment:'Machine'},
+    {name:'Dumbbell Standing Calf Raise', type:'Isolation', equipment:'Dumbbell'},
+    {name:'Dumbbell Single-Leg Calf Raise', type:'Isolation', equipment:'Dumbbell'},
+    {name:'Cable Calf Raise',          type:'Isolation', equipment:'Cable'},
     {name:'Tibialis Raise',            type:'Isolation', equipment:'Bodyweight'},
     {name:'Smith Machine Calf Raise',  type:'Isolation', equipment:'Machine'},
     {name:'Hack Squat Calf Press',     type:'Isolation', equipment:'Machine'},
@@ -1290,7 +1294,7 @@ const EXERCISE_LIBRARY={
     {name:'Jump Rope',                 type:'Cardio',    equipment:'Equipment'},
     {name:'Burpees',                   type:'Cardio',    equipment:'Bodyweight'},
     {name:'High Knees',                type:'Cardio',    equipment:'Bodyweight'},
-    {name:'Jump Squat',                type:'Cardio',    equipment:'Bodyweight'},
+    {name:'Jump Squat (Cardio Focus)', type:'Cardio',    equipment:'Bodyweight'},
     {name:'Box Jump',                  type:'Cardio',    equipment:'Bodyweight'},
     {name:'Shadowboxing',              type:'Cardio',    equipment:'Bodyweight'},
     // ── Equipment / outdoor ───────────────────────────────────────────────────
@@ -1302,6 +1306,19 @@ const EXERCISE_LIBRARY={
     {name:'Sled Pull',                 type:'Cardio',    equipment:'Equipment'},
   ],
 };
+
+// Exercise names must be globally unique across EXERCISE_LIBRARY — getExerciseMuscle/
+// getExerciseInfo resolve by name alone, so a name reused in two groups silently
+// attributes volume/lookups to whichever group is declared first.
+(function validateExerciseLibraryNames(){
+  const seenIn={};
+  for(const [group,arr] of Object.entries(EXERCISE_LIBRARY)){
+    for(const e of arr){
+      if(seenIn[e.name]) console.warn(`EXERCISE_LIBRARY: "${e.name}" appears in both "${seenIn[e.name]}" and "${group}" — rename one (e.g. "${e.name} (${group} Focus)") to keep muscle attribution correct.`);
+      else seenIn[e.name]=group;
+    }
+  }
+})();
 
 function getExerciseMuscle(name){
   for(const [group,arr] of Object.entries(EXERCISE_LIBRARY)){

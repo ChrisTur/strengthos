@@ -645,9 +645,11 @@ function renderSwapGrid(){
   }
 
   if(isSearch) pool=pool.filter(e=>e.name.toLowerCase().includes(q)||(getExerciseMuscle(e.name)||'').toLowerCase().includes(q));
-  // Filter by user's available equipment
-  const avail=getAvailableEquipment();
-  pool=pool.filter(e=>avail.includes(e.equipment));
+  // Filter by user's available equipment — skip while actively searching so results aren't silently hidden
+  if(!isSearch){
+    const avail=getAvailableEquipment();
+    pool=pool.filter(e=>avail.includes(e.equipment));
+  }
 
   const grid=document.getElementById('swap-exercise-grid');
   if(!pool.length){
@@ -893,6 +895,9 @@ function confirmResetWeekTemplates(){
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const TODAY=new Date().toISOString().slice(0,10);
+// Double-progression rule: below this rep count, nudge reps up at the same weight;
+// at/above it, nudge weight up instead.
+const REP_CEILING=10;
 function _clearDraftsForDayIdx(dayIdx){ clearDraftsForDayIdx(dayIdx,TODAY); }
 let activeDate=TODAY;
 let activeDayIdx=0; // kept in sync via setActiveDate()
@@ -1102,8 +1107,10 @@ function renderDetail(){
     <div class="add-ex-wrap">
       <button class="add-ex-btn" onclick="openAddExModal()">+ Add Exercise</button>
     </div>
+    <div class="note-label">📋 Day plan — same every time you do this day</div>
     <textarea class="note-edit" id="day-note-ta" rows="2" placeholder="Day notes — cues, focus areas, target weights…" oninput="saveDayNoteFromUI(${activeDayIdx},this.value)">${note}</textarea>
     <div class="session-notes-wrap">
+      <div class="note-label">📝 This session — ${formatDate(draftSession.date)}</div>
       <textarea class="session-notes" id="session-notes"
         placeholder="Session notes (how you felt, PRs, adjustments…)"
         oninput="draftSession.notes=this.value;saveDraft(activeDate,draftSession)">${draftSession.notes}</textarea>
@@ -1209,11 +1216,20 @@ function renderExerciseRows(lastSession){
         return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${isPR?' 🏆':''}</span>`;
       }).join('');
       if(chips) lastHTML=`<div class="last-set-row">${chips}</div>`;
-      const doneSets=lastEx.sets.filter(isSetDone);
-      if(doneSets.length){
-        const bestW=Math.max(...doneSets.map(s=>parseFloat(s.weight)));
-        const inc=getWeightUnit()==='kg'?2.5:5;
-        overloadHint=`<span class="overload-hint">↑ Try ${bestW+inc} ${getWeightUnit()}</span>`;
+      if(lastEx.variantNote){
+        lastHTML+=`<div class="variant-flag" title="${lastEx.variantNote.replace(/"/g,'&quot;')}">⚠️ different setup last time</div>`;
+      } else {
+        const doneSets=lastEx.sets.filter(isSetDone);
+        if(doneSets.length){
+          const bestW=Math.max(...doneSets.map(s=>parseFloat(s.weight)||0));
+          const topReps=Math.max(...doneSets.filter(s=>parseFloat(s.weight)===bestW).map(s=>parseInt(s.reps)||0));
+          if(topReps>0&&topReps<REP_CEILING){
+            overloadHint=`<span class="overload-hint">↑ Try ${topReps+1} reps</span>`;
+          } else {
+            const inc=getWeightUnit()==='kg'?2.5:5;
+            overloadHint=`<span class="overload-hint">↑ Try ${bestW+inc} ${getWeightUnit()}</span>`;
+          }
+        }
       }
     }
 
@@ -1240,6 +1256,7 @@ function renderExerciseRows(lastSession){
             <div class="ex-action-row">
               ${swapTag}
 <button style="background:none;border:none;cursor:pointer;padding:0;font-size:14px" onclick="openProgressModal('${safeName}')" title="View progress chart">📈</button>
+<button class="variant-btn${ex.variantNote?' active':''}" onclick="markExerciseVariant(${ei})" title="${ex.variantNote?('Different setup: '+ex.variantNote.replace(/"/g,'&quot;')):'Flag a different setup today (e.g. different machine) — click to add a note'}">${ex.variantNote?'⚠️':'🔀'}</button>
             </div>
           </div>
           <div class="ex-controls">
@@ -1289,13 +1306,21 @@ function renderSets(ei){
   const lastEx=_lastSession?.exercises?.find(e=>e.name===ex.name);
   const inc=getWeightUnit()==='kg'?1.25:2.5;
   sets.forEach((set,si)=>{
-    const lastW=parseFloat(lastEx?.sets?.[si]?.weight)||0;
-    const nudgeW=lastW>0?lastW+inc:0;
-    const nudge=nudgeW>0&&!set.weight
-      ?`<span class="overload-nudge" onclick="applyOverloadNudge(${ei},${si},${nudgeW})" title="Try ${nudgeW} ${getWeightUnit()}">↑${nudgeW}</span>`
-      :'';
-    const applyAll=sets.length>1&&set.weight
-      ?`<span class="apply-all-btn" onclick="applyWeightToAllSets(${ei},${si})" title="Copy to all sets">↓all</span>`
+    const lastSet=lastEx?.variantNote?null:lastEx?.sets?.[si];
+    const lastW=parseFloat(lastSet?.weight)||0;
+    const lastR=parseInt(lastSet?.reps)||0;
+    let nudge='';
+    if(lastW>0&&!set.weight&&!set.warmup){
+      if(lastR>0&&lastR<REP_CEILING){
+        const nudgeR=lastR+1;
+        nudge=`<span class="overload-nudge" onclick="applyRepNudge(${ei},${si},${lastW},${nudgeR})" title="Same weight, try ${nudgeR} reps">↑${nudgeR}rep</span>`;
+      } else {
+        const nudgeW=lastW+inc;
+        nudge=`<span class="overload-nudge" onclick="applyOverloadNudge(${ei},${si},${nudgeW})" title="Try ${nudgeW} ${getWeightUnit()}">↑${nudgeW}</span>`;
+      }
+    }
+    const applyAll=sets.length>1&&set.weight&&!set.warmup
+      ?`<span class="apply-all-btn" onclick="applyWeightToAllSets(${ei},${si})" title="Copy to all working sets">↓all</span>`
       :'';
     const row=document.createElement('div');
     row.className=`set-row${set.warmup?' warmup-set':''}`;
@@ -1313,11 +1338,20 @@ function renderSets(ei){
   });
 }
 
+function markExerciseVariant(ei){
+  const ex=draftSession.exercises[ei];
+  const val=prompt('What\'s different this time? (e.g. "Different machine — Cybex instead of Hammer Strength")\nLeave blank to clear.', ex.variantNote||'');
+  if(val===null) return;
+  ex.variantNote=val.trim();
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderExerciseRows(_lastSavedSession()); updateSessionStatus();
+}
+
 function applyWeightToAllSets(ei,si){
   const ex=draftSession.exercises[ei];
   const w=ex.sets[si].weight;
   if(!w) return;
-  ex.sets.forEach(s=>{s.weight=w;});
+  ex.sets.forEach(s=>{if(!s.warmup) s.weight=w;});
   _markModified(); saveDraft(activeDate,draftSession);
   renderSets(ei); updateSessionStatus();
 }
@@ -1340,6 +1374,13 @@ function generateWarmupSets(ei){
 function applyOverloadNudge(ei,si,weight){
   const ex=draftSession.exercises[ei];
   ex.sets[si].weight=String(weight);
+  _markModified(); saveDraft(activeDate,draftSession);
+  renderSets(ei); updateSessionStatus();
+}
+function applyRepNudge(ei,si,weight,reps){
+  const ex=draftSession.exercises[ei];
+  ex.sets[si].weight=String(weight);
+  ex.sets[si].reps=String(reps);
   _markModified(); saveDraft(activeDate,draftSession);
   renderSets(ei); updateSessionStatus();
 }
@@ -1605,10 +1646,17 @@ function renderMuscleVolumeSection(){
 // ── Copy last workout ─────────────────────────────────────────────────────────
 function copyLastWorkout(){
   if(!_lastSession){alert('No previous session found for this day.');return;}
-  if(!confirm('Copy all weights and reps from your last session?')) return;
+  const flagged=draftSession.exercises
+    .map(ex=>_lastSession.exercises.find(e=>e.name===ex.name))
+    .filter(lastEx=>lastEx?.variantNote)
+    .map(lastEx=>lastEx.name);
+  const warning=flagged.length
+    ?`\n\nSkipping ${flagged.length} exercise${flagged.length>1?'s':''} flagged as a different setup last time (${flagged.join(', ')}) — those numbers aren't comparable.`
+    :'';
+  if(!confirm('Copy all weights and reps from your last session?'+warning)) return;
   draftSession.exercises.forEach(ex=>{
     const lastEx=_lastSession.exercises.find(e=>e.name===ex.name);
-    if(!lastEx||!lastEx.sets.length) return;
+    if(!lastEx||!lastEx.sets.length||lastEx.variantNote) return;
     ex.sets=lastEx.sets.map(s=>({...s,done:false}));
   });
   _markModified(); saveDraft(activeDate,draftSession);
@@ -2039,6 +2087,7 @@ function calcPRs(sessions){
   const prs={};
   [...sessions].sort((a,b)=>a.date.localeCompare(b.date)).forEach(session=>{
     session.exercises.forEach(ex=>{
+      if(ex.variantNote) return; // different equipment/setup — not a comparable PR
       ex.sets.forEach(set=>{
         if(!isWorkingSet(set)) return;
         const w=parseFloat(set.weight); if(isNaN(w)||w<=0) return;
@@ -2092,7 +2141,7 @@ function renderHistory(){
       <div class="hist-session-body">
         ${session.exercises.map(ex=>`
           <div class="hist-ex">
-            <div class="hist-ex-name">${ex.name}</div>
+            <div class="hist-ex-name">${ex.name}${ex.variantNote?` <span class="variant-flag" style="display:inline" title="${ex.variantNote.replace(/"/g,'&quot;')}">⚠️ different setup</span>`:''}</div>
             <div class="hist-sets">
               ${ex.sets.map((s,i)=>{
                 const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&isWorkingSet(s);
