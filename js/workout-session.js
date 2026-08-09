@@ -322,11 +322,12 @@ ${ei<draftSession.exercises.length-1?`<button class="superset-btn${ex.linkedToNe
             </div>
           </div>
           <div class="ex-controls">
-            <div class="ex-reorder-group">
-              <button class="ex-reorder-btn" onclick="moveExercise(${ei},-1)" ${ei===0?'disabled':''} title="Move up">↑</button>
-              <button class="ex-reorder-btn" onclick="moveExercise(${ei},1)" ${ei===draftSession.exercises.length-1?'disabled':''} title="Move down">↓</button>
+            <button class="ex-kebab-btn" onclick="event.stopPropagation();toggleExMenu(${ei})" title="More options">⋯</button>
+            <div class="ex-menu" id="ex-menu-${ei}">
+              <button onclick="closeExMenus();moveExercise(${ei},-1)" ${ei===0?'disabled':''}>↑ Move up</button>
+              <button onclick="closeExMenus();moveExercise(${ei},1)" ${ei===draftSession.exercises.length-1?'disabled':''}>↓ Move down</button>
+              <button class="ex-menu-danger" onclick="closeExMenus();removeExerciseToday(${ei})">✕ Remove exercise</button>
             </div>
-            <button class="ex-remove-btn" onclick="removeExerciseToday(${ei})" title="Remove from today's session">✕ Remove</button>
           </div>
         </div>
       </td>
@@ -571,6 +572,13 @@ function removeExerciseToday(ei){
   draftSession.exercises.splice(ei,1); _markModified();
   saveDraft(activeDate,draftSession);
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus(); updateDetailSub();
+}
+function toggleExMenu(ei){
+  document.querySelectorAll('.ex-menu.open').forEach(m=>{ if(m.id!=='ex-menu-'+ei) m.classList.remove('open'); });
+  document.getElementById('ex-menu-'+ei)?.classList.toggle('open');
+}
+function closeExMenus(){
+  document.querySelectorAll('.ex-menu.open').forEach(m=>m.classList.remove('open'));
 }
 function moveExercise(ei,dir){
   const j=ei+dir;

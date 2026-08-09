@@ -185,4 +185,5 @@ _boot();
 document.addEventListener('click',e=>{
   const sel=document.getElementById('profile-selector');
   if(sel&&!sel.contains(e.target)) closeProfileDropdown();
+  if(!e.target.closest('.ex-controls')) closeExMenus();
 });

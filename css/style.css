@@ -295,13 +295,19 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .sched-sel{flex:1;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer}
 .sched-sel:focus{outline:none;border-color:var(--accent)}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.ex-controls{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
-.ex-reorder-group{display:flex;gap:4px}
-.ex-reorder-btn{font-size:13px;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:5px;padding:5px 10px;cursor:pointer;min-width:32px;line-height:1;transition:opacity .15s}
-.ex-reorder-btn:hover:not(:disabled){opacity:.8}
-.ex-reorder-btn:disabled{background:var(--bg4);color:var(--text3);cursor:default}
-.ex-remove-btn{font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;white-space:nowrap;transition:all .15s}
-.ex-remove-btn:hover{background:var(--red-bg)}
+.ex-controls{position:relative;flex-shrink:0}
+/* Reorder/remove collapsed behind a single overflow button instead of three
+   permanently-visible buttons competing with the logging inputs for attention. */
+.ex-kebab-btn{background:none;border:none;color:var(--text3);font-size:18px;line-height:1;cursor:pointer;padding:6px 9px;border-radius:6px;transition:background .15s,color .15s}
+.ex-kebab-btn:hover{background:var(--bg3);color:var(--text)}
+.ex-menu{display:none;position:absolute;top:100%;right:0;z-index:20;margin-top:2px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:150px;padding:4px;flex-direction:column;gap:1px}
+.ex-menu.open{display:flex}
+.ex-menu button{background:none;border:none;text-align:left;padding:8px 10px;border-radius:6px;font-size:13px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.ex-menu button:hover{background:var(--bg3);color:var(--text)}
+.ex-menu button:disabled{opacity:.35;cursor:default}
+.ex-menu button:disabled:hover{background:none}
+.ex-menu-danger{color:var(--red)!important}
+.ex-menu-danger:hover{background:var(--red-bg)!important}
 .add-ex-wrap{display:flex;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--border)}
 .add-ex-wrap input{flex:1;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
 .add-ex-wrap input:focus{outline:none;border-color:var(--accent)}
