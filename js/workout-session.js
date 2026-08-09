@@ -134,7 +134,6 @@ function renderDetail(){
         </div>
       </div>`
     :'';
-  const note=getDayNote(activeDayIdx);
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
   const heroUrl=typeof getWorkoutImageUrl==='function'?getWorkoutImageUrl(day):null;
   const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${escapeHtml(day.name)}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
@@ -173,12 +172,10 @@ function renderDetail(){
     <div class="add-ex-wrap">
       <button class="add-ex-btn" onclick="openAddExModal()">+ Add Exercise</button>
     </div>
-    <div class="note-label">📋 Day plan — same every time you do this day</div>
-    <textarea class="note-edit" id="day-note-ta" rows="2" placeholder="Day notes — cues, focus areas, target weights…" oninput="saveDayNoteFromUI(${activeDayIdx},this.value)">${escapeHtml(note)}</textarea>
     <div class="session-notes-wrap">
-      <div class="note-label">📝 This session — ${formatDate(draftSession.date)}</div>
+      <div class="note-label">📝 Session Notes</div>
       <textarea class="session-notes" id="session-notes"
-        placeholder="Session notes (how you felt, PRs, adjustments…)"
+        placeholder="Cues, focus areas, target weights, how you felt, PRs, adjustments…"
         oninput="draftSession.notes=this.value;saveDraft(activeDate,draftSession)">${escapeHtml(draftSession.notes)}</textarea>
     </div>
     <div class="session-bar">
@@ -275,20 +272,18 @@ function renderExerciseRows(lastSession){
     if(lastEx&&lastEx.sets.length){
       const chips=lastEx.sets.filter(s=>s.weight||s.reps).map(s=>{
         const isPR=allPRs[ex.name]&&parseFloat(s.weight)>=allPRs[ex.name].weight&&isSetDone(s);
-        return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${s.rpe?' @'+s.rpe:''}${isPR?' 🏆':''}</span>`;
+        return`<span class="lsc${isPR?' pr':''}">${s.weight||'?'}×${s.reps||'?'}${isPR?' 🏆':''}</span>`;
       }).join('');
-      if(chips) lastHTML=`<div class="last-set-row">${chips}</div>`;
+      if(chips) lastHTML=`<div class="last-set-row">${chips}</div>${lastEx.rpe?`<div class="last-rpe">@ RPE ${escapeHtml(lastEx.rpe)}</div>`:''}`;
       if(lastEx.variantNote){
         lastHTML+=`<div class="variant-flag" title="${escapeHtml(lastEx.variantNote)}">⚠️ different setup last time</div>`;
       } else {
         const doneSets=lastEx.sets.filter(isSetDone);
         if(doneSets.length){
           const bestW=Math.max(...doneSets.map(s=>parseFloat(s.weight)||0));
-          const topSets=doneSets.filter(s=>parseFloat(s.weight)===bestW);
-          const topReps=Math.max(...topSets.map(s=>parseInt(s.reps)||0));
-          const topRpe=topSets.find(s=>parseInt(s.reps)===topReps)?.rpe;
+          const topReps=Math.max(...doneSets.filter(s=>parseFloat(s.weight)===bestW).map(s=>parseInt(s.reps)||0));
           const inc=getWeightUnit()==='kg'?2.5:5;
-          const sug=suggestProgression(bestW,topReps,topRpe,inc);
+          const sug=suggestProgression(bestW,topReps,lastEx.rpe,inc);
           if(sug.type==='reps') overloadHint=`<span class="overload-hint">↑ Try ${sug.value} reps</span>`;
           else if(sug.type==='weight') overloadHint=`<span class="overload-hint">↑ Try ${sug.value} ${getWeightUnit()}</span>`;
           else overloadHint=`<span class="overload-hint" style="color:var(--text3)">≈ Hold — near max last time</span>`;
@@ -339,7 +334,8 @@ ${ei<draftSession.exercises.length-1?`<button class="superset-btn${ex.linkedToNe
       <td class="ex-last-cell">${lastHTML}${overloadHint}</td>
       <td class="ex-log-cell">
         <div class="sets-container" id="sets-${ei}"></div>
-        ${isCardioExercise(ex.name)?'':`<button class="add-set-btn" onclick="addSet(${ei})">+ add set</button><button class="add-set-btn warmup-gen-btn" onclick="generateWarmupSets(${ei})">🔥 warmups</button>`}
+        ${isCardioExercise(ex.name)?'':`<button class="add-set-btn" onclick="addSet(${ei})">+ add set</button><button class="add-set-btn warmup-gen-btn" onclick="generateWarmupSets(${ei})">🔥 warmups</button>
+        <span class="ex-rpe-wrap"><span class="set-x" title="Rate of perceived exertion">@</span><input class="set-input set-rpe-input" type="text" inputmode="decimal" placeholder="RPE" title="Rate of perceived exertion (6–10) — how the hardest set of this exercise felt overall" value="${ex.rpe||''}" oninput="updateExerciseRpe(${ei},this.value)"></span>`}
       </td>`;
     tbody.appendChild(tr);
     renderSets(ei);
@@ -377,7 +373,7 @@ function renderSets(ei){
     const lastR=parseInt(lastSet?.reps)||0;
     let nudge='';
     if(lastW>0&&!set.weight&&!set.warmup){
-      const sug=suggestProgression(lastW,lastR,lastSet?.rpe,inc);
+      const sug=suggestProgression(lastW,lastR,lastEx?.variantNote?null:lastEx?.rpe,inc);
       if(sug.type==='reps')
         nudge=`<span class="overload-nudge" onclick="applyRepNudge(${ei},${si},${lastW},${sug.value})" title="Same weight, try ${sug.value} reps">↑${sug.value}rep</span>`;
       else if(sug.type==='weight')
@@ -397,9 +393,6 @@ function renderSets(ei){
       <span class="set-x">×</span>
       <input class="set-input" type="text" inputmode="numeric" placeholder="reps"
         value="${set.reps}" oninput="updateSet(${ei},${si},'reps',this.value)">
-      ${set.warmup?'':`<span class="set-x" title="Rate of perceived exertion">@</span>
-      <input class="set-input set-rpe-input" type="text" inputmode="decimal" placeholder="RPE" title="Rate of perceived exertion (6–10) — how hard that set felt"
-        value="${set.rpe||''}" oninput="updateSet(${ei},${si},'rpe',this.value)">`}
       <button class="set-warmup-btn${set.warmup?' active':''}" onclick="toggleSetWarmup(${ei},${si})" title="${set.warmup?'Mark as working set':'Mark as warm-up set'}">W</button>
       ${sets.length>1?`<span class="add-set-btn" onclick="removeSet(${ei},${si})" style="color:var(--red);font-size:14px;padding:0 2px">×</span>`:''}`;
     container.appendChild(row);
@@ -426,7 +419,7 @@ function generateWarmupSets(ei){
   const workingSets=ex.sets.filter(s=>!s.warmup&&parseFloat(s.weight)>0);
   if(!workingSets.length){alert('Enter a working weight first, then generate warmups.');return;}
   const maxW=Math.max(...workingSets.map(s=>parseFloat(s.weight)));
-  const snap=getWeightUnit()==='kg'?1.25:2.5;
+  const snap=getWarmupIncrement();
   const warmups=[
     {pct:.4,reps:10},{pct:.6,reps:6},{pct:.8,reps:3}
   ].map(({pct,reps})=>({
@@ -549,13 +542,6 @@ function updateDetailSub(){
   const mins=estimateWorkoutMinutes();
   el.textContent=`${n} exercise${n!==1?'s':''} · ~${mins} min`;
 }
-function saveDayNoteFromUI(dayIdx, val){
-  saveDayNote(dayIdx, val);
-  const base=getActiveDay(dayIdx)||DAYS[dayIdx]||{};
-  setCustomDay(dayIdx, {...base, defaultNote: val,
-    exercises:(base.exercises||[])});
-  apiSyncSettings({customDays: getCustomDays()});
-}
 function updateSet(ei,si,field,val){
   const ex=draftSession.exercises[ei];
   const set=ex.sets[si];
@@ -563,6 +549,10 @@ function updateSet(ei,si,field,val){
   set[field]=val; _markModified();
   saveDraft(activeDate,draftSession); updateSessionStatus();
   if(!wasDone && isSetDone(set) && si < ex.sets.length - 1 && !ex.linkedToNext) startRestTimer();
+}
+function updateExerciseRpe(ei,val){
+  draftSession.exercises[ei].rpe=val; _markModified();
+  saveDraft(activeDate,draftSession);
 }
 function toggleSetDone(ei,si){
   draftSession.exercises[ei].sets[si].done=!draftSession.exercises[ei].sets[si].done; _markModified();
@@ -611,6 +601,9 @@ function updateSessionStatus(){
   const el=document.getElementById('session-status'); if(!el) return;
   if(draftSession.savedAt){
     const t=new Date(draftSession.savedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    if(draftSession.syncStatus==='failed'){
+      el.textContent=`⚠️ Saved on this device at ${t} — not synced to your account yet`; el.style.color='var(--amber)'; return;
+    }
     el.textContent=`✓ Saved at ${t}`; el.style.color='var(--green)'; return;
   }
   const workingSets=e=>e.sets.filter(s=>!s.warmup);
@@ -622,23 +615,61 @@ function updateSessionStatus(){
   el.style.color='';
 }
 function saveSession(){
+  const doneSets=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);
+  if(doneSets===0){ alert('Log at least one set before saving.'); return; }
+
   clearInterval(_durationTimer);
   const prevPRs=calcPRs(loadSessions());
   const sessions=loadSessions();
   const session=JSON.parse(JSON.stringify(draftSession));
   // Mark every set that has data as done so DB/history are consistent
   session.exercises.forEach(ex=>ex.sets.forEach(s=>{ s.done=isSetDone(s); }));
-  // Random suffix on top of the timestamp so two sessions (same or different users)
-  // saved in the same millisecond can't collide on this globally-unique id.
-  session.id=Date.now()*1000+Math.floor(Math.random()*1000);
-  session.endedAt=Date.now();
-  session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
-  sessions.push(session); saveSessions(sessions);
-  apiSyncSession(session); // sync to Postgres (fire-and-forget)
+
+  // Re-saving the same day (e.g. half the workout logged this morning, the rest
+  // tonight) should update the session already on record, not fork a duplicate.
+  // Diff against what's actually stored, not just "has this been saved before" —
+  // so a resave with nothing new is a no-op instead of a phantom duplicate.
+  const existingIdx=draftSession.savedSessionId!=null
+    ?sessions.findIndex(s=>s.id===draftSession.savedSessionId)
+    :-1;
+  if(existingIdx>=0){
+    const prev=sessions[existingIdx];
+    const unchanged=JSON.stringify(prev.exercises)===JSON.stringify(session.exercises)
+      &&(prev.notes||'')===(session.notes||'');
+    if(unchanged){ alert('Nothing new to save since your last save.'); return; }
+    session.id=draftSession.savedSessionId;
+    session.startedAt=prev.startedAt;
+    session.endedAt=Date.now();
+    session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
+    sessions[existingIdx]=session;
+  } else {
+    // Random suffix on top of the timestamp so two sessions (same or different users)
+    // saved in the same millisecond can't collide on this globally-unique id.
+    session.id=Date.now()*1000+Math.floor(Math.random()*1000);
+    session.endedAt=Date.now();
+    session.duration=session.startedAt?Math.round((session.endedAt-session.startedAt)/60000):null;
+    sessions.push(session);
+  }
+
+  if(!saveSessions(sessions)){
+    alert('Could not save — your device storage may be full. Free up space and try again.');
+    return;
+  }
+  draftSession.savedSessionId=session.id;
   draftSession.savedAt=Date.now();
+  draftSession.syncStatus='pending';
   saveDraft(activeDate,draftSession);
   renderWeekGrid(); renderExerciseRows(session); updateSessionStatus();
   showCompletionSummary(session,prevPRs);
+
+  // Capture references now — by the time this resolves the user may have
+  // navigated to a different day, and activeDate/draftSession will have moved on.
+  const draftRef=draftSession, draftDateAtSave=activeDate;
+  apiSyncSession(session).then(ok=>{
+    draftRef.syncStatus=ok?'synced':'failed';
+    saveDraft(draftDateAtSave,draftRef);
+    if(draftSession===draftRef) updateSessionStatus();
+  });
 }
 function showCompletionSummary(session,prevPRs){
   const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);

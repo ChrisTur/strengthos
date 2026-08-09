@@ -41,7 +41,7 @@ function deleteProfile(name){
   localStorage.removeItem(cardioKey(name)); localStorage.removeItem(dislikedKey(name));
   const updated=p.filter(x=>x!==name); saveProfiles(updated);
   if(getActiveProfile()===name) setActiveProfile(updated[0]);
-  renderProfileSelector(); renderWeekGrid(); renderDetail();
+  renderProfileSelector(); renderProfileDropdown(); renderWeekGrid(); renderDetail();
 }
 function toggleProfileDropdown(){
   const dd=document.getElementById('profile-dropdown');
@@ -58,12 +58,10 @@ function renderProfileDropdown(){
     const safe=escapeJsAttr(name);
     div.innerHTML=`<span>${escapeHtml(name)}${name===active?' ✓':''}</span>
       <span style="display:flex;gap:4px">
-        <button class="profile-del-btn" onclick="event.stopPropagation();openRenameModal('${safe}')" title="Rename" style="opacity:0">✎</button>
+        <button class="profile-del-btn" onclick="event.stopPropagation();openRenameModal('${safe}')" title="Rename">✎</button>
         ${profiles.length>1?`<button class="profile-del-btn" onclick="event.stopPropagation();deleteProfile('${safe}')" title="Delete">✕</button>`:''}
       </span>`;
     div.onclick=()=>switchProfile(name);
-    div.onmouseenter=()=>div.querySelectorAll('.profile-del-btn').forEach(b=>b.style.opacity='1');
-    div.onmouseleave=()=>div.querySelectorAll('.profile-del-btn').forEach(b=>b.style.opacity='0');
     list.appendChild(div);
   });
 }
