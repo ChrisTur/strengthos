@@ -167,6 +167,18 @@ function renderWeekGrid(){
     const active=grid.querySelector('.day-pill.active');
     if(active) setTimeout(()=>active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}),30);
   }
+  applyWeekGridCollapsed();
+}
+function toggleWeekGridCollapsed(){
+  setWeekGridCollapsed(!getWeekGridCollapsed());
+  applyWeekGridCollapsed();
+}
+function applyWeekGridCollapsed(){
+  const grid=document.getElementById('week-grid');
+  const btn=document.getElementById('week-collapse-btn');
+  const collapsed=getWeekGridCollapsed();
+  if(grid) grid.style.display=collapsed?'none':'';
+  if(btn){ btn.textContent=collapsed?'▸':'▾'; btn.title=collapsed?'Expand calendar':'Collapse calendar'; }
 }
 // ── Detail panel ──────────────────────────────────────────────────────────────
 function changeWorkoutForDate(newIdx){
