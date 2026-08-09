@@ -21,7 +21,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-title{font-size:20px;font-weight:600}
 .header-sub{font-size:13px;color:var(--text2);margin-top:2px}
 .header-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.view-tabs{display:flex;gap:6px}
 
 /* Buttons */
 .btn{padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -52,8 +51,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .profile-option.current{color:var(--accent);font-weight:500}
 .profile-option.profile-new{color:var(--text3);font-size:12px}
 .profile-option.profile-new:hover{color:var(--accent);background:var(--bg4)}
-.profile-del-btn{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;opacity:0;transition:opacity .15s,background .15s,border-color .15s,color .15s;flex-shrink:0}
+.profile-del-btn{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;opacity:1;transition:opacity .15s,background .15s,border-color .15s,color .15s;flex-shrink:0}
 .profile-del-btn:hover{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+/* Only hide-until-hover on devices that actually support hover (mouse/trackpad) —
+   on touch there's no hover state to reveal it with, so it must stay visible there. */
+@media (hover:hover) and (pointer:fine){
+  .profile-del-btn{opacity:0}
+  .profile-option:hover .profile-del-btn{opacity:1}
+}
 .profile-divider{border-top:1px solid var(--border)}
 
 /* Modal */
@@ -166,14 +171,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .last-set-row{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:2px}
 .lsc{font-size:11px;padding:1px 6px;border-radius:99px;background:var(--bg3);border:1px solid var(--border2);color:var(--text3);white-space:nowrap}
 .lsc.pr{border-color:var(--accent);color:var(--accent)}
+.last-rpe{font-size:10px;color:var(--text3);margin-top:1px}
 
 /* Sets */
 .sets-container{display:flex;flex-direction:column;gap:5px}
 .set-row{display:flex;align-items:center;gap:5px}
 .set-row.warmup-set{opacity:.65}
 .set-label{font-size:11px;color:var(--text3);width:24px;flex-shrink:0}
-.set-input{width:54px;padding:4px 6px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;text-align:center}
-.set-input:focus{outline:none;border-color:var(--accent)}
+.set-input{width:54px;padding:4px 6px;border-radius:var(--radius-sm);border:1px solid transparent;background:var(--bg3);color:var(--text);font-size:12px;text-align:center;transition:border-color .15s,background .15s}
+.set-input:focus{outline:none;border-color:var(--accent);background:var(--bg4)}
 .set-input::placeholder{color:var(--text3)}
 .set-x{font-size:11px;color:var(--text3)}
 .set-rpe-input{width:38px}
@@ -183,20 +189,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .apply-all-btn:hover{opacity:1;color:var(--text);border-color:var(--text3)}
 .warmup-gen-btn{margin-left:4px;opacity:.7}
 .warmup-gen-btn:hover{opacity:1}
+.ex-rpe-wrap{display:inline-flex;align-items:center;gap:3px;margin-left:8px;vertical-align:middle}
 .add-set-btn{font-size:11px;color:var(--text3);cursor:pointer;background:none;border:none;padding:2px 0;transition:color .15s}
 .add-set-btn:hover{color:var(--accent)}
 /* Warm-up toggle */
-.set-warmup-btn{font-size:10px;font-weight:700;cursor:pointer;background:none;border:1px solid var(--border2);border-radius:3px;color:var(--text3);padding:2px 5px;line-height:1;transition:background .15s,color .15s,border-color .15s;flex-shrink:0}
+.set-warmup-btn{font-size:10px;font-weight:700;cursor:pointer;background:var(--bg3);border:1px solid transparent;border-radius:3px;color:var(--text3);padding:2px 5px;line-height:1;transition:background .15s,color .15s,border-color .15s;flex-shrink:0}
 .set-warmup-btn.active{background:var(--blue-bg);border-color:var(--blue);color:var(--blue)}
 
-/* Caption above day/session note boxes so the distinction survives once typed */
+/* Caption above the session notes box */
 .note-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin:10px 12px 3px}
-
-/* Editable day note */
-.note-edit{display:block;margin:0 12px 10px;width:calc(100% - 24px);padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--blue-bg);color:#7eb8d4;font-size:12px;line-height:1.6;font-family:inherit;border-left:3px solid var(--blue);resize:vertical;min-height:40px}
-.note-edit:focus{outline:none;border-color:var(--blue);opacity:1}
-.note-edit::placeholder{color:var(--text3);font-style:italic}
-[data-theme="light"] .note-edit{color:#1a5070}
 
 /* Session bar */
 .session-bar{padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -293,26 +294,35 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .sched-sel{flex:1;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer}
 .sched-sel:focus{outline:none;border-color:var(--accent)}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.ex-controls{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
-.ex-reorder-group{display:flex;gap:4px}
-.ex-reorder-btn{font-size:13px;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:5px;padding:5px 10px;cursor:pointer;min-width:32px;line-height:1;transition:opacity .15s}
-.ex-reorder-btn:hover:not(:disabled){opacity:.8}
-.ex-reorder-btn:disabled{background:var(--bg4);color:var(--text3);cursor:default}
-.ex-remove-btn{font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;white-space:nowrap;transition:all .15s}
-.ex-remove-btn:hover{background:var(--red-bg)}
+.ex-controls{position:relative;flex-shrink:0}
+/* Reorder/remove collapsed behind a single overflow button instead of three
+   permanently-visible buttons competing with the logging inputs for attention. */
+.ex-kebab-btn{background:none;border:none;color:var(--text3);font-size:18px;line-height:1;cursor:pointer;padding:6px 9px;border-radius:6px;transition:background .15s,color .15s}
+.ex-kebab-btn:hover{background:var(--bg3);color:var(--text)}
+.ex-menu{display:none;position:absolute;top:100%;right:0;z-index:20;margin-top:2px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:150px;padding:4px;flex-direction:column;gap:1px}
+.ex-menu.open{display:flex}
+.ex-menu button{background:none;border:none;text-align:left;padding:8px 10px;border-radius:6px;font-size:13px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.ex-menu button:hover{background:var(--bg3);color:var(--text)}
+.ex-menu button:disabled{opacity:.35;cursor:default}
+.ex-menu button:disabled:hover{background:none}
+.ex-menu-danger{color:var(--red)!important}
+.ex-menu-danger:hover{background:var(--red-bg)!important}
+.ex-menu button.active{color:var(--accent);font-weight:600}
+.detail-menu-field{padding:6px 10px;display:flex;flex-direction:column;gap:3px}
+.detail-menu-field label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.detail-menu-field select,.detail-menu-field input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;max-width:none}
 .add-ex-wrap{display:flex;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--border)}
 .add-ex-wrap input{flex:1;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
 .add-ex-wrap input:focus{outline:none;border-color:var(--accent)}
 .add-ex-wrap input::placeholder{color:var(--text3)}
 .add-ex-wrap button{padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--green);background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
 .add-ex-wrap button:hover{background:var(--green);color:#fff}
-.tab-icon{display:none}
 
 /* ── Mobile ────────────────────────────────────────────────────────────────── */
 @media(max-width:600px){
 
-  /* Body — reserve space for fixed bottom nav + iPhone home bar */
-  body{padding:10px;padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px))}
+  /* Body — iPhone home bar clearance only; no more fixed bottom nav to reserve for */
+  body{padding:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px))}
 
   /* ── Header ── compact single row */
   .header{margin-bottom:12px;gap:6px;flex-wrap:nowrap;align-items:center}
@@ -332,30 +342,6 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
     border-radius:var(--radius);
     box-shadow:0 8px 40px rgba(0,0,0,.6)
   }
-
-  /* Hide plates text; show icon only */
-  .plates-txt{display:none}
-
-  /* ── Bottom nav (view tabs become a fixed tab bar) ── */
-  .view-tabs{
-    position:fixed;bottom:0;left:0;right:0;
-    z-index:150;
-    display:flex;gap:0;
-    background:var(--bg2);
-    border-top:1px solid var(--border);
-    padding-bottom:env(safe-area-inset-bottom, 0px)
-  }
-  .view-tabs .btn{
-    flex:1;
-    display:flex;flex-direction:column;align-items:center;gap:3px;
-    border:none;border-radius:0;border-right:1px solid var(--border);
-    background:var(--bg2);color:var(--text3);
-    padding:8px 4px 7px;font-size:10px;font-weight:600;letter-spacing:.03em
-  }
-  .view-tabs .btn:last-child{border-right:none}
-  .view-tabs .btn.active{color:var(--accent);background:var(--bg2)}
-  .view-tabs .btn:hover{background:var(--bg3)}
-  .tab-icon{display:block;font-size:20px;line-height:1}
 
   /* ── Exercise table → stacked cards ── */
   .ex-table thead{display:none}

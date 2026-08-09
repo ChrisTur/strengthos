@@ -48,14 +48,14 @@ function renderWeekPlanDays(dates){
         <div class="wp-day-header">
           <div>
             <span class="wp-dow">${dowLabels[i]}</span>
-            <span class="wp-day-name">${day.name}</span>
+            <span class="wp-day-name">${escapeHtml(day.name)}</span>
             ${isCustom?'<span class="wp-custom-badge">custom</span>':''}
           </div>
           <button class="btn btn-sm" onclick="closeWeekPlanModal();setActiveDate('${date}');renderWeekGrid();openCustomDayModal(${dayIdx})" title="Edit this day's exercises">✏️ Edit</button>
         </div>
         ${hasDraft?`<div class="wp-draft-note">📝 This week has a draft — <button class="wp-link" onclick="promoteWeekDraft('${date}',${dayIdx})">copy draft exercises to template</button></div>`:''}
         <div class="wp-ex-list">
-          ${exList.map(e=>`<div class="wp-ex-row"><span class="wp-ex-name">${e.name}</span><span class="wp-ex-struct">${e.structure||''}</span></div>`).join('')}
+          ${exList.map(e=>`<div class="wp-ex-row"><span class="wp-ex-name">${escapeHtml(e.name)}</span><span class="wp-ex-struct">${escapeHtml(e.structure||'')}</span></div>`).join('')}
           ${!exList.length?'<div style="color:var(--text3);font-size:12px">No exercises configured</div>':''}
         </div>`;
     }
@@ -156,7 +156,7 @@ function renderWeekGrid(){
       ${isSuggested?'<div class="next-badge">→</div>':''}
       <div class="dow">${dowLabel}</div>
       <div class="pdate">${+mm}/${+dd}</div>
-      <div class="dname" style="${isRest?'color:var(--text3)':''}" title="${day?day.name:''}">${isRest?'Rest':day?day.name:'?'}</div>
+      <div class="dname" style="${isRest?'color:var(--text3)':''}" title="${day?escapeHtml(day.name):''}">${isRest?'Rest':day?escapeHtml(day.name):'?'}</div>
       <div class="dots">${isRest?'':(day?day.dots.map(c=>`<div class="dot" style="background:${c}"></div>`).join(''):'')}</div>`;
     div.onclick=()=>{ setActiveDate(date); renderWeekGrid(); renderDetail(); };
     grid.appendChild(div);
@@ -167,6 +167,18 @@ function renderWeekGrid(){
     const active=grid.querySelector('.day-pill.active');
     if(active) setTimeout(()=>active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}),30);
   }
+  applyWeekGridCollapsed();
+}
+function toggleWeekGridCollapsed(){
+  setWeekGridCollapsed(!getWeekGridCollapsed());
+  applyWeekGridCollapsed();
+}
+function applyWeekGridCollapsed(){
+  const grid=document.getElementById('week-grid');
+  const btn=document.getElementById('week-collapse-btn');
+  const collapsed=getWeekGridCollapsed();
+  if(grid) grid.style.display=collapsed?'none':'';
+  if(btn){ btn.textContent=collapsed?'▸':'▾'; btn.title=collapsed?'Expand calendar':'Collapse calendar'; }
 }
 // ── Detail panel ──────────────────────────────────────────────────────────────
 function changeWorkoutForDate(newIdx){
@@ -208,7 +220,7 @@ function renderScheduleModal(){
 
   const makeOpts=(current)=>[
     `<option value="${REST_DAY}"${current===REST_DAY?' selected':''}>Rest / Off</option>`,
-    ...activeDays.map((day,idx)=>`<option value="${idx}"${current===idx?' selected':''}>${day.dow} — ${day.name}</option>`)
+    ...activeDays.map((day,idx)=>`<option value="${idx}"${current===idx?' selected':''}>${day.dow} — ${escapeHtml(day.name)}</option>`)
   ].join('');
 
   if(isTemplate){

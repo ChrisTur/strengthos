@@ -1,9 +1,7 @@
 // ── Onboarding flow, goal/prefs modals, AI plan generation ──────────────────────────────────────────────
 
 let _selectedGoal='';
-function openGoalModal(){
-  closeProfileDropdown();
-  _selectedGoal=getGoal();
+function renderGoalGrid(){
   const grid=document.getElementById('goal-grid');
   grid.innerHTML=GOALS.map(g=>`
     <button class="goal-opt${_selectedGoal===g.id?' selected':''}" onclick="selectGoalOpt('${g.id}')">
@@ -11,19 +9,16 @@ function openGoalModal(){
       <span class="go-label">${g.label}</span>
       <span class="go-desc">${g.desc}</span>
     </button>`).join('');
+}
+function openGoalModal(){
+  closeProfileDropdown();
+  _selectedGoal=getGoal();
+  renderGoalGrid();
   document.getElementById('goal-modal').style.display='flex';
 }
 function selectGoalOpt(id){
   _selectedGoal=id;
-  document.querySelectorAll('.goal-opt').forEach(b=>b.classList.toggle('selected',b.onclick.toString().includes("'"+id+"'")));
-  // simpler re-render
-  const grid=document.getElementById('goal-grid');
-  grid.innerHTML=GOALS.map(g=>`
-    <button class="goal-opt${_selectedGoal===g.id?' selected':''}" onclick="selectGoalOpt('${g.id}')">
-      <span class="go-icon">${g.icon}</span>
-      <span class="go-label">${g.label}</span>
-      <span class="go-desc">${g.desc}</span>
-    </button>`).join('');
+  renderGoalGrid();
 }
 function saveGoal(){ if(_selectedGoal) setGoal(_selectedGoal); closeGoalModal(); renderProfileSelector(); if(currentView()==='dashboard') renderDashboard(); }
 function closeGoalModal(){ document.getElementById('goal-modal').style.display='none' }
@@ -45,6 +40,10 @@ function selectEquipment(type){
   toggleEquipmentType(type);
   renderPrefsModal();
 }
+function selectWarmupIncrement(v){
+  setWarmupIncrement(v);
+  renderPrefsModal();
+}
 function renderPrefsModal(){
   // Equipment
   const avail=getAvailableEquipment();
@@ -59,6 +58,14 @@ function renderPrefsModal(){
   document.querySelectorAll('#unit-row .dpw-btn').forEach(btn=>{
     btn.classList.toggle('selected',btn.dataset.unit===unit);
   });
+  const warmupIncOpts=unit==='kg'?[1.25,2.5,5]:[2.5,5,10];
+  const warmupInc=getWarmupIncrement();
+  const warmupIncRow=document.getElementById('warmup-inc-row');
+  if(warmupIncRow){
+    warmupIncRow.innerHTML=warmupIncOpts.map(v=>
+      `<button class="dpw-btn${v===warmupInc?' selected':''}" onclick="selectWarmupIncrement(${v})">${v} ${unit}</button>`
+    ).join('');
+  }
   const level=getCardioLevel();
   document.querySelectorAll('#cardio-level-row .dpw-btn').forEach(btn=>{
     btn.classList.toggle('selected',btn.dataset.level===level);
@@ -79,8 +86,8 @@ function renderPrefsModal(){
   } else {
     el.innerHTML=disliked.map(name=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:13px">${name}</span>
-        <button class="btn btn-sm btn-green" onclick="restoreExercise('${name.replace(/'/g,"\\'")}')">Restore</button>
+        <span style="font-size:13px">${escapeHtml(name)}</span>
+        <button class="btn btn-sm btn-green" onclick="restoreExercise('${escapeJsAttr(name)}')">Restore</button>
       </div>`).join('');
   }
 }
@@ -224,10 +231,12 @@ function renderObConfigure(){
     renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
     const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
   } else {
-    // Non-custom: confirm equipment + optionally adjust days
-    const defaultEquip=p.id==='new_lifter'||p.id==='general_health'||p.id==='build_muscle'||p.id==='fat_loss'||p.id==='lift_and_run'?[...ALL_EQUIPMENT]:['Dumbbell','Bodyweight'];
+    // Non-custom: confirm equipment + adjust days. Default to every equipment type checked —
+    // the toggle grid is fully editable either way, so there's no good reason to start any
+    // persona narrower than another (previously only "Pure Cardio" defaulted to Dumbbell+
+    // Bodyweight, which didn't even match what cardio exercises actually use).
+    const defaultEquip=[...ALL_EQUIPMENT];
     _obEquipment=[...defaultEquip];
-    const showDPW=(p.type==='cardio'||p.type==='hybrid');
     el.innerHTML=`
       <div class="ob-persona-confirm-header" style="border-left:3px solid ${p.color};padding-left:12px;margin-bottom:16px">
         <div style="font-size:20px;margin-bottom:2px">${p.icon} <strong>${p.headline}</strong></div>
@@ -235,14 +244,12 @@ function renderObConfigure(){
       </div>
       <p class="ob-sub" style="text-align:left;margin-bottom:8px">What equipment do you have access to?</p>
       <div class="ob-equip-grid">${ALL_EQUIPMENT.map(e=>`<button class="ob-equip-btn${defaultEquip.includes(e)?' active':''}" data-eq="${e}" onclick="obToggleEquip(this)">${e}</button>`).join('')}</div>
-      ${showDPW?`<p class="ob-sub" style="text-align:left;margin-top:16px;margin-bottom:6px">Sessions per week</p>
+      <p class="ob-sub" style="text-align:left;margin-top:16px;margin-bottom:6px">Sessions per week</p>
       <div class="dpw-row" id="ob-dpw-row"></div>
-      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`:''}`;
+      <div id="ob-dpw-desc" class="ob-dpw-desc"></div>`;
     if(confBtn) confBtn.disabled=false;
-    if(showDPW){
-      renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
-      const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
-    }
+    renderDPWButtons('ob-dpw-row',_obDPW,'obSelectDPW');
+    const d=document.getElementById('ob-dpw-desc'); if(d) d.textContent=DPW_DESCS[_obDPW]||'';
   }
 }
 function obToggleEquip(btn){

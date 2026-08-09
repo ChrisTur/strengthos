@@ -26,7 +26,7 @@ function renderHistory(){
     div.innerHTML=`
       <div class="hist-session-header" onclick="toggleCollapse(this.parentElement)">
         <div>
-          <div class="hist-session-title">${day.dow} — ${day.name}${{great:'💪',good:'😊',tired:'😴',rough:'😓'}[session.mood]?' <span style="font-size:13px">'+{great:'💪',good:'😊',tired:'😴',rough:'😓'}[session.mood]+'</span>':''}</div>
+          <div class="hist-session-title">${day.dow} — ${escapeHtml(day.name)}${{great:'💪',good:'😊',tired:'😴',rough:'😓'}[session.mood]?' <span style="font-size:13px">'+{great:'💪',good:'😊',tired:'😴',rough:'😓'}[session.mood]+'</span>':''}</div>
           <div class="hist-session-date">${formatDate(session.date)}${session.duration?` · ${session.duration} min`:''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -39,17 +39,17 @@ function renderHistory(){
       <div class="hist-session-body">
         ${session.exercises.map(ex=>`
           <div class="hist-ex">
-            <div class="hist-ex-name">${ex.name}${ex.variantNote?` <span class="variant-flag" style="display:inline" title="${ex.variantNote.replace(/"/g,'&quot;')}">⚠️ different setup</span>`:''}</div>
+            <div class="hist-ex-name">${escapeHtml(ex.name)}${ex.rpe?` <span class="variant-flag" style="display:inline;color:var(--text3)">@ RPE ${escapeHtml(ex.rpe)}</span>`:''}${ex.variantNote?` <span class="variant-flag" style="display:inline" title="${escapeHtml(ex.variantNote)}">⚠️ different setup</span>`:''}</div>
             <div class="hist-sets">
               ${ex.sets.map((s,i)=>{
                 const isPR=sessionPRs[ex.name]&&parseFloat(s.weight)>=sessionPRs[ex.name]&&isWorkingSet(s);
                 return`<span class="hist-set-chip ${isSetDone(s)?'done':''} ${s.warmup?'warmup':''} ${isPR?'pr':''}">
-                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${s.rpe?' @'+s.rpe:''}${s.warmup?' W':''}${isPR?' 🏆':''}
+                  S${i+1} ${s.weight?s.weight+getWeightUnit():'—'} × ${s.reps||'—'}${s.warmup?' W':''}${isPR?' 🏆':''}
                 </span>`;
               }).join('')}
             </div>
           </div>`).join('')}
-        ${session.notes?`<div class="hist-notes" style="padding:8px 14px">${session.notes}</div>`:''}
+        ${session.notes?`<div class="hist-notes" style="padding:8px 14px">${escapeHtml(session.notes)}</div>`:''}
       </div>`;
     list.appendChild(div);
   });

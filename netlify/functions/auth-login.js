@@ -1,7 +1,7 @@
 // POST /api/auth-login  { email, password }
 const bcrypt  = require('bcryptjs');
 const { getPool }  = require('./_db');
-const { signToken, ok, err } = require('./_auth');
+const { createSession, ok, err } = require('./_auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, body: '' };
@@ -21,6 +21,6 @@ exports.handler = async (event) => {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) return err('Invalid email or password', 401);
 
-  const token = signToken(user.id);
+  const token = await createSession(user.id);
   return ok({ token, user: { id: user.id, name: user.name, email } });
 };

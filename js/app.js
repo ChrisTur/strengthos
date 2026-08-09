@@ -102,6 +102,7 @@ async function _hydrateAndLaunch(){
   initApp();
 }
 function logout(){
+  apiLogout(); // must run before clearAuthToken() — it needs the current token to revoke it
   clearAuthToken();
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
@@ -184,4 +185,5 @@ _boot();
 document.addEventListener('click',e=>{
   const sel=document.getElementById('profile-selector');
   if(sel&&!sel.contains(e.target)) closeProfileDropdown();
+  if(!e.target.closest('.ex-controls')) closeExMenus();
 });

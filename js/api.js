@@ -46,14 +46,21 @@ async function apiLoadUserData() {
   return { settings, sessions: sessionsBody.sessions };
 }
 
-// Fire-and-forget — never blocks the UI
-function apiSyncSession(session) {
-  if (!getAuthToken()) return;
-  fetch(API + '/sessions-save', {
-    method: 'POST',
-    headers: _headers(),
-    body: JSON.stringify({ session }),
-  }).catch(() => {});
+// Never throws (network/HTTP failures resolve to false, not a rejection), so it's
+// still safe to fire without awaiting — but callers that care whether the workout
+// actually reached the server (saveSession) can await the result and tell the user.
+async function apiSyncSession(session) {
+  if (!getAuthToken()) return false;
+  try {
+    const res = await fetch(API + '/sessions-save', {
+      method: 'POST',
+      headers: _headers(),
+      body: JSON.stringify({ session }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 function apiSyncSettings(patch) {
@@ -63,4 +70,11 @@ function apiSyncSettings(patch) {
     headers: _headers(),
     body: JSON.stringify(patch),
   }).catch(() => {});
+}
+
+// Fire-and-forget — logout should feel instant regardless of network; this just
+// revokes the token server-side in the background so it can't be replayed later.
+function apiLogout() {
+  if (!getAuthToken()) return;
+  fetch(API + '/auth-logout', { method: 'POST', headers: _headers() }).catch(() => {});
 }

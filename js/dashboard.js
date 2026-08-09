@@ -162,7 +162,7 @@ function renderDashboard(){
       </div>
       <div class="stat-card" style="flex:1;min-width:180px">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Suggested Next</div>
-        <div style="font-size:14px;font-weight:600">${nextDay.dow} — ${nextDay.name}</div>
+        <div style="font-size:14px;font-weight:600">${nextDay.dow} — ${escapeHtml(nextDay.name)}</div>
         <div style="display:flex;gap:4px;margin-top:6px">${nextDay.dots.map(c=>`<div class="dot" style="background:${c};width:8px;height:8px"></div>`).join('')}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:6px">${nextDay.tags.join(' · ')}</div>
         <button class="btn btn-sm btn-green" onclick="jumpToNextSuggested()" style="margin-top:10px;font-size:11px">Go to this workout →</button>
