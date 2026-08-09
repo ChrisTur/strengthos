@@ -58,12 +58,10 @@ function renderProfileDropdown(){
     const safe=escapeJsAttr(name);
     div.innerHTML=`<span>${escapeHtml(name)}${name===active?' ✓':''}</span>
       <span style="display:flex;gap:4px">
-        <button class="profile-del-btn" onclick="event.stopPropagation();openRenameModal('${safe}')" title="Rename" style="opacity:0">✎</button>
+        <button class="profile-del-btn" onclick="event.stopPropagation();openRenameModal('${safe}')" title="Rename">✎</button>
         ${profiles.length>1?`<button class="profile-del-btn" onclick="event.stopPropagation();deleteProfile('${safe}')" title="Delete">✕</button>`:''}
       </span>`;
     div.onclick=()=>switchProfile(name);
-    div.onmouseenter=()=>div.querySelectorAll('.profile-del-btn').forEach(b=>b.style.opacity='1');
-    div.onmouseleave=()=>div.querySelectorAll('.profile-del-btn').forEach(b=>b.style.opacity='0');
     list.appendChild(div);
   });
 }

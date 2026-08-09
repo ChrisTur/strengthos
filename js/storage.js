@@ -62,10 +62,6 @@ function clearDraftsForDayIdx(dayIdx,fromDate){
     });
 }
 
-// ── Day notes ─────────────────────────────────────────────────────────────────
-function getDayNote(i){ return localStorage.getItem(noteKey(i,getActiveProfile()))||'' }
-function saveDayNote(i,v){ localStorage.setItem(noteKey(i,getActiveProfile()),v) }
-
 // ── Deload ────────────────────────────────────────────────────────────────────
 function isDeload(){ return !!localStorage.getItem(deloadKey(getActiveProfile())) }
 function toggleDeload(){
@@ -125,6 +121,13 @@ function setDaysPerWeek(n){ localStorage.setItem(daysPerWeekKey(getActiveProfile
 // ── Weight unit preference ────────────────────────────────────────────────────
 function getWeightUnit(){ return localStorage.getItem('wt_unit')||'lbs' }
 function setWeightUnit(u){ localStorage.setItem('wt_unit',u) }
+
+// ── Warm-up weight rounding increment ─────────────────────────────────────────
+function getWarmupIncrement(){
+  const v=localStorage.getItem('wt_warmup_inc');
+  return v!=null?parseFloat(v):(getWeightUnit()==='kg'?1.25:2.5);
+}
+function setWarmupIncrement(v){ localStorage.setItem('wt_warmup_inc',String(parseFloat(v))) }
 
 // ── Equipment availability (per-profile) ──────────────────────────────────────
 const ALL_EQUIPMENT=['Barbell','Dumbbell','Machine','Cable','Bodyweight','Equipment'];

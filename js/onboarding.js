@@ -40,6 +40,10 @@ function selectEquipment(type){
   toggleEquipmentType(type);
   renderPrefsModal();
 }
+function selectWarmupIncrement(v){
+  setWarmupIncrement(v);
+  renderPrefsModal();
+}
 function renderPrefsModal(){
   // Equipment
   const avail=getAvailableEquipment();
@@ -54,6 +58,14 @@ function renderPrefsModal(){
   document.querySelectorAll('#unit-row .dpw-btn').forEach(btn=>{
     btn.classList.toggle('selected',btn.dataset.unit===unit);
   });
+  const warmupIncOpts=unit==='kg'?[1.25,2.5,5]:[2.5,5,10];
+  const warmupInc=getWarmupIncrement();
+  const warmupIncRow=document.getElementById('warmup-inc-row');
+  if(warmupIncRow){
+    warmupIncRow.innerHTML=warmupIncOpts.map(v=>
+      `<button class="dpw-btn${v===warmupInc?' selected':''}" onclick="selectWarmupIncrement(${v})">${v} ${unit}</button>`
+    ).join('');
+  }
   const level=getCardioLevel();
   document.querySelectorAll('#cardio-level-row .dpw-btn').forEach(btn=>{
     btn.classList.toggle('selected',btn.dataset.level===level);

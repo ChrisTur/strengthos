@@ -140,6 +140,10 @@
       <button class="dpw-btn" data-unit="kg" onclick="selectWeightUnit('kg')">kg<br><span style="font-size:10px;font-weight:400">Kilograms</span></button>
     </div>
 
+    <div class="prefs-section-label" style="margin-top:16px">Warm-up weight rounding</div>
+    <div class="prefs-section-sub">Rounds calculated warm-up weights to the nearest increment.</div>
+    <div class="dpw-row" id="warmup-inc-row"></div>
+
     <div class="prefs-section-label" style="margin-top:16px">Cardio intensity</div>
     <div class="prefs-section-sub">Affects exercise selection on cardio days.</div>
     <div class="dpw-row" id="cardio-level-row">
@@ -371,8 +375,6 @@
     </div>
     <!-- Theme toggle -->
     <button class="btn btn-icon" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
-    <!-- Plate calc -->
-    <button class="btn btn-sm" onclick="openPlateModal()" title="Plate calculator">🏋️ <span class="plates-txt">Plates</span></button>
     <!-- View toggle -->
     <div class="view-tabs">
       <button class="btn active" id="btn-log"  onclick="showView('log')"><span class="tab-icon">📝</span>Log</button>
