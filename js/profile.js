@@ -41,7 +41,7 @@ function deleteProfile(name){
   localStorage.removeItem(cardioKey(name)); localStorage.removeItem(dislikedKey(name));
   const updated=p.filter(x=>x!==name); saveProfiles(updated);
   if(getActiveProfile()===name) setActiveProfile(updated[0]);
-  renderProfileSelector(); renderWeekGrid(); renderDetail();
+  renderProfileSelector(); renderProfileDropdown(); renderWeekGrid(); renderDetail();
 }
 function toggleProfileDropdown(){
   const dd=document.getElementById('profile-dropdown');
