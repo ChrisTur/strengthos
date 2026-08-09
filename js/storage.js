@@ -86,13 +86,19 @@ function toggleTheme(){
   const next=html.getAttribute('data-theme')==='dark'?'light':'dark';
   html.setAttribute('data-theme',next);
   localStorage.setItem('wt_theme',next);
-  document.getElementById('theme-btn').textContent=next==='dark'?'🌙':'☀️';
+  const btn=document.getElementById('theme-btn');
+  if(btn) btn.textContent=next==='dark'?'🌙 Dark mode':'☀️ Light mode';
 }
 function initTheme(){
   const t=localStorage.getItem('wt_theme')||'dark';
   document.documentElement.setAttribute('data-theme',t);
-  document.getElementById('theme-btn').textContent=t==='dark'?'🌙':'☀️';
+  const btn=document.getElementById('theme-btn');
+  if(btn) btn.textContent=t==='dark'?'🌙 Dark mode':'☀️ Light mode';
 }
+// ── Calendar strip collapse (personal display preference, not per-profile) ────
+function getWeekGridCollapsed(){ return localStorage.getItem('wt_weekgrid_collapsed')==='1' }
+function setWeekGridCollapsed(v){ localStorage.setItem('wt_weekgrid_collapsed',v?'1':'0') }
+
 function selectWeightUnit(u){
   setWeightUnit(u);
   if(typeof renderPrefsModal==='function') renderPrefsModal();

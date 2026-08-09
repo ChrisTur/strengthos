@@ -21,7 +21,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-title{font-size:20px;font-weight:600}
 .header-sub{font-size:13px;color:var(--text2);margin-top:2px}
 .header-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.view-tabs{display:flex;gap:6px}
 
 /* Buttons */
 .btn{padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -308,6 +307,7 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .ex-menu button:disabled:hover{background:none}
 .ex-menu-danger{color:var(--red)!important}
 .ex-menu-danger:hover{background:var(--red-bg)!important}
+.ex-menu button.active{color:var(--accent);font-weight:600}
 .detail-menu-field{padding:6px 10px;display:flex;flex-direction:column;gap:3px}
 .detail-menu-field label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
 .detail-menu-field select,.detail-menu-field input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;max-width:none}
@@ -317,13 +317,12 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .add-ex-wrap input::placeholder{color:var(--text3)}
 .add-ex-wrap button{padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--green);background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
 .add-ex-wrap button:hover{background:var(--green);color:#fff}
-.tab-icon{display:none}
 
 /* ── Mobile ────────────────────────────────────────────────────────────────── */
 @media(max-width:600px){
 
-  /* Body — reserve space for fixed bottom nav + iPhone home bar */
-  body{padding:10px;padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px))}
+  /* Body — iPhone home bar clearance only; no more fixed bottom nav to reserve for */
+  body{padding:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px))}
 
   /* ── Header ── compact single row */
   .header{margin-bottom:12px;gap:6px;flex-wrap:nowrap;align-items:center}
@@ -343,30 +342,6 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
     border-radius:var(--radius);
     box-shadow:0 8px 40px rgba(0,0,0,.6)
   }
-
-  /* Hide plates text; show icon only */
-  .plates-txt{display:none}
-
-  /* ── Bottom nav (view tabs become a fixed tab bar) ── */
-  .view-tabs{
-    position:fixed;bottom:0;left:0;right:0;
-    z-index:150;
-    display:flex;gap:0;
-    background:var(--bg2);
-    border-top:1px solid var(--border);
-    padding-bottom:env(safe-area-inset-bottom, 0px)
-  }
-  .view-tabs .btn{
-    flex:1;
-    display:flex;flex-direction:column;align-items:center;gap:3px;
-    border:none;border-radius:0;border-right:1px solid var(--border);
-    background:var(--bg2);color:var(--text3);
-    padding:8px 4px 7px;font-size:10px;font-weight:600;letter-spacing:.03em
-  }
-  .view-tabs .btn:last-child{border-right:none}
-  .view-tabs .btn.active{color:var(--accent);background:var(--bg2)}
-  .view-tabs .btn:hover{background:var(--bg3)}
-  .tab-icon{display:block;font-size:20px;line-height:1}
 
   /* ── Exercise table → stacked cards ── */
   .ex-table thead{display:none}

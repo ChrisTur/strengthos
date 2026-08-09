@@ -366,6 +366,7 @@
       <div class="profile-dropdown" id="profile-dropdown" style="display:none">
         <div id="profile-list"></div>
         <div class="profile-divider"></div>
+        <div class="profile-option profile-new" onclick="toggleTheme()" id="theme-btn">🌙 Dark mode</div>
         <div class="profile-option profile-new" onclick="openGoalModal()">🎯 Set goal</div>
         <div class="profile-option profile-new" onclick="openPrefsModal()">⚙️ Training preferences</div>
         <div class="profile-option profile-new" onclick="openProfileModal()">+ New profile</div>
@@ -373,13 +374,14 @@
         <div class="profile-option profile-new" onclick="logout()" style="color:var(--red)">Sign out</div>
       </div>
     </div>
-    <!-- Theme toggle -->
-    <button class="btn btn-icon" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
-    <!-- View toggle -->
-    <div class="view-tabs">
-      <button class="btn active" id="btn-log"  onclick="showView('log')"><span class="tab-icon">📝</span>Log</button>
-      <button class="btn" id="btn-dash" onclick="showView('dashboard')"><span class="tab-icon">📈</span>Progress</button>
-      <button class="btn" id="btn-hist" onclick="showView('history')"><span class="tab-icon">🕐</span>History</button>
+    <!-- Primary view stays a direct action; secondary views tuck behind a menu -->
+    <button class="btn active" id="btn-log" onclick="showView('log')">📝 Log</button>
+    <div class="ex-controls">
+      <button class="ex-kebab-btn" onclick="event.stopPropagation();toggleExMenu('nav')" title="More views">☰</button>
+      <div class="ex-menu" id="ex-menu-nav">
+        <button id="btn-dash" onclick="closeExMenus();showView('dashboard')">📈 Progress</button>
+        <button id="btn-hist" onclick="closeExMenus();showView('history')">🕐 History</button>
+      </div>
     </div>
   </div>
 </div>
@@ -397,6 +399,7 @@
     <button class="btn btn-sm" onclick="openScheduleModal()" title="Edit this week's workout schedule">Edit</button>
     <button class="btn btn-sm" onclick="openWeekPlanModal()" title="Plan exercises for the whole week">📋 Plan</button>
     <button class="btn btn-sm btn-icon" onclick="changeWeek(1)" title="Next week">›</button>
+    <button class="btn btn-sm btn-icon" id="week-collapse-btn" onclick="toggleWeekGridCollapsed()" title="Collapse calendar">▾</button>
   </div>
   <div class="week-grid" id="week-grid"></div>
   <div class="detail" id="detail-panel"></div>
