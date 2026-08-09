@@ -77,6 +77,7 @@ function toggleDeload(){
   const k=deloadKey(getActiveProfile());
   if(localStorage.getItem(k)) localStorage.removeItem(k); else localStorage.setItem(k,'1');
   document.getElementById('deload-banner').style.display=isDeload()?'':'none';
+  if(typeof renderDetail==='function') renderDetail();
 }
 
 // ── Theme ─────────────────────────────────────────────────────────────────────

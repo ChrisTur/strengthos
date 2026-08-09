@@ -308,6 +308,9 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .ex-menu button:disabled:hover{background:none}
 .ex-menu-danger{color:var(--red)!important}
 .ex-menu-danger:hover{background:var(--red-bg)!important}
+.detail-menu-field{padding:6px 10px;display:flex;flex-direction:column;gap:3px}
+.detail-menu-field label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.detail-menu-field select,.detail-menu-field input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;max-width:none}
 .add-ex-wrap{display:flex;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--border)}
 .add-ex-wrap input{flex:1;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
 .add-ex-wrap input:focus{outline:none;border-color:var(--accent)}

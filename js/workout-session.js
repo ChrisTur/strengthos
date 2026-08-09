@@ -148,16 +148,23 @@ function renderDetail(){
           <span class="rename-hint">✎</span>
         </div>
         <div class="detail-sub" id="detail-sub">${draftSession.exercises.length} exercise${draftSession.exercises.length!==1?'s':''} · ~${estimateWorkoutMinutes()} min${lastSession?` · Last: ${formatDate(lastSession.date)}`:''}</div>
-        <div class="tags">${day.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}</div>
+        <div class="tags">${day.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}${isDeload()?'<span class="tag" style="border-color:var(--amber);color:var(--amber)">⚡ Deload</span>':''}</div>
       </div>
-      <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap">
-        <button class="btn btn-sm" onclick="openCustomDayModal(${activeDayIdx})" title="Edit exercises for this day template">✏️ Edit day</button>
-        <select class="workout-select" onchange="changeWorkoutForDate(this.value)" title="Change workout for this date">${workoutOpts}</select>
-        <input type="date" id="session-date" value="${draftSession.date}"
-          style="padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer"
-          onchange="draftSession.date=this.value;saveDraft(activeDate,draftSession)">
-        <button class="btn btn-sm ${isDeload()?'btn-amber':''}" onclick="toggleDeload()" title="Toggle deload week"
-          style="white-space:nowrap">${isDeload()?'⚡ Deload ON':'⚡ Deload'}</button>
+      <div class="ex-controls">
+        <button class="ex-kebab-btn" onclick="event.stopPropagation();toggleExMenu('detail')" title="Day options">⋯</button>
+        <div class="ex-menu" id="ex-menu-detail" style="min-width:220px">
+          <button onclick="closeExMenus();openCustomDayModal(${activeDayIdx})">✏️ Edit day exercises</button>
+          <div class="detail-menu-field">
+            <label>Change workout</label>
+            <select class="workout-select" onchange="changeWorkoutForDate(this.value)" title="Change workout for this date">${workoutOpts}</select>
+          </div>
+          <div class="detail-menu-field">
+            <label>Date</label>
+            <input type="date" id="session-date" value="${draftSession.date}"
+              onchange="draftSession.date=this.value;saveDraft(activeDate,draftSession)">
+          </div>
+          <button onclick="closeExMenus();toggleDeload()">${isDeload()?'⚡ Turn off Deload':'⚡ Turn on Deload'}</button>
+        </div>
       </div>
     </div>
     <table class="ex-table">
