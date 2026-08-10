@@ -200,8 +200,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .note-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin:10px 12px 3px}
 
 /* Session bar */
-.session-bar{padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.session-bar{padding:14px 16px;border-top:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .session-date{font-size:12px;color:var(--text2)}
+.session-bar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* Save is the one action taken every single time; give it real visual weight
+   instead of matching the same btn-sm size as Discard/the rest selector. */
+.btn-lg{padding:10px 24px;font-size:14px;font-weight:700;border-radius:var(--radius)}
 /* Rest period selector */
 .rest-label{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .rest-select{font-size:11px;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer}
@@ -365,8 +369,8 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
   /* ── Session bar: full-width action buttons ── */
   .session-bar{flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px}
-  .session-bar>div:last-child{display:flex;flex-wrap:wrap;gap:8px}
-  .session-bar>div:last-child .btn{flex:1;padding:12px;font-size:14px}
+  .session-bar-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .session-bar-actions .btn{flex:1;padding:12px;font-size:14px}
   .rest-label{width:100%;justify-content:flex-start;margin-bottom:0}
 
   /* ── Detail header: workout picker + date wrap gracefully ── */
@@ -731,6 +735,18 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
   font-size:12px;color:var(--text2);line-height:1.5;
 }
 .deload-suggest-actions{display:flex;gap:8px;margin-top:8px}
+
+/* ── Rest-day / per-goal coaching banners — same shape as deload-suggest, neutral tone ── */
+.info-banner{
+  background:var(--bg3);
+  border:1px solid var(--border2);border-radius:8px;
+  padding:10px 14px;margin:10px 16px 0;
+  font-size:12px;color:var(--text2);line-height:1.5;
+}
+.info-banner-accent{
+  background:color-mix(in srgb,var(--accent) 10%,var(--bg2));
+  border-color:var(--accent);
+}
 
 /* ── Mood picker in completion modal ─────────────────────────────────────────── */
 .mood-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border2);text-align:center}
