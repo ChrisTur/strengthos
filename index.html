@@ -130,11 +130,15 @@
   <div class="modal-box prefs-modal-box" onclick="event.stopPropagation()">
     <div class="modal-title">⚙️ Training Preferences</div>
 
-    <div class="prefs-section-label">Available equipment</div>
+    <div class="prefs-section-label">Days per week</div>
+    <div class="prefs-section-sub">How many days you train — changes your program split and which days are rest days.</div>
+    <div class="dpw-row" id="prefs-dpw-row"></div>
+
+    <div class="prefs-section-label" style="margin-top:16px">Available equipment</div>
     <div class="prefs-section-sub">Filters the exercise library to what you actually have access to.</div>
     <div id="equip-row" class="prefs-chip-row"></div>
 
-    <div class="prefs-section-label">Weight unit</div>
+    <div class="prefs-section-label" style="margin-top:16px">Weight unit</div>
     <div class="dpw-row" id="unit-row">
       <button class="dpw-btn" data-unit="lbs" onclick="selectWeightUnit('lbs')">lbs<br><span style="font-size:10px;font-weight:400">Pounds</span></button>
       <button class="dpw-btn" data-unit="kg" onclick="selectWeightUnit('kg')">kg<br><span style="font-size:10px;font-weight:400">Kilograms</span></button>

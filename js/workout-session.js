@@ -96,34 +96,20 @@ function renderDetail(){
   const workoutOpts=`<option value="${REST_DAY}"${activeDayIdx===REST_DAY?' selected':''}>Rest / Off</option>`
     +activeDays.map((d,i)=>`<option value="${i}"${i===activeDayIdx?' selected':''}>${d.dow} — ${escapeHtml(d.name)}</option>`).join('');
 
-  if(activeDayIdx===REST_DAY){
-    panel.innerHTML=`
-      <div class="detail-header">
-        <div>
-          <div class="detail-title">Rest Day</div>
-          <div class="detail-sub">Recovery — muscles grow during rest, not just during training</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:flex-start">
-          <select class="workout-select" onchange="changeWorkoutForDate(this.value)" title="Change workout for this date">${workoutOpts}</select>
-        </div>
-      </div>
-      <div style="padding:36px 16px;text-align:center;color:var(--text3)">
-        <div style="font-size:36px;margin-bottom:12px">😴</div>
-        <div style="font-size:14px;font-weight:500;color:var(--text2);margin-bottom:8px">Scheduled rest day</div>
-        <div style="font-size:12px;line-height:1.7">Sleep well, stay hydrated, eat enough protein.<br>Want to train today? Use the dropdown above to assign a workout.</div>
-      </div>`;
-    return;
-  }
+  const isRestDay=activeDayIdx===REST_DAY;
+  const day=isRestDay?null:(getActiveDay(activeDayIdx)||DAYS[activeDayIdx]);
+  if(!isRestDay&&!day){panel.innerHTML='<div class="empty-state">No workout found.</div>';return}
+  // A rest day still gets a real draft — you can log an ad-hoc exercise on it without
+  // it needing to belong to a day template. effectiveDay is display-only in that case.
+  const effectiveDay=day||{name:'Rest Day',short:'Rest',tags:[],dots:['#555'],exercises:[]};
 
-  const day=getActiveDay(activeDayIdx)||DAYS[activeDayIdx];
-  if(!day){panel.innerHTML='<div class="empty-state">No workout found.</div>';return}
   draftSession=getDraft(activeDate)||initDraft(activeDayIdx,activeDate);
   draftSession.dayIdx=activeDayIdx;
   syncGoalExercises();
   const sessions=loadSessions().filter(s=>s.dayIdx===activeDayIdx);
   const lastSession=sessions.length?sessions[sessions.length-1]:null;
   const allStats=calcStats(loadSessions());
-  const showDeloadBanner=allStats.weekStreak>=4&&!isDeload()&&
+  const showDeloadBanner=!isRestDay&&allStats.weekStreak>=4&&!isDeload()&&
     Number(localStorage.getItem('wt_deload_dismiss')||0)<allStats.weekStreak;
   const deloadBannerHTML=showDeloadBanner
     ?`<div class="deload-suggest-banner" id="deload-suggest-banner">
@@ -134,26 +120,37 @@ function renderDetail(){
         </div>
       </div>`
     :'';
+  const restDayBannerHTML=isRestDay
+    ?`<div class="info-banner">😴 Scheduled rest day — recovery matters as much as training. Add an exercise below only if you actually want to train today.</div>`
+    :'';
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
+  const goalCoachingText=!isRestDay?(GOAL_COACHING[goal]||''):'';
+  const goalCoachingHTML=goalCoachingText
+    ?`<div class="info-banner info-banner-accent">${goalCoachingText}</div>`
+    :'';
   const heroUrl=typeof getWorkoutImageUrl==='function'?getWorkoutImageUrl(day):null;
-  const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${escapeHtml(day.name)}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
+  const heroHTML=heroUrl?`<div class="workout-hero"><img src="${heroUrl}" alt="${escapeHtml(effectiveDay.name)}" loading="lazy" onerror="this.closest('.workout-hero').style.display='none'"><div class="workout-hero-grad"></div></div>`:'';
 
   panel.innerHTML=`
     ${heroHTML}
+    ${restDayBannerHTML}
     ${deloadBannerHTML}
+    ${goalCoachingHTML}
     <div class="detail-header">
       <div>
-        <div class="detail-title-wrap" onclick="startDayRename(${activeDayIdx})" title="Click to rename this day">
-          <span class="detail-title" id="detail-day-title">${escapeHtml(day.name)}</span>
-          <span class="rename-hint">✎</span>
-        </div>
+        ${isRestDay
+          ?`<span class="detail-title">${escapeHtml(effectiveDay.name)}</span>`
+          :`<div class="detail-title-wrap" onclick="startDayRename(${activeDayIdx})" title="Click to rename this day">
+              <span class="detail-title" id="detail-day-title">${escapeHtml(effectiveDay.name)}</span>
+              <span class="rename-hint">✎</span>
+            </div>`}
         <div class="detail-sub" id="detail-sub">${draftSession.exercises.length} exercise${draftSession.exercises.length!==1?'s':''} · ~${estimateWorkoutMinutes()} min${lastSession?` · Last: ${formatDate(lastSession.date)}`:''}</div>
-        <div class="tags">${day.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}${isDeload()?'<span class="tag" style="border-color:var(--amber);color:var(--amber)">⚡ Deload</span>':''}</div>
+        <div class="tags">${effectiveDay.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${goalObj?`<span class="tag" style="border-color:var(--accent);color:var(--accent)">${goalObj.icon} ${goalObj.label}</span>`:''}${isDeload()?'<span class="tag" style="border-color:var(--amber);color:var(--amber)">⚡ Deload</span>':''}</div>
       </div>
       <div class="ex-controls">
         <button class="ex-kebab-btn" onclick="event.stopPropagation();toggleExMenu('detail')" title="Day options">⋯</button>
         <div class="ex-menu" id="ex-menu-detail" style="min-width:220px">
-          <button onclick="closeExMenus();openCustomDayModal(${activeDayIdx})">✏️ Edit day exercises</button>
+          ${isRestDay?'':`<button onclick="closeExMenus();openCustomDayModal(${activeDayIdx})">✏️ Edit day exercises</button>`}
           <div class="detail-menu-field">
             <label>Change workout</label>
             <select class="workout-select" onchange="changeWorkoutForDate(this.value)" title="Change workout for this date">${workoutOpts}</select>
@@ -186,15 +183,14 @@ function renderDetail(){
         oninput="draftSession.notes=this.value;saveDraft(activeDate,draftSession)">${escapeHtml(draftSession.notes)}</textarea>
     </div>
     <div class="session-bar">
-      <div>
+      <div class="session-bar-status">
         <div class="session-date" id="session-status">Draft — not saved</div>
         <div id="session-timer" style="font-size:10px;color:var(--text3);margin-top:2px"></div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="session-bar-actions">
         <label class="rest-label">Rest <select class="rest-select" onchange="setRestPeriod(parseFloat(this.value));updateDetailSub()">${restSelectHTML()}</select></label>
-        ${_lastSession?`<button class="btn btn-sm" onclick="copyLastWorkout()" title="Copy weights & reps from last session">📋 Copy last</button>`:''}
         <button class="btn btn-sm btn-red" onclick="discardDraft()">Discard</button>
-        <button class="btn btn-sm btn-green" onclick="saveSession()">Save workout</button>
+        <button class="btn btn-lg btn-green" onclick="saveSession()">Save workout</button>
       </div>
     </div>`;
 
@@ -255,7 +251,6 @@ function renderExerciseRows(lastSession){
   const sessions=loadSessions();
   const goal=getGoal();
   const goalExtras=GOAL_EXERCISES[goal]||[];
-  const planTag=GOAL_PLAN_TAG[goal]||'';
   const useStructure=sessions.length===0||getDaysPerWeek()<7;
   const recovery=buildMuscleRecovery();
   const supersetLabels=computeSupersetLabels(draftSession.exercises);
@@ -298,9 +293,12 @@ function renderExerciseRows(lastSession){
       }
     }
 
+    // Goal-specific coaching (e.g. "keep rest ≤60s") only makes sense on the
+    // exercises the goal actually injected, not blanket-applied to everything
+    // on the day — a heavy compound someone adds manually still needs real rest.
     const goalTag=isGoalEx
       ?`<span style="font-size:10px;color:var(--accent);margin-top:3px;display:block">${GOALS.find(g=>g.id===goal)?.icon||''} Goal exercise</span>`
-      :planTag;
+      :'';
 
     const safeName=escapeJsAttr(ex.name);
     const superset=supersetLabels[ei];
@@ -774,23 +772,4 @@ function renderMuscleVolumeSection(){
     </div>`;
   }).join('');
   return`<div class="mvol-legend"><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--amber)"></span>Under minimum</span><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--green)"></span>In range</span><span class="mvol-leg-item" style="font-size:10px;color:var(--text3)">Line = minimum target</span></div><div class="mvol-grid">${rows}</div>`;
-}
-// ── Copy last workout ─────────────────────────────────────────────────────────
-function copyLastWorkout(){
-  if(!_lastSession){alert('No previous session found for this day.');return;}
-  const flagged=draftSession.exercises
-    .map(ex=>_lastSession.exercises.find(e=>e.name===ex.name))
-    .filter(lastEx=>lastEx?.variantNote)
-    .map(lastEx=>lastEx.name);
-  const warning=flagged.length
-    ?`\n\nSkipping ${flagged.length} exercise${flagged.length>1?'s':''} flagged as a different setup last time (${flagged.join(', ')}) — those numbers aren't comparable.`
-    :'';
-  if(!confirm('Copy all weights and reps from your last session?'+warning)) return;
-  draftSession.exercises.forEach(ex=>{
-    const lastEx=_lastSession.exercises.find(e=>e.name===ex.name);
-    if(!lastEx||!lastEx.sets.length||lastEx.variantNote) return;
-    ex.sets=lastEx.sets.map(s=>({...s,done:false}));
-  });
-  _markModified(); saveDraft(activeDate,draftSession);
-  renderExerciseRows(_lastSession); updateSessionStatus();
 }
