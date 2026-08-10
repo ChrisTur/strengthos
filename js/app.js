@@ -78,10 +78,15 @@ async function authSubmit(){
   }
 }
 function _hydrateLocalStorage(settings, sessions){
+  // settings.profile is just the account's registered name, used only to seed the
+  // local multi-profile list the very first time (empty device/browser). Re-adding
+  // it unconditionally on every hydrate (i.e. every page load) resurrected profiles
+  // right after they were deleted, since this runs on every refresh while logged in.
   const profile = settings.profile || 'Me';
   let profiles = loadProfiles();
-  if(!profiles.includes(profile)){ profiles.push(profile); saveProfiles(profiles); }
-  setActiveProfile(profile);
+  if(!profiles.length){ profiles=[profile]; saveProfiles(profiles); }
+  if(profiles.includes(profile)) setActiveProfile(profile);
+  else if(!getActiveProfile()||!profiles.includes(getActiveProfile())) setActiveProfile(profiles[0]);
   if(settings.goal)         setGoal(settings.goal);
   if(settings.dpw)          setDaysPerWeek(settings.dpw);
   if(settings.weightUnit)   setWeightUnit(settings.weightUnit);

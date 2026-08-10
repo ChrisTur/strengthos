@@ -44,7 +44,15 @@ function selectWarmupIncrement(v){
   setWarmupIncrement(v);
   renderPrefsModal();
 }
+function selectPrefsDPW(n){
+  setDaysPerWeek(n);
+  apiSyncSettings({dpw:n});
+  renderPrefsModal();
+  renderWeekGrid();
+  renderDetail();
+}
 function renderPrefsModal(){
+  renderDPWButtons('prefs-dpw-row',getDaysPerWeek(),'selectPrefsDPW');
   // Equipment
   const avail=getAvailableEquipment();
   const equipRow=document.getElementById('equip-row');
