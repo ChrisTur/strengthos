@@ -10,7 +10,7 @@ exports.handler = async (event) => {
   try { user = await requireAuth(event); } catch (e) { return err(e.message, e.status || 401); }
 
   const pool = getPool();
-  const [{ rows }, { rows: cdRows }] = await Promise.all([
+  const [{ rows }, { rows: cdRows }, { rows: schedRows }] = await Promise.all([
     pool.query(
       `SELECT goal, days_per_week AS dpw, weight_unit AS "weightUnit",
               cardio_level AS "cardioLevel", equipment, disliked_exercises AS disliked,
@@ -20,6 +20,10 @@ exports.handler = async (event) => {
     ),
     pool.query(
       'SELECT day_idx, day_data FROM custom_days WHERE user_id = $1',
+      [user.id]
+    ),
+    pool.query(
+      'SELECT date, day_idx AS "dayIdx" FROM schedule_overrides WHERE user_id = $1',
       [user.id]
     ),
   ]);
@@ -32,6 +36,12 @@ exports.handler = async (event) => {
       ? JSON.parse(row.day_data) : row.day_data;
   }
 
+  const scheduleOverrides = {};
+  for (const row of schedRows) {
+    const dateStr = row.date.toISOString ? row.date.toISOString().slice(0, 10) : String(row.date);
+    scheduleOverrides[dateStr] = row.dayIdx;
+  }
+
   function parse(v) { return typeof v === 'string' ? JSON.parse(v) : v; }
 
   return ok({
@@ -42,5 +52,6 @@ exports.handler = async (event) => {
     weekTemplate: parse(settings.weekTemplate),
     aiPlan:       parse(settings.aiPlan),
     customDays,
+    scheduleOverrides,
   });
 };
