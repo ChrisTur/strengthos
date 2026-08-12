@@ -105,7 +105,15 @@ function confirmResetWeekTemplates(){
   openWeekPlanModal();
 }
 // ── State ─────────────────────────────────────────────────────────────────────
-const TODAY=localDateStr();
+// TODAY used to be computed once as a `const` at script-load time, which is
+// wrong for a PWA left open across midnight: every "today" pill/window/recovery
+// calc kept reading that frozen date forever, silently drifting from the real
+// calendar day until the next full reload — e.g. the week grid's "today" window
+// (getWeekDates anchors on TODAY) and highlight would sit on yesterday while
+// each pill's own workout type still correctly reflected its own real date,
+// making the two look mismatched. It's `let` now and gets refreshed by
+// refreshTodayIfStale() below, called on tab-focus and on an interval.
+let TODAY=localDateStr();
 function _clearDraftsForDayIdx(dayIdx){ clearDraftsForDayIdx(dayIdx,TODAY); }
 let activeDate=TODAY;
 let activeDayIdx=0; // kept in sync via setActiveDate()
@@ -114,6 +122,17 @@ function setActiveDate(date){
   activeDate=date;
   activeDayIdx=getWorkoutForDate(date);
 }
+function refreshTodayIfStale(){
+  const real=localDateStr();
+  if(real===TODAY) return;
+  const wasOnToday=activeDate===TODAY;
+  TODAY=real;
+  if(wasOnToday) setActiveDate(TODAY);
+  renderWeekGrid();
+  if(wasOnToday) renderDetail();
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') refreshTodayIfStale(); });
+setInterval(refreshTodayIfStale, 5*60*1000);
 // ── Week grid ─────────────────────────────────────────────────────────────────
 function getWeekDates(offset){
   const anchor=new Date(TODAY+'T00:00:00');
