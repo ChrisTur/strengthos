@@ -54,5 +54,16 @@ exports.handler = async (event) => {
     }
   }
 
+  // Persist per-date schedule overrides (full replace — same pattern as customDays)
+  if (body.scheduleOverrides !== undefined) {
+    await pool.query('DELETE FROM schedule_overrides WHERE user_id = $1', [user.id]);
+    for (const [date, dayIdx] of Object.entries(body.scheduleOverrides || {})) {
+      await pool.query(
+        `INSERT INTO schedule_overrides (user_id, date, day_idx) VALUES ($1,$2,$3)`,
+        [user.id, date, parseInt(dayIdx, 10)]
+      );
+    }
+  }
+
   return ok({ ok: true });
 };

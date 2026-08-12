@@ -77,7 +77,7 @@ async function authSubmit(){
     btn.textContent = _authMode==='login'?'Log In':'Create Account';
   }
 }
-function _hydrateLocalStorage(settings, sessions){
+function _hydrateLocalStorage(settings, sessions, drafts, bodyWeight){
   // settings.profile is just the account's registered name, used only to seed the
   // local multi-profile list the very first time (empty device/browser). Re-adding
   // it unconditionally on every hydrate (i.e. every page load) resurrected profiles
@@ -93,15 +93,29 @@ function _hydrateLocalStorage(settings, sessions){
   if(settings.cardioLevel)  setCardioLevel(settings.cardioLevel);
   if(settings.equipment)    setEquipment(settings.equipment);
   if(settings.disliked)     saveDisliked(settings.disliked);
-  if(settings.weekTemplate) setWeekTemplate(settings.weekTemplate);
   if(settings.aiPlan)       setAIPlan(settings.aiPlan);
   if(settings.customDays && Object.keys(settings.customDays).length) setCustomDays(settings.customDays);
+  // Written straight to localStorage (not via setWeekTemplate/saveSchedule) so
+  // restoring server state doesn't immediately re-fire a sync call echoing the
+  // same data right back to the server it just came from.
+  if(settings.weekTemplate && settings.weekTemplate.length===7){
+    localStorage.setItem(weekTemplateKey(getActiveProfile()),JSON.stringify(settings.weekTemplate));
+  }
+  if(settings.scheduleOverrides){
+    localStorage.setItem(scheduleKey(getActiveProfile()),JSON.stringify(settings.scheduleOverrides));
+  }
   saveSessions(sessions);
+  if(drafts){
+    Object.entries(drafts).forEach(([date,d])=>{
+      localStorage.setItem(draftKey(date,getActiveProfile()),JSON.stringify(d));
+    });
+  }
+  if(bodyWeight) localStorage.setItem(bwKey(getActiveProfile()),JSON.stringify(bodyWeight));
   localStorage.setItem('wt_onboarded','1');
 }
 async function _hydrateAndLaunch(){
-  const { settings, sessions } = await apiLoadUserData();
-  _hydrateLocalStorage(settings, sessions);
+  const { settings, sessions, drafts, bodyWeight } = await apiLoadUserData();
+  _hydrateLocalStorage(settings, sessions, drafts, bodyWeight);
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = '';
   initApp();
