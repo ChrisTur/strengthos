@@ -39,11 +39,13 @@ async function apiRegister(name, email, password) {
 }
 
 async function apiLoadUserData() {
-  const [settings, sessionsBody] = await Promise.all([
-    _fetch('/settings-get',   { headers: _headers() }),
-    _fetch('/sessions-list',  { headers: _headers() }),
+  const [settings, sessionsBody, draftsBody, bwBody] = await Promise.all([
+    _fetch('/settings-get',    { headers: _headers() }),
+    _fetch('/sessions-list',   { headers: _headers() }),
+    _fetch('/drafts-list',     { headers: _headers() }),
+    _fetch('/bodyweight-list', { headers: _headers() }),
   ]);
-  return { settings, sessions: sessionsBody.sessions };
+  return { settings, sessions: sessionsBody.sessions, drafts: draftsBody.drafts, bodyWeight: bwBody.entries };
 }
 
 // Never throws (network/HTTP failures resolve to false, not a rejection), so it's
@@ -69,6 +71,33 @@ function apiSyncSettings(patch) {
     method: 'POST',
     headers: _headers(),
     body: JSON.stringify(patch),
+  }).catch(() => {});
+}
+
+function apiSyncDraft(date, data) {
+  if (!getAuthToken()) return;
+  fetch(API + '/drafts-save', {
+    method: 'POST',
+    headers: _headers(),
+    body: JSON.stringify({ date, data }),
+  }).catch(() => {});
+}
+
+function apiDeleteDraft(date) {
+  if (!getAuthToken()) return;
+  fetch(API + '/drafts-delete', {
+    method: 'POST',
+    headers: _headers(),
+    body: JSON.stringify({ date }),
+  }).catch(() => {});
+}
+
+function apiSyncBodyWeight(date, weight) {
+  if (!getAuthToken()) return;
+  fetch(API + '/bodyweight-save', {
+    method: 'POST',
+    headers: _headers(),
+    body: JSON.stringify({ date, weight }),
   }).catch(() => {});
 }
 

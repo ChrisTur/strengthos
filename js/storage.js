@@ -54,12 +54,29 @@ function saveSessions(s){
 }
 
 // ── Draft helpers ─────────────────────────────────────────────────────────────
+// saveDraft() fires on every keystroke (set inputs, notes textarea), so syncing
+// to the server on every call would hammer the API. Debounce per-date instead —
+// this is what protects in-progress workouts from the local-only-storage data
+// loss that hit schedule/bodyweight before this file was wired up to sync at all.
+let _draftSyncTimers={};
+function _scheduleDraftSync(date,d){
+  clearTimeout(_draftSyncTimers[date]);
+  _draftSyncTimers[date]=setTimeout(()=>{ apiSyncDraft(date,d); delete _draftSyncTimers[date]; },1500);
+}
 function getDraft(date){ try{return JSON.parse(localStorage.getItem(draftKey(date,getActiveProfile())))}catch{return null} }
 function saveDraft(date,d){
-  try{ localStorage.setItem(draftKey(date,getActiveProfile()),JSON.stringify(d)); return true; }
+  try{
+    localStorage.setItem(draftKey(date,getActiveProfile()),JSON.stringify(d));
+    _scheduleDraftSync(date,d);
+    return true;
+  }
   catch(e){ console.error('saveDraft failed:',e); return false; }
 }
-function clearDraft(date){ localStorage.removeItem(draftKey(date,getActiveProfile())) }
+function clearDraft(date){
+  localStorage.removeItem(draftKey(date,getActiveProfile()));
+  clearTimeout(_draftSyncTimers[date]); delete _draftSyncTimers[date];
+  apiDeleteDraft(date);
+}
 function clearDraftsForDayIdx(dayIdx,fromDate){
   const profile=getActiveProfile();
   const prefix='wt_draft_', suffix='_'+profile;
@@ -67,7 +84,7 @@ function clearDraftsForDayIdx(dayIdx,fromDate){
     .filter(k=>k.startsWith(prefix)&&k.endsWith(suffix))
     .forEach(k=>{
       const date=k.slice(prefix.length,k.length-suffix.length);
-      if(date>=fromDate && getWorkoutForDate(date)===dayIdx) localStorage.removeItem(k);
+      if(date>=fromDate && getWorkoutForDate(date)===dayIdx){ localStorage.removeItem(k); apiDeleteDraft(date); }
     });
 }
 
@@ -108,11 +125,21 @@ function selectWeightUnit(u){
 
 
 function loadBW(){ try{return JSON.parse(localStorage.getItem(bwKey(getActiveProfile())))||[]}catch{return[]} }
-function saveBW2(entries){ localStorage.setItem(bwKey(getActiveProfile()),JSON.stringify(entries)) }
+// Re-syncs every entry (idempotent upsert by date) rather than tracking just what
+// changed — callers are low-frequency (an explicit save or a CSV import), so the
+// simplicity of "whatever's in localStorage is what the server has" is worth more
+// than trimming a few redundant requests.
+function saveBW2(entries){
+  localStorage.setItem(bwKey(getActiveProfile()),JSON.stringify(entries));
+  entries.forEach(e=>apiSyncBodyWeight(e.date,e.weight));
+}
 
 // ── Schedule (date → workout assignment) ──────────────────────────────────────
 function loadSchedule(){ try{return JSON.parse(localStorage.getItem(scheduleKey(getActiveProfile())))||{}}catch{return{}} }
-function saveSchedule(s){ localStorage.setItem(scheduleKey(getActiveProfile()),JSON.stringify(s)) }
+function saveSchedule(s){
+  localStorage.setItem(scheduleKey(getActiveProfile()),JSON.stringify(s));
+  apiSyncSettings({scheduleOverrides:s});
+}
 function getDefaultForDate(date){
   const dow=(new Date(date+'T00:00:00').getDay()+6)%7; // Mon=0…Sun=6
   return getGoalWeekDefaults()[dow];
@@ -161,8 +188,19 @@ function weekTemplateKey(n){ return 'wt_weektemplate_'+n }
 function getWeekTemplate(){
   try{const r=localStorage.getItem(weekTemplateKey(getActiveProfile())); return r?JSON.parse(r):null}catch{return null}
 }
-function setWeekTemplate(arr){ localStorage.setItem(weekTemplateKey(getActiveProfile()),JSON.stringify(arr)) }
-function clearWeekTemplate(){ localStorage.removeItem(weekTemplateKey(getActiveProfile())) }
+function setWeekTemplate(arr){
+  localStorage.setItem(weekTemplateKey(getActiveProfile()),JSON.stringify(arr));
+  apiSyncSettings({weekTemplate:arr});
+}
+// Server-side week_template is COALESCE-merged on write (omitting/nulling a field
+// in settings-save leaves it untouched, so other patches don't clobber it) — so
+// "clear" can't be expressed as null there. An empty array round-trips through
+// settings-get/getGoalWeekDefaults() as "no custom template" (it only accepts a
+// length-7 array), so it doubles as the clear sentinel without special-casing reads.
+function clearWeekTemplate(){
+  localStorage.removeItem(weekTemplateKey(getActiveProfile()));
+  apiSyncSettings({weekTemplate:[]});
+}
 
 // ── Custom day templates (per-profile) ────────────────────────────────────────
 function getCustomDays(){ try{return JSON.parse(localStorage.getItem('wt_customdays_'+getActiveProfile()))||{}}catch{return{}} }
