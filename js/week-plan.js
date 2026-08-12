@@ -250,12 +250,18 @@ function renderScheduleModal(){
         <select class="sched-sel" onchange="templChange(${i},this.value)">${makeOpts(_templDraft[i])}</select>
       </div>`).join('');
   } else {
+    // getWeekDates() is a rolling 7-day window anchored on TODAY, not
+    // necessarily starting on a Monday, so dates[i]'s real weekday can be
+    // any of the 7 — indexing dowNames by loop position (as this used to)
+    // mislabeled every row whenever TODAY wasn't Monday, so changes made
+    // under a given day name silently applied to a different real date.
     const dates=getWeekDates(weekOffset);
-    document.getElementById('sched-rows').innerHTML=dates.map((date,i)=>{
+    document.getElementById('sched-rows').innerHTML=dates.map(date=>{
       const current=_schedChanges[date]!==undefined?_schedChanges[date]:getWorkoutForDate(date);
       const [,m,d]=date.split('-');
+      const dow=dowNames[(new Date(date+'T00:00:00').getDay()+6)%7];
       return`<div class="sched-row">
-        <span class="sched-dow">${dowNames[i]}</span>
+        <span class="sched-dow">${dow}</span>
         <span class="sched-date">${+m}/${+d}</span>
         <select class="sched-sel" onchange="schedChange('${date}',this.value)">${makeOpts(current)}</select>
       </div>`;
