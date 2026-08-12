@@ -141,9 +141,27 @@ async function _boot(){
   setTimeout(()=>document.getElementById('auth-email').focus(), 100);
 }
 // ── Push notifications ────────────────────────────────────────────────────────
+// Browsers only re-check sw.js for changes roughly every 24h by default, and
+// on iOS an installed home-screen PWA is a separate context that reopening
+// Safari doesn't touch at all — both meant a shipped fix could sit unseen
+// indefinitely even after closing/reopening the app. Forcing an update check
+// on every load, and reloading once a new worker actually takes over, makes
+// picking up a new deploy automatic instead of requiring the user to guess
+// at manual cache-clearing steps.
+let _swReloadedForUpdate=false;
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swReloadedForUpdate) return;
+    _swReloadedForUpdate=true;
+    window.location.reload();
+  });
+}
 async function initNotifications(){
   if(!('serviceWorker' in navigator)) return;
-  try{ await navigator.serviceWorker.register('/sw.js'); }catch(e){ console.warn('SW:',e); }
+  try{
+    const reg=await navigator.serviceWorker.register('/sw.js');
+    reg.update();
+  }catch(e){ console.warn('SW:',e); }
   if(Notification.permission==='granted'&&getReminderEnabled()) checkWorkoutReminder();
 }
 async function checkWorkoutReminder(){
