@@ -37,7 +37,14 @@ function renderWeekPlanDays(dates){
     const div=document.createElement('div');
     div.className='wp-day-card';
     if(isRest){
-      div.innerHTML=`<div class="wp-day-header"><span class="wp-dow">${dowLabels[i]}</span><span class="wp-day-name" style="color:var(--text3)">Rest Day</span></div>`;
+      const opts=`<option value="${REST_DAY}" selected>Rest / Off</option>`
+        +getActiveDays().map((d,di)=>`<option value="${di}">${d.dow} — ${escapeHtml(d.name)}</option>`).join('');
+      div.innerHTML=`
+        <div class="wp-day-header">
+          <span class="wp-dow">${dowLabels[i]}</span>
+          <span class="wp-day-name" style="color:var(--text3)">Rest Day</span>
+        </div>
+        <select class="workout-select" onchange="assignWeekPlanDay('${date}',this.value)" title="Assign a workout to this day">${opts}</select>`;
     } else if(!day){
       div.innerHTML=`<div class="wp-day-header"><span class="wp-dow">${dowLabels[i]}</span><span class="wp-day-name" style="color:var(--text3)">No workout</span></div>`;
     } else {
@@ -61,6 +68,12 @@ function renderWeekPlanDays(dates){
     }
     container.appendChild(div);
   });
+}
+function assignWeekPlanDay(date,val){
+  setWorkoutForDate(date,parseInt(val,10));
+  renderWeekPlanDays(getWeekDates(weekOffset));
+  renderWeekGrid();
+  if(date===activeDate){ setActiveDate(date); renderDetail(); }
 }
 function promoteWeekDraft(date, dayIdx){
   const draft=getDraft(date);
