@@ -1,4 +1,7 @@
-const CACHE = 'strengthos-v3';
+// The placeholder below is stamped with the deploy commit SHA by
+// scripts/stamp-sw.js at Netlify build time, so every deploy gets a distinct
+// cache name without anyone needing to remember to bump it by hand.
+const CACHE = 'strengthos-__BUILD_ID__';
 const ASSETS = ['/', '/index.html', '/css/style.css', '/js/data.js', '/js/storage.js', '/js/api.js',
   '/js/profile.js', '/js/onboarding.js', '/js/exercise-picker.js', '/js/week-plan.js',
   '/js/workout-session.js', '/js/dashboard.js', '/js/progress.js', '/js/history.js',
