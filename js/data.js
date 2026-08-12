@@ -21,6 +21,17 @@ function escapeJsAttr(str){
   return escapeHtml(jsEscaped);
 }
 
+// ── Local calendar date ──────────────────────────────────────────────────────
+// `d.toISOString().slice(0,10)` converts to UTC first, so anyone west of UTC
+// (most of the US) gets tomorrow's date for several hours every evening —
+// e.g. a Monday-night workout showing under Tuesday. Every "what's today's
+// date" call in this app means the user's local calendar date, never UTC, so
+// always go through this instead of toISOString() for date-only strings.
+function localDateStr(d=new Date()){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 // ── Colours ─────────────────────────────────────────────────────────────────
 const CORAL='#e07b39',PURPLE='#8b6fd4',BLUE='#5b9bd5',
       GREEN='#5aaa5a',AMBER='#c9963c',GRAY='#888';
