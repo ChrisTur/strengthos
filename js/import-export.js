@@ -19,7 +19,7 @@ function exportJSON(){
   const profile=getActiveProfile();
   const data={
     version:2,
-    exportDate:new Date().toISOString().slice(0,10),
+    exportDate:localDateStr(),
     profile,
     goal:getGoal(),
     dpw:getDaysPerWeek(),
