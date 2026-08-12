@@ -52,7 +52,7 @@ function renderYearHeatmap(){
   const cells=[];
   const d=new Date(start);
   while(d<=today){
-    const ds=d.toISOString().slice(0,10);
+    const ds=localDateStr(d);
     cells.push({date:ds,count:countByDate[ds]||0});
     d.setDate(d.getDate()+1);
   }
@@ -77,8 +77,8 @@ function renderYearHeatmap(){
 function renderMonthlySummary(){
   const sessions=loadSessions();
   const now=new Date();
-  const thisMonthStr=now.toISOString().slice(0,7);
-  const lastMonthStr=new Date(now.getFullYear(),now.getMonth()-1,1).toISOString().slice(0,7);
+  const thisMonthStr=localDateStr(now).slice(0,7);
+  const lastMonthStr=localDateStr(new Date(now.getFullYear(),now.getMonth()-1,1)).slice(0,7);
   const thisM=sessions.filter(s=>s.date.startsWith(thisMonthStr));
   const lastM=sessions.filter(s=>s.date.startsWith(lastMonthStr));
   const calcVol=arr=>Math.round(arr.reduce((t,sess)=>t+sess.exercises.reduce((a,ex)=>a+ex.sets.reduce((b,s)=>{
@@ -204,8 +204,8 @@ function renderDashboard(){
     <div id="progress-section">${renderExerciseProgressSection()}</div>`;
 }
 function calcStats(sessions){
-  const today=new Date().toISOString().slice(0,10);
-  const weekAgo=new Date(Date.now()-6*86400000).toISOString().slice(0,10);
+  const today=localDateStr();
+  const weekAgo=localDateStr(new Date(Date.now()-6*86400000));
   const thisWeek=sessions.filter(s=>s.date>=weekAgo&&s.date<=today).length;
   // Week streak — consecutive Mon-Sun calendar weeks with ≥1 session
   const now=new Date();
@@ -214,9 +214,9 @@ function calcStats(sessions){
   let weekStreak=0;
   const wk=new Date(curMon);
   while(true){
-    const ws=wk.toISOString().slice(0,10);
+    const ws=localDateStr(wk);
     const we=new Date(wk); we.setDate(wk.getDate()+7);
-    const weStr=we.toISOString().slice(0,10);
+    const weStr=localDateStr(we);
     if(!sessions.some(s=>s.date>=ws&&s.date<weStr)) break;
     weekStreak++;
     wk.setDate(wk.getDate()-7);
@@ -236,7 +236,7 @@ function calcWeeklyData(sessions,numWeeks){
   for(let i=numWeeks-1;i>=0;i--){
     const ws=new Date(wsStart); ws.setDate(wsStart.getDate()-i*7);
     const we=new Date(ws); we.setDate(ws.getDate()+7);
-    const wsStr=ws.toISOString().slice(0,10),weStr=we.toISOString().slice(0,10);
+    const wsStr=localDateStr(ws),weStr=localDateStr(we);
     let count=0,vol=0;
     sessions.forEach(s=>{
       if(s.date<wsStr||s.date>=weStr) return; count++;

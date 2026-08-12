@@ -148,7 +148,7 @@ async function initNotifications(){
 }
 async function checkWorkoutReminder(){
   if(!getReminderEnabled()||Notification.permission!=='granted') return;
-  const today=new Date().toISOString().slice(0,10);
+  const today=localDateStr();
   if(localStorage.getItem('wt_notified')===today) return;
   if(activeDayIdx===REST_DAY) return;
   const [rh,rm]=getReminderTime().split(':').map(Number);

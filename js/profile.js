@@ -165,7 +165,7 @@ function calcPlates(){
     ${Math.abs(remainder)>0.1?`<div class="plate-sub">⚠ ${remainder} lbs unaccounted — check available plates</div>`:''}`;
 }
 function openBWModal(){
-  document.getElementById('bw-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('bw-date').value=localDateStr();
   document.getElementById('bw-weight').value='';
   document.getElementById('bw-modal').style.display='flex';
   setTimeout(()=>document.getElementById('bw-weight').focus(),60);

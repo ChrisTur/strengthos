@@ -741,7 +741,7 @@ function calcWeeklyMuscleSets(){
   const weekStart=new Date(now);
   weekStart.setDate(now.getDate()+toMon);
   weekStart.setHours(0,0,0,0);
-  const weekStartStr=weekStart.toISOString().slice(0,10);
+  const weekStartStr=localDateStr(weekStart);
   const sets={};
   loadSessions().filter(s=>s.date>=weekStartStr).forEach(s=>{
     s.exercises.forEach(ex=>{
