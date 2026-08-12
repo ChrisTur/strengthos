@@ -105,7 +105,15 @@ function confirmResetWeekTemplates(){
   openWeekPlanModal();
 }
 // ── State ─────────────────────────────────────────────────────────────────────
-const TODAY=localDateStr();
+// TODAY used to be computed once as a `const` at script-load time, which is
+// wrong for a PWA left open across midnight: every "today" pill/window/recovery
+// calc kept reading that frozen date forever, silently drifting from the real
+// calendar day until the next full reload — e.g. the week grid's "today" window
+// (getWeekDates anchors on TODAY) and highlight would sit on yesterday while
+// each pill's own workout type still correctly reflected its own real date,
+// making the two look mismatched. It's `let` now and gets refreshed by
+// refreshTodayIfStale() below, called on tab-focus and on an interval.
+let TODAY=localDateStr();
 function _clearDraftsForDayIdx(dayIdx){ clearDraftsForDayIdx(dayIdx,TODAY); }
 let activeDate=TODAY;
 let activeDayIdx=0; // kept in sync via setActiveDate()
@@ -114,6 +122,17 @@ function setActiveDate(date){
   activeDate=date;
   activeDayIdx=getWorkoutForDate(date);
 }
+function refreshTodayIfStale(){
+  const real=localDateStr();
+  if(real===TODAY) return;
+  const wasOnToday=activeDate===TODAY;
+  TODAY=real;
+  if(wasOnToday) setActiveDate(TODAY);
+  renderWeekGrid();
+  if(wasOnToday) renderDetail();
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') refreshTodayIfStale(); });
+setInterval(refreshTodayIfStale, 5*60*1000);
 // ── Week grid ─────────────────────────────────────────────────────────────────
 function getWeekDates(offset){
   const anchor=new Date(TODAY+'T00:00:00');
@@ -231,12 +250,18 @@ function renderScheduleModal(){
         <select class="sched-sel" onchange="templChange(${i},this.value)">${makeOpts(_templDraft[i])}</select>
       </div>`).join('');
   } else {
+    // getWeekDates() is a rolling 7-day window anchored on TODAY, not
+    // necessarily starting on a Monday, so dates[i]'s real weekday can be
+    // any of the 7 — indexing dowNames by loop position (as this used to)
+    // mislabeled every row whenever TODAY wasn't Monday, so changes made
+    // under a given day name silently applied to a different real date.
     const dates=getWeekDates(weekOffset);
-    document.getElementById('sched-rows').innerHTML=dates.map((date,i)=>{
+    document.getElementById('sched-rows').innerHTML=dates.map(date=>{
       const current=_schedChanges[date]!==undefined?_schedChanges[date]:getWorkoutForDate(date);
       const [,m,d]=date.split('-');
+      const dow=dowNames[(new Date(date+'T00:00:00').getDay()+6)%7];
       return`<div class="sched-row">
-        <span class="sched-dow">${dowNames[i]}</span>
+        <span class="sched-dow">${dow}</span>
         <span class="sched-date">${+m}/${+d}</span>
         <select class="sched-sel" onchange="schedChange('${date}',this.value)">${makeOpts(current)}</select>
       </div>`;
