@@ -184,13 +184,13 @@ function renderDetail(){
     </div>
     <div class="session-bar">
       <div class="session-bar-status">
-        <div class="session-date" id="session-status">Draft — not saved</div>
+        <div class="session-date" id="session-status">Draft</div>
         <div id="session-timer" style="font-size:10px;color:var(--text3);margin-top:2px"></div>
       </div>
       <div class="session-bar-actions">
         <label class="rest-label">Rest <select class="rest-select" onchange="setRestPeriod(parseFloat(this.value));updateDetailSub()">${restSelectHTML()}</select></label>
-        <button class="btn btn-sm btn-red" onclick="discardDraft()">Discard</button>
-        <button class="btn btn-lg btn-green" onclick="saveSession()">Save workout</button>
+        <button class="btn btn-sm btn-red" onclick="discardDraft()" title="Discard this workout and delete it if it's already synced">Discard</button>
+        <button class="btn btn-lg btn-green" onclick="saveSession()" title="Your sets already auto-sync in the background — this wraps up the workout and shows your stats">Finish</button>
       </div>
     </div>`;
 
@@ -220,7 +220,7 @@ function commitDayRename(inp,dayIdx){
 function startDurationTimer(){
   clearInterval(_durationTimer);
   const el=document.getElementById('session-timer');
-  if(!el||!draftSession||draftSession.savedAt) return;
+  if(!el||!draftSession||draftSession.finishedAt) return;
   const update=()=>{
     if(!draftSession?.startedAt){el.textContent='';return}
     const mins=Math.round((Date.now()-draftSession.startedAt)/60000);
@@ -461,7 +461,7 @@ function toggleCardioSetDone(ei){
   ex.sets[0].done=!ex.sets[0].done; _markModified();
   saveDraft(activeDate,draftSession); renderSets(ei); updateSessionStatus();
 }
-function _markModified(){ delete draftSession.savedAt; }
+function _markModified(){ delete draftSession.savedAt; delete draftSession.finishedAt; }
 function isCardioExercise(name){ return getExerciseMuscle(name)==='Cardio'; }
 function isSetDone(s){ return (parseFloat(s.weight)>0 && parseInt(s.reps)>0) || !!s.done; }
 function isWorkingSet(s){ return isSetDone(s) && !s.warmup; }
@@ -612,36 +612,49 @@ function _lastSavedSession(){
 }
 function updateSessionStatus(){
   const el=document.getElementById('session-status'); if(!el) return;
-  if(draftSession.savedAt){
-    const t=new Date(draftSession.savedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(draftSession.finishedAt){
+    const t=new Date(draftSession.finishedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     if(draftSession.syncStatus==='failed'){
-      el.textContent=`⚠️ Saved on this device at ${t} — not synced to your account yet`; el.style.color='var(--amber)'; return;
+      el.textContent=`⚠️ Finished at ${t} — not synced to your account yet`; el.style.color='var(--amber)'; return;
     }
-    el.textContent=`✓ Saved at ${t}`; el.style.color='var(--green)'; return;
+    el.textContent=`✓ Finished at ${t}`; el.style.color='var(--green)'; return;
   }
   const workingSets=e=>e.sets.filter(s=>!s.warmup);
   const total=draftSession.exercises.reduce((a,e)=>a+workingSets(e).length,0);
   const done=draftSession.exercises.reduce((a,e)=>a+workingSets(e).filter(isSetDone).length,0);
   const warmupDone=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.warmup&&isSetDone(s)).length,0);
   const warmupNote=warmupDone>0?` · ${warmupDone}W`:'';
-  el.textContent=done===0&&warmupDone===0?'Draft — not saved':`${done} / ${total} sets logged${warmupNote} · not saved`;
+  if(done===0&&warmupDone===0){ el.textContent='Draft'; el.style.color=''; return; }
+  // savedSessionId only exists once the background auto-sync has landed at
+  // least once (debounced ~1.5s after the first working set) — until then
+  // there's real progress on screen that isn't in the database yet.
+  const syncNote=draftSession.savedSessionId==null?' · saving…'
+    :draftSession.syncStatus==='failed'?' · saved on this device only'
+    :' · auto-synced';
+  el.textContent=`${done} / ${total} sets logged${warmupNote}${syncNote}`;
   el.style.color='';
 }
-function saveSession(){
+// Persists the current draft into a real workout_sessions row — this is what
+// both the silent auto-sync (fired from the draft debounce, see storage.js)
+// and the explicit "Finish" button call, so a workout is durably in the
+// database within a couple seconds of the first set logged, not only once
+// someone remembers to tap Save. `silent` suppresses the validation/no-op
+// alerts for the background path; returns the session on success, else null.
+function _persistSession({silent=false}={}){
   const doneSets=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);
-  if(doneSets===0){ alert('Log at least one set before saving.'); return; }
-
-  clearInterval(_durationTimer);
-  const prevPRs=calcPRs(loadSessions());
+  if(doneSets===0){
+    if(!silent) alert('Log at least one set before finishing.');
+    return null;
+  }
   const sessions=loadSessions();
   const session=JSON.parse(JSON.stringify(draftSession));
   // Mark every set that has data as done so DB/history are consistent
   session.exercises.forEach(ex=>ex.sets.forEach(s=>{ s.done=isSetDone(s); }));
 
-  // Re-saving the same day (e.g. half the workout logged this morning, the rest
-  // tonight) should update the session already on record, not fork a duplicate.
-  // Diff against what's actually stored, not just "has this been saved before" —
-  // so a resave with nothing new is a no-op instead of a phantom duplicate.
+  // Re-persisting the same day (every auto-sync tick, or a later manual Finish)
+  // should update the row already on record, not fork a duplicate. Diff against
+  // what's actually stored, not just "has this been persisted before" — so a
+  // no-change tick is a silent no-op instead of a phantom duplicate.
   const existingIdx=draftSession.savedSessionId!=null
     ?sessions.findIndex(s=>s.id===draftSession.savedSessionId)
     :-1;
@@ -649,7 +662,10 @@ function saveSession(){
     const prev=sessions[existingIdx];
     const unchanged=JSON.stringify(prev.exercises)===JSON.stringify(session.exercises)
       &&(prev.notes||'')===(session.notes||'');
-    if(unchanged){ alert('Nothing new to save since your last save.'); return; }
+    if(unchanged){
+      if(!silent) alert('Nothing new since this was last saved.');
+      return null;
+    }
     session.id=draftSession.savedSessionId;
     session.startedAt=prev.startedAt;
     session.endedAt=Date.now();
@@ -665,15 +681,13 @@ function saveSession(){
   }
 
   if(!saveSessions(sessions)){
-    alert('Could not save — your device storage may be full. Free up space and try again.');
-    return;
+    if(!silent) alert('Could not save — your device storage may be full. Free up space and try again.');
+    return null;
   }
   draftSession.savedSessionId=session.id;
   draftSession.savedAt=Date.now();
   draftSession.syncStatus='pending';
   saveDraft(activeDate,draftSession);
-  renderWeekGrid(); renderExerciseRows(session); updateSessionStatus();
-  showCompletionSummary(session,prevPRs);
 
   // Capture references now — by the time this resolves the user may have
   // navigated to a different day, and activeDate/draftSession will have moved on.
@@ -683,6 +697,29 @@ function saveSession(){
     saveDraft(draftDateAtSave,draftRef);
     if(draftSession===draftRef) updateSessionStatus();
   });
+
+  return session;
+}
+function saveSession(){
+  const doneSets=draftSession.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);
+  if(doneSets===0){ alert('Log at least one set before finishing.'); return; }
+  clearInterval(_durationTimer);
+  // Exclude today's own session from the "previous" baseline — background
+  // auto-sync may have already written it (possibly more than once), so
+  // "previous PRs" has to mean every *other* session, not "before this click."
+  const prevPRs=calcPRs(loadSessions().filter(s=>s.id!==draftSession.savedSessionId));
+  // Auto-sync has usually already persisted the current state by the time
+  // someone clicks Finish, in which case _persistSession's own no-op guard
+  // (correctly) returns null with nothing new to write — that's not a
+  // failure here, just fall back to the already-synced row so the
+  // completion summary still shows.
+  const session=_persistSession({silent:true})
+    || loadSessions().find(s=>s.id===draftSession.savedSessionId);
+  if(!session){ alert('Could not save — your device storage may be full. Free up space and try again.'); return; }
+  draftSession.finishedAt=Date.now();
+  saveDraft(activeDate,draftSession);
+  renderWeekGrid(); renderExerciseRows(session); updateSessionStatus();
+  showCompletionSummary(session,prevPRs);
 }
 function showCompletionSummary(session,prevPRs){
   const doneSets=session.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0);
@@ -731,6 +768,14 @@ function closeCompletionModal(){
 }
 function discardDraft(){
   if(!confirm('Reset this workout log and start fresh?')) return;
+  // Auto-sync may have already promoted this draft into a real session row
+  // (that's the whole point — you don't need to click Finish for it to be
+  // saved) so discarding has to delete that row too, not just clear the draft,
+  // or a "discarded" workout would silently linger in your history/stats.
+  if(draftSession.savedSessionId!=null){
+    saveSessions(loadSessions().filter(s=>s.id!==draftSession.savedSessionId));
+    apiDeleteSession(draftSession.savedSessionId);
+  }
   clearDraft(activeDate); draftSession=initDraft(activeDayIdx,activeDate); renderDetail();
 }
 // ── Muscle volume tracker ─────────────────────────────────────────────────────

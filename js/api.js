@@ -69,6 +69,16 @@ async function apiSyncSession(session) {
   }
 }
 
+function apiDeleteSession(id) {
+  if (!getAuthToken()) return;
+  fetch(API + '/sessions-delete', {
+    method: 'POST',
+    headers: _headers(),
+    body: JSON.stringify({ id }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 function apiSyncSettings(patch) {
   if (!getAuthToken()) return;
   fetch(API + '/settings-save', {
