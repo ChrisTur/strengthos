@@ -779,42 +779,75 @@ function discardDraft(){
   clearDraft(activeDate); draftSession=initDraft(activeDayIdx,activeDate); renderDetail();
 }
 // ── Muscle volume tracker ─────────────────────────────────────────────────────
-function calcWeeklyMuscleSets(){
-  const now=new Date();
-  const dow=now.getDay();
-  const toMon=dow===0?-6:1-dow;
-  const weekStart=new Date(now);
-  weekStart.setDate(now.getDate()+toMon);
-  weekStart.setHours(0,0,0,0);
-  const weekStartStr=localDateStr(weekStart);
-  const sets={};
-  loadSessions().filter(s=>s.date>=weekStartStr).forEach(s=>{
-    s.exercises.forEach(ex=>{
-      const m=getExerciseMuscle(ex.name);
-      if(!m||!MUSCLE_VOLUME_TARGETS[m]) return;
-      const count=ex.sets.filter(isWorkingSet).length;
-      if(count>0) sets[m]=(sets[m]||0)+count;
+// Buckets the given range into Mon–Sun weeks and returns, per muscle, both the
+// average working sets/week across the *whole* range (what the target bar
+// compares against — stays meaningful no matter how wide the range is) and a
+// short recent trend (capped at 12 weeks so the sparkline stays legible even
+// for "All Time"). A single-week range collapses to the old "this week" view
+// since avg-of-one-week is just that week's count.
+function calcMuscleWeeklyTrend(range){
+  const totalWeeks=weeksForRange(range);
+  const trendWeeks=Math.min(totalWeeks,12);
+  const end=new Date((range.end||localDateStr())+'T00:00:00');
+  const dow=end.getDay(),toMon=dow===0?-6:1-dow;
+  const curMonStart=new Date(end); curMonStart.setDate(end.getDate()+toMon);
+  const sessions=loadSessions();
+  const trend={},totals={};
+  Object.keys(MUSCLE_VOLUME_TARGETS).forEach(m=>{trend[m]=[];totals[m]=0;});
+  for(let i=totalWeeks-1;i>=0;i--){
+    const ws=new Date(curMonStart); ws.setDate(curMonStart.getDate()-i*7);
+    const we=new Date(ws); we.setDate(ws.getDate()+7);
+    const wsStr=localDateStr(ws),weStr=localDateStr(we);
+    const counts={};
+    sessions.forEach(s=>{
+      if(s.date<wsStr||s.date>=weStr) return;
+      if(range.start&&s.date<range.start) return; // clip a partial first week to the real range start
+      s.exercises.forEach(ex=>{
+        const m=getExerciseMuscle(ex.name);
+        if(!m||!MUSCLE_VOLUME_TARGETS[m]) return;
+        const c=ex.sets.filter(isWorkingSet).length;
+        if(c>0) counts[m]=(counts[m]||0)+c;
+      });
     });
-  });
-  return sets;
+    Object.keys(MUSCLE_VOLUME_TARGETS).forEach(m=>{
+      const c=counts[m]||0;
+      totals[m]+=c;
+      if(i<trendWeeks) trend[m].push({label:(ws.getMonth()+1)+'/'+ws.getDate(),sets:c});
+    });
+  }
+  const avg={};
+  Object.keys(MUSCLE_VOLUME_TARGETS).forEach(m=>avg[m]=totals[m]/totalWeeks);
+  return{trend,avg,totalWeeks};
 }
-function renderMuscleVolumeSection(){
-  const weekSets=calcWeeklyMuscleSets();
+function renderMiniTrendBars(weeks,color){
+  if(!weeks.length) return '';
+  const max=Math.max(...weeks.map(w=>w.sets),1);
+  const bars=weeks.map(w=>{
+    const h=w.sets>0?Math.max(Math.round((w.sets/max)*16),2):0;
+    return`<div class="mvol-trend-bar" style="height:${h}px;background:${color};opacity:${w.sets>0?.85:.25}" title="${w.label}: ${w.sets} set${w.sets!==1?'s':''}"></div>`;
+  }).join('');
+  return`<div class="mvol-trend-bars">${bars}</div>`;
+}
+function renderMuscleVolumeSection(range){
+  range=range||{start:null,end:localDateStr()};
+  const{trend,avg,totalWeeks}=calcMuscleWeeklyTrend(range);
   const rows=Object.entries(MUSCLE_VOLUME_TARGETS).map(([m,t])=>{
-    const sets=weekSets[m]||0;
+    const setsAvg=avg[m]||0;
+    const setsDisplay=Math.round(setsAvg*10)/10;
     const color=MUSCLE_COLORS[m]||'#888';
-    const pct=Math.min(100,(sets/t.max)*100);
+    const pct=Math.min(100,(setsAvg/t.max)*100);
     const minPct=(t.min/t.max)*100;
-    const statusColor=sets===0?'var(--text3)':sets<t.min?'var(--amber)':sets<=t.max?'var(--green)':'var(--red)';
+    const statusColor=setsAvg===0?'var(--text3)':setsAvg<t.min?'var(--amber)':setsAvg<=t.max?'var(--green)':'var(--red)';
     return`<div class="mvol-row">
       <div class="mvol-label" style="color:${color}">${m}</div>
       <div class="mvol-track">
         <div class="mvol-fill" style="width:${pct}%;background:${color}"></div>
         <div class="mvol-min-line" style="left:${minPct}%"></div>
       </div>
-      <div class="mvol-count" style="color:${statusColor}">${sets}</div>
-      <div class="mvol-range">${t.min}–${t.max}</div>
+      <div class="mvol-count" style="color:${statusColor}">${setsDisplay}</div>
+      <div class="mvol-range">${t.min}–${t.max}/wk</div>
+      ${renderMiniTrendBars(trend[m]||[],color)}
     </div>`;
   }).join('');
-  return`<div class="mvol-legend"><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--amber)"></span>Under minimum</span><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--green)"></span>In range</span><span class="mvol-leg-item" style="font-size:10px;color:var(--text3)">Line = minimum target</span></div><div class="mvol-grid">${rows}</div>`;
+  return`<div class="mvol-legend"><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--amber)"></span>Under minimum</span><span class="mvol-leg-item"><span class="mvol-leg-dot" style="background:var(--green)"></span>In range</span><span class="mvol-leg-item" style="font-size:10px;color:var(--text3)">Avg sets/week over ${totalWeeks} week${totalWeeks!==1?'s':''}</span></div><div class="mvol-grid">${rows}</div>`;
 }
