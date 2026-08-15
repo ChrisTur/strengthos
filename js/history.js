@@ -61,6 +61,7 @@ function toggleCollapse(el){
 function deleteSession(id){
   if(!confirm('Delete this session?')) return;
   saveSessions(loadSessions().filter(s=>s.id!==id));
+  apiDeleteSession(id);
   renderWeekGrid(); renderHistory();
 }
 function countDoneSets(session){ return session.exercises.reduce((a,e)=>a+e.sets.filter(isWorkingSet).length,0) }
