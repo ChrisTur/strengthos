@@ -1,8 +1,7 @@
 // ── CSV/JSON export, import modal ──────────────────────────────────────────────
 
 // ── Export / Import ───────────────────────────────────────────────────────────
-function exportCSV(){
-  const sessions=loadSessions(); if(!sessions.length){alert('No sessions to export.');return}
+function _sessionsToCSV(sessions){
   const rows=[['Date','Day','Exercise','Set',`Weight (${getWeightUnit()})`,'Reps','RPE','Completed','Session Notes']];
   sessions.forEach(s=>{
     const day=(s.dayIdx>=0?(getActiveDay(s.dayIdx)||DAYS[s.dayIdx]):null)||{name:'Unknown'};
@@ -12,8 +11,21 @@ function exportCSV(){
       });
     });
   });
-  const csv=rows.map(r=>r.map(v=>'"'+(String(v).replace(/"/g,'""'))+'"').join(',')).join('\n');
-  downloadFile('workout-data.csv','text/csv',csv);
+  return rows.map(r=>r.map(v=>'"'+(String(v).replace(/"/g,'""'))+'"').join(',')).join('\n');
+}
+function exportCSV(){
+  const sessions=loadSessions(); if(!sessions.length){alert('No sessions to export.');return}
+  downloadFile('workout-data.csv','text/csv',_sessionsToCSV(sessions));
+}
+// Scoped to whatever date range is currently selected on the Progress page —
+// full export already exists in Preferences for "everything", this is for
+// "just what I'm looking at right now."
+function exportProgressRangeCSV(){
+  const range=getProgressRange();
+  const sessions=filterSessionsByRange(loadSessions(),range);
+  if(!sessions.length){alert('No sessions in this date range.');return}
+  const suffix=range.start?`${range.start}_to_${range.end}`:`through_${range.end}`;
+  downloadFile(`workout-data-${suffix}.csv`,'text/csv',_sessionsToCSV(sessions));
 }
 function exportJSON(){
   const profile=getActiveProfile();

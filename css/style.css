@@ -992,7 +992,7 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 
 /* ── Muscle volume tracker ────────────────────────────────────────────────── */
 .mvol-grid{display:flex;flex-direction:column;gap:9px}
-.mvol-row{display:grid;grid-template-columns:88px 1fr 26px 44px;align-items:center;gap:8px}
+.mvol-row{display:grid;grid-template-columns:88px 1fr 32px 50px 70px;align-items:center;gap:8px}
 .mvol-label{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mvol-track{height:7px;background:var(--bg4);border-radius:4px;position:relative;overflow:visible}
 .mvol-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.25,.8,.25,1)}
@@ -1002,3 +1002,14 @@ select.hist-select:focus{outline:none;border-color:var(--accent)}
 .mvol-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .mvol-leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)}
 .mvol-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mvol-trend-bars{display:flex;align-items:flex-end;gap:1.5px;height:16px}
+.mvol-trend-bar{width:3px;border-radius:1px;min-height:1px}
+@media(max-width:600px){.mvol-row{grid-template-columns:70px 1fr 28px 0 0}.mvol-range,.mvol-trend-bars{display:none}}
+
+/* ── Progress date-range filter ───────────────────────────────────────────── */
+.progress-range-bar{margin:14px 16px 20px;padding-bottom:14px;border-bottom:1px solid var(--border2)}
+.progress-range-bar .dpw-row{flex-wrap:wrap}
+.progress-range-bar .dpw-btn{flex:0 1 auto;min-width:52px;padding:6px 10px;font-size:12px}
+.progress-range-custom{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--text3)}
+.progress-range-custom input[type=date]{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:5px 7px;font-size:12px}
+.progress-range-note{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--text3)}
