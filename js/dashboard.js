@@ -1,5 +1,86 @@
 // ── Dashboard, stats, mood, deload suggestion, milestones, heatmap ──────────────────────────────────────────────
 
+// ── Progress date-range filter ─────────────────────────────────────────────────
+// Drives every section on the Progress page (stats, charts, muscle volume, PRs,
+// exercise sparklines) instead of each one carrying its own hardcoded window —
+// persisted per-profile-ish via plain localStorage keys since it's a personal
+// viewing preference, not data worth syncing to the server.
+let _progressRangePreset=localStorage.getItem('wt_progress_range')||'90d'; // '7d'|'30d'|'90d'|'year'|'all'|'custom'
+let _progressRangeCustom={
+  start:localStorage.getItem('wt_progress_range_start')||null,
+  end:localStorage.getItem('wt_progress_range_end')||null,
+};
+function getProgressRange(){
+  const today=localDateStr();
+  if(_progressRangePreset==='all'){
+    // A real bound (earliest logged session), not an open-ended null, so the
+    // weekly charts and weeksForRange() below see "all time" as the actual
+    // span of your history — otherwise "All" could show *fewer* weeks on the
+    // chart than "This Year" does, which is backwards.
+    const sessions=loadSessions();
+    const earliest=sessions.reduce((min,s)=>!min||s.date<min?s.date:min,null);
+    return{start:earliest||today,end:today};
+  }
+  if(_progressRangePreset==='year') return{start:today.slice(0,4)+'-01-01',end:today};
+  if(_progressRangePreset==='custom') return{start:_progressRangeCustom.start||null,end:_progressRangeCustom.end||today};
+  const days={'7d':7,'30d':30,'90d':90}[_progressRangePreset]||90;
+  const d=new Date(); d.setDate(d.getDate()-(days-1));
+  return{start:localDateStr(d),end:today};
+}
+function filterSessionsByRange(sessions,range){
+  range=range||getProgressRange();
+  return sessions.filter(s=>(!range.start||s.date>=range.start)&&(!range.end||s.date<=range.end));
+}
+function filterBWByRange(entries,range){
+  range=range||getProgressRange();
+  return entries.filter(e=>(!range.start||e.date>=range.start)&&(!range.end||e.date<=range.end));
+}
+// Weekly-bar charts stay readable regardless of how wide the range is — cap at
+// 52 bars (a year) and always show at least 1, even for a 7-day window.
+function weeksForRange(range){
+  if(!range.start) return 12;
+  const days=Math.round((new Date(range.end+'T00:00:00')-new Date(range.start+'T00:00:00'))/86400000)+1;
+  return Math.min(Math.max(Math.ceil(days/7),1),52);
+}
+function setProgressRange(preset){
+  _progressRangePreset=preset;
+  localStorage.setItem('wt_progress_range',preset);
+  if(preset==='custom'&&(!_progressRangeCustom.start||!_progressRangeCustom.end)){
+    const d=new Date(); d.setDate(d.getDate()-29);
+    _progressRangeCustom.start=_progressRangeCustom.start||localDateStr(d);
+    _progressRangeCustom.end=_progressRangeCustom.end||localDateStr();
+    localStorage.setItem('wt_progress_range_start',_progressRangeCustom.start);
+    localStorage.setItem('wt_progress_range_end',_progressRangeCustom.end);
+  }
+  renderDashboard();
+}
+function setProgressRangeCustom(which,val){
+  if(!val) return;
+  _progressRangeCustom[which]=val;
+  localStorage.setItem('wt_progress_range_'+which,val);
+  renderDashboard();
+}
+function renderProgressRangeBar(){
+  const range=getProgressRange();
+  const presets=[['7d','7D'],['30d','30D'],['90d','90D'],['year','Year'],['all','All'],['custom','Custom']];
+  const rangeText=range.start?`${formatDateShort(range.start)} – ${formatDateShort(range.end)}`:`Through ${formatDateShort(range.end)}`;
+  return`<div class="progress-range-bar">
+    <div class="dpw-row">
+      ${presets.map(([id,label])=>`<button class="dpw-btn${_progressRangePreset===id?' selected':''}" onclick="setProgressRange('${id}')">${label}</button>`).join('')}
+    </div>
+    ${_progressRangePreset==='custom'?`
+      <div class="progress-range-custom">
+        <input type="date" value="${_progressRangeCustom.start||''}" max="${localDateStr()}" onchange="setProgressRangeCustom('start',this.value)">
+        <span>to</span>
+        <input type="date" value="${_progressRangeCustom.end||''}" max="${localDateStr()}" onchange="setProgressRangeCustom('end',this.value)">
+      </div>`:''}
+    <div class="progress-range-note">
+      <span>${rangeText}</span>
+      <button class="btn btn-sm" onclick="exportProgressRangeCSV()">⬇ Export range</button>
+    </div>
+  </div>`;
+}
+
 // ── Deload suggestion ─────────────────────────────────────────────────────────
 function dismissDeloadSuggest(){
   const streak=calcStats(loadSessions()).weekStreak;
@@ -101,10 +182,13 @@ function renderMonthlySummary(){
 }
 // ── Progress page ─────────────────────────────────────────────────────────────
 function renderDashboard(){
-  const sessions=loadSessions();
-  const stats=calcStats(sessions);
-  const weeks=calcWeeklyData(sessions,8);
-  const bwEntries=loadBW();
+  const range=getProgressRange();
+  const allSessions=loadSessions();
+  const sessions=filterSessionsByRange(allSessions,range);
+  const stats=calcStats(sessions,allSessions);
+  const consistency=calcConsistency(range);
+  const numWeeks=weeksForRange(range);
+  const weeks=calcWeeklyData(sessions,numWeeks);
   const maxCount=Math.max(...weeks.map(w=>w.count),1);
 
   // Frequency bars
@@ -119,8 +203,12 @@ function renderDashboard(){
   const labelsHTML=weeks.map(w=>`<div class="freq-label">${w.label}</div>`).join('');
   const volSVG=renderVolumeSVG(weeks);
 
-  // Body weight section
-  const latestBW=bwEntries.length?bwEntries[bwEntries.length-1]:null;
+  // Body weight section — "Latest" always reflects true latest regardless of
+  // range (it's a current-state fact, not a historical metric), the chart
+  // and chips are scoped to the range like everything else.
+  const bwAll=loadBW();
+  const latestBW=bwAll.length?bwAll[bwAll.length-1]:null;
+  const bwEntries=filterBWByRange(bwAll,range);
   const bwChips=bwEntries.slice(-12).reverse().map((e,i)=>
     `<span class="bw-chip ${i===0?'latest':''}">${e.weight} ${getWeightUnit()} <span style="color:var(--text3);font-size:10px">${formatDateShort(e.date)}</span></span>`
   ).join('');
@@ -136,14 +224,18 @@ function renderDashboard(){
   };
 
   document.getElementById('dash-content').innerHTML=`
+    ${renderProgressRangeBar()}
+
     <div class="dash-section-title">Overview — ${getActiveProfile()}</div>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">Total Sessions</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">Sessions in Range</div></div>
       <div class="stat-card"><div class="stat-value">${stats.thisWeek}</div><div class="stat-label">This Week</div></div>
       <div class="stat-card"><div class="stat-value">${stats.weekStreak}</div><div class="stat-label">Week Streak</div>
         <div class="stat-sub">${stats.weekStreak>0?'🔥 Keep it up!':'Log to start'}</div></div>
       <div class="stat-card"><div class="stat-value">${stats.topDay}</div><div class="stat-label">Most Trained</div>
         <div class="stat-sub">${stats.topDayCount>0?stats.topDayCount+' sessions':''}</div></div>
+      ${consistency?`<div class="stat-card"><div class="stat-value">${consistency.pct}%</div><div class="stat-label">Consistency</div>
+        <div class="stat-sub">${consistency.trained}/${consistency.scheduled} scheduled days</div></div>`:''}
     </div>
 
     <div class="dash-section-title">Goal & Next Up</div>
@@ -169,20 +261,20 @@ function renderDashboard(){
       </div>
     </div>
 
-    <div class="dash-section-title">Weekly Sessions — Last 8 Weeks</div>
+    <div class="dash-section-title">Weekly Sessions — Last ${numWeeks} Week${numWeeks!==1?'s':''}</div>
     <div class="chart-wrap">
       <div class="freq-bars">${barsHTML}</div>
       <div class="freq-labels">${labelsHTML}</div>
     </div>
 
-    <div class="dash-section-title">Weekly Volume — Last 8 Weeks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(${getWeightUnit()} × reps, completed sets)</span></div>
+    <div class="dash-section-title">Weekly Volume — Last ${numWeeks} Week${numWeeks!==1?'s':''} <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(${getWeightUnit()} × reps, completed sets)</span></div>
     <div class="chart-wrap">${volSVG}</div>
 
     <div class="dash-section-title">This Month</div>
     <div class="chart-wrap">${renderMonthlySummary()}</div>
 
-    <div class="dash-section-title">Muscle Volume — This Week <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(working sets)</span></div>
-    <div class="chart-wrap">${renderMuscleVolumeSection()}</div>
+    <div class="dash-section-title">Muscle Volume <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(avg working sets/week in range, trend = last ${Math.min(numWeeks,12)} weeks)</span></div>
+    <div class="chart-wrap">${renderMuscleVolumeSection(range)}</div>
 
     <div class="dash-section-title">Training Year</div>
     <div class="chart-wrap" style="overflow-x:auto">${renderYearHeatmap()}</div>
@@ -203,7 +295,13 @@ function renderDashboard(){
     <div class="dash-section-title">Exercise Progress</div>
     <div id="progress-section">${renderExerciseProgressSection()}</div>`;
 }
-function calcStats(sessions){
+// `sessions` is whatever the current date-range filter selected — total/
+// thisWeek/topDay all respect it. `allSessions` (defaulting to `sessions`
+// for callers that don't care about ranges) always drives weekStreak, since
+// "current momentum" only means something computed from the real, unfiltered
+// history — a 7-day range shouldn't make a 12-week streak look like it reset.
+function calcStats(sessions,allSessions){
+  allSessions=allSessions||sessions;
   const today=localDateStr();
   const weekAgo=localDateStr(new Date(Date.now()-6*86400000));
   const thisWeek=sessions.filter(s=>s.date>=weekAgo&&s.date<=today).length;
@@ -217,7 +315,7 @@ function calcStats(sessions){
     const ws=localDateStr(wk);
     const we=new Date(wk); we.setDate(wk.getDate()+7);
     const weStr=localDateStr(we);
-    if(!sessions.some(s=>s.date>=ws&&s.date<weStr)) break;
+    if(!allSessions.some(s=>s.date>=ws&&s.date<weStr)) break;
     weekStreak++;
     wk.setDate(wk.getDate()-7);
   }
@@ -228,6 +326,22 @@ function calcStats(sessions){
   const maxD=Math.max(...dayCounts),topIdx=dayCounts.indexOf(maxD);
   const topDayObj=maxD>0?(activeDays[topIdx]||DAYS[topIdx]||null):null;
   return{total:sessions.length,thisWeek,weekStreak,topDay:topDayObj?topDayObj.dow:'—',topDayCount:maxD};
+}
+// % of scheduled training days (per your current program, excluding rest
+// days) that actually got logged within the range — a real adherence metric,
+// unlike weekStreak which only cares whether a week had *any* session at all.
+function calcConsistency(range){
+  if(!range.start) return null;
+  const start=new Date(range.start+'T00:00:00'), end=new Date(range.end+'T00:00:00');
+  if(end<start) return null;
+  let scheduled=0,trained=0;
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const ds=localDateStr(d);
+    if(getWorkoutForDate(ds)===REST_DAY) continue;
+    scheduled++;
+    if(hasLoggedOnDate(ds)) trained++;
+  }
+  return scheduled>0?{pct:Math.round((trained/scheduled)*100),trained,scheduled}:null;
 }
 function calcWeeklyData(sessions,numWeeks){
   const now=new Date(),dow=now.getDay(),toMon=dow===0?-6:1-dow;

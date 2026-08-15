@@ -58,11 +58,31 @@ function saveSessions(s){
 // to the server on every call would hammer the API. Debounce per-date instead —
 // this is what protects in-progress workouts from the local-only-storage data
 // loss that hit schedule/bodyweight before this file was wired up to sync at all.
-let _draftSyncTimers={};
+let _draftSyncTimers={}, _pendingDraftSync={};
 function _scheduleDraftSync(date,d){
+  _pendingDraftSync[date]=d;
   clearTimeout(_draftSyncTimers[date]);
-  _draftSyncTimers[date]=setTimeout(()=>{ apiSyncDraft(date,d); delete _draftSyncTimers[date]; },1500);
+  _draftSyncTimers[date]=setTimeout(()=>_flushDraftSync(date),1500);
 }
+function _flushDraftSync(date){
+  if(!(date in _pendingDraftSync)) return;
+  const d=_pendingDraftSync[date];
+  delete _pendingDraftSync[date];
+  clearTimeout(_draftSyncTimers[date]); delete _draftSyncTimers[date];
+  apiSyncDraft(date,d);
+  // Auto-persist to the real session row too, not just the ephemeral draft —
+  // this is what makes "Finish" a pure summary action instead of the only
+  // path a workout actually reaches the database. Only meaningful for the
+  // currently active day; flushing a stale background date has nothing live
+  // to promote (_persistSession always operates on today's draftSession).
+  if(date===activeDate && typeof _persistSession==='function') _persistSession({silent:true});
+}
+// Flush every pending debounced draft the moment the tab is backgrounded —
+// including right before a reload — instead of leaving it to the 1.5s timer,
+// which a reload (e.g. the service worker's auto-update) can cut off mid-wait.
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden') Object.keys(_pendingDraftSync).forEach(_flushDraftSync);
+});
 function getDraft(date){ try{return JSON.parse(localStorage.getItem(draftKey(date,getActiveProfile())))}catch{return null} }
 function saveDraft(date,d){
   try{

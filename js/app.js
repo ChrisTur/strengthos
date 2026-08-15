@@ -104,10 +104,21 @@ function _hydrateLocalStorage(settings, sessions, drafts, bodyWeight){
   if(settings.scheduleOverrides){
     localStorage.setItem(scheduleKey(getActiveProfile()),JSON.stringify(settings.scheduleOverrides));
   }
-  saveSessions(sessions);
+  // A blind overwrite here can silently drop a session or draft that was saved
+  // locally but hadn't finished syncing to the server yet — e.g. the auto-reload
+  // on a new deploy (see app.js's controllerchange handler) firing mid-sync. So:
+  // sessions merge by id rather than replace (recovers anything local-only the
+  // server doesn't know about yet), and drafts only fill dates with no local
+  // copy at all, since an existing local draft may be strictly newer than
+  // whatever stale snapshot last reached the server.
+  const localSessions=loadSessions();
+  const serverIds=new Set(sessions.map(s=>String(s.id)));
+  const localOnly=localSessions.filter(s=>!serverIds.has(String(s.id)));
+  saveSessions([...sessions,...localOnly].sort((a,b)=>String(a.date).localeCompare(b.date)));
   if(drafts){
     Object.entries(drafts).forEach(([date,d])=>{
-      localStorage.setItem(draftKey(date,getActiveProfile()),JSON.stringify(d));
+      const key=draftKey(date,getActiveProfile());
+      if(localStorage.getItem(key)==null) localStorage.setItem(key,JSON.stringify(d));
     });
   }
   if(bodyWeight) localStorage.setItem(bwKey(getActiveProfile()),JSON.stringify(bodyWeight));
