@@ -54,10 +54,14 @@ async function apiLoadUserData() {
 async function apiSyncSession(session) {
   if (!getAuthToken()) return false;
   try {
+    // keepalive lets this finish even if the page unloads right after (e.g. the
+    // service worker's auto-update reload landing moments after a save) instead
+    // of the request getting cut off mid-flight.
     const res = await fetch(API + '/sessions-save', {
       method: 'POST',
       headers: _headers(),
       body: JSON.stringify({ session }),
+      keepalive: true,
     });
     return res.ok;
   } catch {
@@ -76,10 +80,13 @@ function apiSyncSettings(patch) {
 
 function apiSyncDraft(date, data) {
   if (!getAuthToken()) return;
+  // keepalive matters here specifically: this is what the visibilitychange
+  // flush in storage.js calls right as the tab backgrounds/unloads.
   fetch(API + '/drafts-save', {
     method: 'POST',
     headers: _headers(),
     body: JSON.stringify({ date, data }),
+    keepalive: true,
   }).catch(() => {});
 }
 
