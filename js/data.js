@@ -85,7 +85,7 @@ const DAYS=[
     {name:'Chest Press (machine)', plan:'3 × 10 @ 150',             structure:'3 × 10',note:'Maintain from Mon'},
     {name:'Chest Fly',             plan:'3 × 10 @ 145',             structure:'3 × 10',note:'Pump focus'},
     {name:'Tricep Dips (machine)', plan:'3 × 12 @ 110',             structure:'3 × 12',note:'Squeeze at bottom'},
-    {name:'Tricep Pushdown',       plan:'3 sets: 60.5 / 66 / 71.5', structure:'3 sets', note:'Superset option with curls'},
+    {name:'Tricep Cable Pushdown', plan:'3 sets: 60.5 / 66 / 71.5', structure:'3 sets', note:'Superset option with curls'},
     {name:'Bicep Curls',           plan:'3 × 10 @ 30',              structure:'3 × 10',note:'Same weight, better reps'},
     {name:'Hammer Curls',          plan:'2 × 12 @ 27.5',            structure:'2 × 12',note:'Finish arms'},
    ]},
@@ -106,7 +106,7 @@ const DAYS=[
    exercises:[
     {name:'Lateral Raises',       plan:'3 × 15 @ 30–35',  structure:'3 × 15',note:'Light, blood flow'},
     {name:'Cable Curls',          plan:'3 × 15 @ light',   structure:'3 × 15',note:'Pump, no fatigue'},
-    {name:'Chest Fly (pec deck)', plan:'3 × 15 @ 100–110', structure:'3 × 15',note:'Stretch-focused'},
+    {name:'Chest Fly', plan:'3 × 15 @ 100–110', structure:'3 × 15',note:'Stretch-focused'},
     {name:'Rear Delt',            plan:'2 × 15 @ 50–60',   structure:'2 × 15',note:'Posture work'},
    ]},
 ];
@@ -124,7 +124,7 @@ const PROGRAMS={
       {name:'Incline DB Press',       structure:'3 × 10',   note:'Upper chest emphasis — elbows at 45°, pause at chest, squeeze at top'},
       {name:'Shoulder Press',         structure:'3 × 10',   note:'Strict overhead press — brace core, no leg drive, full lockout'},
       {name:'Lateral Raises',         structure:'4 × 12–15',note:'Slow eccentric (3s down) — weight should stop momentum, not use it'},
-      {name:'Tricep Pushdown',        structure:'3 × 12',   note:'Pin elbows to sides, full extension, hold 1s at bottom each rep'},
+      {name:'Tricep Cable Pushdown',        structure:'3 × 12',   note:'Pin elbows to sides, full extension, hold 1s at bottom each rep'},
      ]},
     {dow:'Day 2',name:'Pull',short:'Pull',dots:[BLUE,AMBER],
      tags:['Back','Biceps'],
@@ -152,7 +152,7 @@ const PROGRAMS={
       {name:'Barbell Bench Press',    structure:'4 × 6–8',  note:'Work to a top set of 6; track this number — it\'s your chest strength benchmark'},
       {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest gap-filler; go to failure on set 4 — note the weight'},
       {name:'Cable Fly',              structure:'3 × 12',   note:'Long-head stretch — cross hands at peak, hold 1s. Keep slight elbow bend.'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Lock elbows in; full extension each rep. Ramp weight across sets.'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Lock elbows in; full extension each rep. Ramp weight across sets.'},
       {name:'Tricep Dips (machine)',  structure:'3 × 12',   note:'Slow negative (3s down); tricep dips are underrated for mass'},
      ]},
     {dow:'Day 2',name:'Back + Biceps',short:'Back/Bi',dots:[BLUE,AMBER],
@@ -179,7 +179,7 @@ const PROGRAMS={
       {name:'Overhead Press',         structure:'4 × 6–8',  note:'Seated or standing; brace core and glutes. Full lockout. This is your shoulder strength test.'},
       {name:'Lateral Raises',         structure:'4 × 12–15',note:'No swinging — if you can\'t control it, it\'s too heavy. 3s eccentric, chase the burn.'},
       {name:'Face Pull',              structure:'3 × 15',   note:'External rotation at end of pull — crucial for shoulder health and rear-delt development'},
-      {name:'Tricep Pushdown',        structure:'3 × 12',   note:'Superset option with curls below to save time and boost pump'},
+      {name:'Tricep Cable Pushdown',        structure:'3 × 12',   note:'Superset option with curls below to save time and boost pump'},
       {name:'Barbell Curl',           structure:'3 × 10',   note:'Strict — no swing. 2s up, 3s down. Squeeze at peak.'},
      ]},
   ],
@@ -190,7 +190,7 @@ const PROGRAMS={
       {name:'Barbell Bench Press',    structure:'4 × 5–6',  note:'Heavy strength day — work to a challenging top set, then one back-off set at 80%'},
       {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest is almost always the lagging area — prioritise this every chest session'},
       {name:'Chest Fly',              structure:'3 × 12',   note:'Go for the stretch — hands wide, elbows slightly bent, feel pecs fully loaded at bottom'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Volume finisher — elbows pinned, full extension, pump the triceps out'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Volume finisher — elbows pinned, full extension, pump the triceps out'},
       {name:'Overhead Tricep Extension',structure:'3 × 12', note:'Long head (the biggest part) only gets stretched in overhead position — don\'t skip this'},
      ]},
     {dow:'Day 2',name:'Back + Biceps',short:'Back/Bi',dots:[BLUE,AMBER],
@@ -230,7 +230,7 @@ const PROGRAMS={
       {name:'Cable Crossover',        structure:'4 × 12',   note:'Full stretch and squeeze — cross hands at the end; best chest isolation for pump work'},
       {name:'Pull-Up',                structure:'4 × max',  note:'Bodyweight pull — dead hang start, chest to bar. Scale with band if needed.'},
       {name:'Cable Seated Row — Wide Grip',structure:'4 × 10',note:'Upper back and rear delt emphasis — wider grip, pull to lower chest, elbows flare wide'},
-      {name:'Dumbbell Curl',          structure:'3 × 10',   note:'Incline dumbbell curl option for extra stretch — hit biceps from a different angle'},
+      {name:'Bicep Curls',            structure:'3 × 10',   note:'Incline dumbbell curl option for extra stretch — hit biceps from a different angle'},
      ]},
   ],
   6:[
@@ -241,7 +241,7 @@ const PROGRAMS={
       {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest; go to failure on final set — note the reps and weight'},
       {name:'Chest Fly',              structure:'3 × 12',   note:'Full stretch at the bottom — don\'t shorten the range for heavier weight'},
       {name:'Lateral Raises',         structure:'4 × 15',   note:'3s eccentric; side delts need volume to grow — these should burn'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension; ramp weight across the 4 sets'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension; ramp weight across the 4 sets'},
      ]},
     {dow:'Day 2',name:'Pull A — Back Width',short:'Pull A',dots:[BLUE,AMBER],
      tags:['Back','Biceps','Pull'],
@@ -299,7 +299,7 @@ const PROGRAMS={
       {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest — go to failure on set 4, note the weight and reps'},
       {name:'Chest Fly',              structure:'3 × 12',   note:'Stretch-focused — feel the pecs fully loaded at the bottom, don\'t shorten the range'},
       {name:'Lateral Raises',         structure:'4 × 15',   note:'3s eccentric; no swinging — if form breaks, the weight is too heavy'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension each rep; ramp weight across sets'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension each rep; ramp weight across sets'},
      ]},
     {dow:'Day 2',name:'Pull A — Width',short:'Pull A',dots:[BLUE,AMBER],
      tags:['Back','Biceps','Pull'],
@@ -755,7 +755,7 @@ const HYBRID_PROGRAMS={
       {name:'Barbell Row',         structure:'4 × 6',  note:'Pull as hard as you push — flat back, drive elbows to hips'},
       {name:'Overhead Press',      structure:'3 × 8',  note:'Strict press — no leg drive, keep ribs down'},
       {name:'Lat Pulldown',        structure:'3 × 10', note:'Full stretch at top, squeeze lats at bottom'},
-      {name:'Dumbbell Curl',       structure:'3 × 12', note:'Slow eccentric — 3 seconds down'},
+      {name:'Bicep Curls',         structure:'3 × 12', note:'Slow eccentric — 3 seconds down'},
      ]},
     {dow:'Wed', name:'Cardio & Core', short:'Cardio', dots:[BLUE,GREEN],
      tags:['Cardio','Core'],
@@ -967,7 +967,6 @@ const EXERCISE_LIBRARY={
     {name:'Landmine Press',               type:'Compound',  equipment:'Barbell'},
     // ── Dumbbell ─────────────────────────────────────────────────────────────
     {name:'Dumbbell Bench Press',         type:'Compound',  equipment:'Dumbbell'},
-    {name:'Incline Dumbbell Press',       type:'Compound',  equipment:'Dumbbell'},
     {name:'Decline Dumbbell Press',       type:'Compound',  equipment:'Dumbbell'},
     {name:'Incline DB Press',             type:'Compound',  equipment:'Dumbbell'},
     {name:'Flat Dumbbell Fly',            type:'Isolation', equipment:'Dumbbell'},
@@ -979,7 +978,6 @@ const EXERCISE_LIBRARY={
     {name:'Chest Press (machine)',        type:'Compound',  equipment:'Machine'},
     {name:'Chest Press (neutral grip)',   type:'Compound',  equipment:'Machine'},
     {name:'Chest Fly',                    type:'Isolation', equipment:'Machine'},
-    {name:'Chest Fly (pec deck)',         type:'Isolation', equipment:'Machine'},
     {name:'Incline Fly or Pec Deck',      type:'Isolation', equipment:'Machine'},
     // ── Cable ─────────────────────────────────────────────────────────────────
     {name:'Cable Fly',                    type:'Isolation', equipment:'Cable'},
@@ -1008,6 +1006,8 @@ const EXERCISE_LIBRARY={
     {name:'Cable Seated Row',               type:'Compound',  equipment:'Cable',     targets:'Mid Back / Rhomboids',  cue:'Drive elbows back; hold 1s at peak contraction, controlled release'},
     {name:'Cable Seated Row — Wide Grip',   type:'Compound',  equipment:'Cable',     targets:'Upper Back / Rear Delt',cue:'Wide neutral or overhand grip; more rear delt and upper trap activation'},
     {name:'Machine Row',                    type:'Compound',  equipment:'Machine',   targets:'Mid Back',              cue:'Chest pad support; drive elbows back and squeeze shoulder blades'},
+    {name:'Assisted Pull-Up Machine',       type:'Compound',  equipment:'Machine',   targets:'Lats + Upper Back',     cue:'Counterweight assists the pull; dial the assist down over time toward a bodyweight pull-up'},
+    {name:'High Row Machine',               type:'Compound',  equipment:'Machine',   targets:'Upper Back / Lats',     cue:'Iso-lateral handles pull to chest height; squeeze shoulder blades at the top of each rep'},
     {name:'Barbell Row',                    type:'Compound',  equipment:'Barbell',   targets:'Full Back',             cue:'Hinge to ~45°; pull bar to lower chest, control the descent'},
     {name:'Pendlay Row',                    type:'Compound',  equipment:'Barbell',   targets:'Upper Back / Traps',    cue:'Start each rep from floor; explosive pull to chest, strict form'},
     {name:'Dumbbell Row',                   type:'Compound',  equipment:'Dumbbell',  targets:'Lats + Mid Back',       cue:'Knee on bench; pull elbow toward ceiling, full elbow extension at bottom'},
@@ -1052,7 +1052,6 @@ const EXERCISE_LIBRARY={
     {name:'Kettlebell Press',         type:'Compound',  equipment:'Equipment'},
     {name:'Bradford Press',           type:'Compound',  equipment:'Barbell'},
     {name:'Behind-the-Neck Press',    type:'Compound',  equipment:'Barbell'},
-    {name:'Machine Shoulder Press',   type:'Compound',  equipment:'Machine'},
     // ── Lateral / side delt ───────────────────────────────────────────────────
     {name:'Lateral Raises',           type:'Isolation', equipment:'Dumbbell'},
     {name:'Cable Lateral Raise',      type:'Isolation', equipment:'Cable'},
@@ -1062,7 +1061,6 @@ const EXERCISE_LIBRARY={
     // ── Rear delt ─────────────────────────────────────────────────────────────
     {name:'Rear Delt Machine',        type:'Isolation', equipment:'Machine'},
     {name:'Rear Delt',                type:'Isolation', equipment:'Dumbbell'},
-    {name:'Rear Delt Fly',            type:'Isolation', equipment:'Dumbbell'},
     {name:'Cable Face Pull',          type:'Isolation', equipment:'Cable'},
     {name:'Prone Y-T-W',              type:'Isolation', equipment:'Bodyweight'},
     {name:'Rear Delt Cable Fly',      type:'Isolation', equipment:'Cable'},
@@ -1084,7 +1082,6 @@ const EXERCISE_LIBRARY={
     {name:'21s (EZ Bar)',             type:'Isolation', equipment:'Barbell'},
     // ── Dumbbell ─────────────────────────────────────────────────────────────
     {name:'Bicep Curls',              type:'Isolation', equipment:'Dumbbell'},
-    {name:'Dumbbell Curl',            type:'Isolation', equipment:'Dumbbell'},
     {name:'Hammer Curls',             type:'Isolation', equipment:'Dumbbell'},
     {name:'Incline Dumbbell Curl',    type:'Isolation', equipment:'Dumbbell'},
     {name:'Concentration Curl',       type:'Isolation', equipment:'Dumbbell'},
@@ -1103,12 +1100,13 @@ const EXERCISE_LIBRARY={
     // ── Machine ───────────────────────────────────────────────────────────────
     {name:'Preacher Curl',            type:'Isolation', equipment:'Machine'},
     {name:'Machine Curl',             type:'Isolation', equipment:'Machine'},
-    {name:'Machine Preacher Curl',    type:'Isolation', equipment:'Machine'},
+    // ── Bodyweight ───────────────────────────────────────────────────────────
+    {name:'Towel Curl',               type:'Isolation', equipment:'Bodyweight'},
+    {name:'Isometric Doorframe Curl', type:'Isolation', equipment:'Bodyweight'},
   ],
   Triceps:[
     // ── Cable pushdown variations ─────────────────────────────────────────────
     {name:'Tricep Cable Pushdown',      type:'Isolation', equipment:'Cable'},
-    {name:'Tricep Pushdown',            type:'Isolation', equipment:'Cable'},
     {name:'Rope Pushdown',              type:'Isolation', equipment:'Cable'},
     {name:'V-Bar Pushdown',             type:'Isolation', equipment:'Cable'},
     {name:'Single-Arm Pushdown',        type:'Isolation', equipment:'Cable'},
@@ -1175,6 +1173,9 @@ const EXERCISE_LIBRARY={
     {name:'Face Pull (trap focus)',     type:'Isolation', equipment:'Cable'},
     {name:'Meadows Shrug',              type:'Isolation', equipment:'Barbell'},
     {name:'Pendlay Row (trap focus)',   type:'Compound',  equipment:'Barbell'},
+    // ── Bodyweight ─────────────────────────────────────────────────────────────
+    {name:'Wall Slide',                 type:'Isolation', equipment:'Bodyweight'},
+    {name:'Prone Trap Raise',           type:'Isolation', equipment:'Bodyweight'},
   ],
   Quads:[
     // ── Barbell ───────────────────────────────────────────────────────────────
@@ -1196,6 +1197,7 @@ const EXERCISE_LIBRARY={
     {name:'Hack Squat',               type:'Compound',  equipment:'Machine'},
     {name:'Smith Machine Squat',      type:'Compound',  equipment:'Machine'},
     {name:'Terminal Knee Extension',  type:'Isolation', equipment:'Cable'},
+    {name:'Cable Squat',              type:'Compound',  equipment:'Cable'},
     // ── Dumbbell / bodyweight ─────────────────────────────────────────────────
     {name:'Bulgarian Split Squat',    type:'Compound',  equipment:'Dumbbell'},
     {name:'Walking Lunges',           type:'Compound',  equipment:'Dumbbell'},
@@ -1242,6 +1244,7 @@ const EXERCISE_LIBRARY={
     {name:'Single-Leg Hip Thrust',     type:'Compound',  equipment:'Bodyweight'},
     {name:'Glute Bridge',              type:'Compound',  equipment:'Bodyweight'},
     {name:'Weighted Glute Bridge',     type:'Compound',  equipment:'Barbell'},
+    {name:'Barbell Step-Up',           type:'Compound',  equipment:'Barbell'},
     {name:'Frog Pump',                 type:'Isolation', equipment:'Bodyweight'},
     // ── Cable / machine isolation ─────────────────────────────────────────────
     {name:'Cable Kickback',            type:'Isolation', equipment:'Cable'},
@@ -1280,7 +1283,6 @@ const EXERCISE_LIBRARY={
   Core:[
     // ── Plank / anti-extension ────────────────────────────────────────────────
     {name:'Plank Hold',                type:'Isolation', equipment:'Bodyweight'},
-    {name:'Plank',                     type:'Isolation', equipment:'Bodyweight'},
     {name:'Side Plank',                type:'Isolation', equipment:'Bodyweight'},
     {name:'Weighted Plank',            type:'Isolation', equipment:'Bodyweight'},
     {name:'Hollow Body Hold',          type:'Isolation', equipment:'Bodyweight'},
@@ -1314,6 +1316,8 @@ const EXERCISE_LIBRARY={
     {name:'Cable Oblique Crunch',      type:'Isolation', equipment:'Cable'},
     {name:'Windshield Wipers',         type:'Isolation', equipment:'Bodyweight'},
     {name:'Side Bend (dumbbell)',      type:'Isolation', equipment:'Dumbbell'},
+    {name:'Weighted Sit-Up',           type:'Isolation', equipment:'Dumbbell'},
+    {name:'Ab Crunch Machine',         type:'Isolation', equipment:'Machine'},
     // ── Dynamic / compound ────────────────────────────────────────────────────
     {name:'Dragon Flag',               type:'Compound',  equipment:'Bodyweight'},
     {name:'Mountain Climber',          type:'Compound',  equipment:'Bodyweight'},
