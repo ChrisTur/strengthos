@@ -689,14 +689,11 @@ function _persistSession({silent=false}={}){
   draftSession.syncStatus='pending';
   saveDraft(activeDate,draftSession);
 
-  // Capture references now — by the time this resolves the user may have
-  // navigated to a different day, and activeDate/draftSession will have moved on.
-  const draftRef=draftSession, draftDateAtSave=activeDate;
-  apiSyncSession(session).then(ok=>{
-    draftRef.syncStatus=ok?'synced':'failed';
-    saveDraft(draftDateAtSave,draftRef);
-    if(draftSession===draftRef) updateSessionStatus();
-  });
+  // Status updates (and retry-on-reconnect if this fails) happen inside
+  // apiSyncSession itself now — see _onSessionSyncSettled in api.js — since a
+  // background retry succeeding later needs the exact same status-line update
+  // this call would have done, not just the first attempt.
+  apiSyncSession(session);
 
   return session;
 }
