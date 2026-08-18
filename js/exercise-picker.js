@@ -1,6 +1,25 @@
 // ── Swap modal, add-exercise modal, custom day editor ──────────────────────────────────────────────
 
 // ── Exercise library modal (swap + add) ───────────────────────────────────────
+// Counts how many past sessions included each exercise — once per session,
+// not per set, so one heavy day doesn't skew the ranking — so the picker can
+// surface exercises this specific user actually reaches for first, instead of
+// the library's fixed insertion order. Personal (per-profile) rather than
+// global across accounts: with a handful of accounts on this app a "global"
+// popularity signal would just reflect whoever logs the most, not what's
+// actually relevant to the person searching.
+function getExerciseFrequency(){
+  const freq={};
+  loadSessions().forEach(s=>{
+    const seen=new Set();
+    s.exercises.forEach(ex=>{
+      if(seen.has(ex.name)) return;
+      seen.add(ex.name);
+      freq[ex.name]=(freq[ex.name]||0)+1;
+    });
+  });
+  return freq;
+}
 let _swapEI=-1, _swapMode='swap', _swapMuscleFilter=null;
 let _customDayIdx=-1, _customDayExercises=[], _customDayName='';
 function _openLibraryModal(){
@@ -82,6 +101,12 @@ function renderSwapGrid(){
     const avail=getAvailableEquipment();
     pool=pool.filter(e=>avail.includes(e.equipment));
   }
+
+  // Most-used-by-this-user first; sort is stable, so exercises tied on
+  // frequency (including everyone at 0, i.e. never logged) keep their
+  // existing relative order rather than getting shuffled.
+  const freq=getExerciseFrequency();
+  pool=[...pool].sort((a,b)=>(freq[b.name]||0)-(freq[a.name]||0));
 
   const grid=document.getElementById('swap-exercise-grid');
   if(!pool.length){
