@@ -13,6 +13,18 @@ function jumpToNextSuggested(){
   renderWeekGrid();
   renderDetail();
 }
+// One <select> body for every "which workout is this day?" picker (detail menu,
+// Plan modal rest days, schedule editor), so bonus workouts show up everywhere
+// a day can be assigned instead of each picker hand-rolling its own list.
+function workoutOptionsHTML(current){
+  const sel=v=>v===current?' selected':'';
+  return `<option value="${REST_DAY}"${sel(REST_DAY)}>Rest / Off</option>`
+    +`<optgroup label="Your program">`
+    +getActiveDays().map((d,i)=>`<option value="${i}"${sel(i)}>${escapeHtml(d.dow)} — ${escapeHtml(d.name)}</option>`).join('')
+    +`</optgroup><optgroup label="Bonus workouts (+${BONUS_XP} XP)">`
+    +getBonusWorkouts().map((d,i)=>`<option value="${BONUS_BASE+i}"${sel(BONUS_BASE+i)}>${escapeHtml(d.name)}</option>`).join('')
+    +`</optgroup>`;
+}
 // ── Week Plan Modal ───────────────────────────────────────────────────────────
 function openWeekPlanModal(){
   const dates=getWeekDates(weekOffset);
@@ -37,8 +49,7 @@ function renderWeekPlanDays(dates){
     const div=document.createElement('div');
     div.className='wp-day-card';
     if(isRest){
-      const opts=`<option value="${REST_DAY}" selected>Rest / Off</option>`
-        +getActiveDays().map((d,di)=>`<option value="${di}">${d.dow} — ${escapeHtml(d.name)}</option>`).join('');
+      const opts=workoutOptionsHTML(REST_DAY);
       div.innerHTML=`
         <div class="wp-day-header">
           <span class="wp-dow">${dowLabels[i]}</span>
@@ -113,6 +124,7 @@ function confirmResetWeekTemplates(){
   if(!confirm('Reset all custom day templates and revert every day to the built-in programme?')) return;
   const activeDays=getActiveDays();
   activeDays.forEach((_,i)=>clearCustomDay(i));
+  BONUS_WORKOUTS.forEach((_,i)=>clearCustomDay(BONUS_BASE+i));
   apiSyncSettings({customDays:{}});
   renderWeekGrid(); renderDetail();
   openWeekPlanModal();
@@ -155,11 +167,13 @@ function getWeekDates(offset){
 function changeWeek(delta){ weekOffset+=delta; renderWeekGrid(); }
 function jumpToToday(){ weekOffset=0; setActiveDate(TODAY); renderWeekGrid(); renderDetail(); }
 function getNextSuggestedDayIdx(){
-  const sessions=loadSessions();
+  // Only program days advance the rotation — a bonus workout (dayIdx 100+)
+  // or an ad-hoc rest-day session shouldn't make "next up" skip or reset.
+  const n=getActiveDays().length||7;
+  const sessions=loadSessions().filter(s=>s.dayIdx>=0&&s.dayIdx<n);
   if(!sessions.length) return 0;
   const last=sessions.reduce((a,b)=>a.date>b.date?a:b);
-  const n=getActiveDays().length||7;
-  return(Math.max(0,last.dayIdx)+1)%n;
+  return(last.dayIdx+1)%n;
 }
 function hasLoggedOnDate(date){ return loadSessions().some(s=>s.date===date) }
 function renderWeekGrid(){
@@ -200,6 +214,10 @@ function renderWeekGrid(){
     if(active) setTimeout(()=>active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}),30);
   }
   applyWeekGridCollapsed();
+  // Every flow that changes logged history (finish, discard, profile switch,
+  // import, hydrate) re-renders the week grid, so this keeps the header's
+  // level badge current without each of them having to remember it.
+  if(typeof renderXPBadge==='function') renderXPBadge();
 }
 function toggleWeekGridCollapsed(){
   setWeekGridCollapsed(!getWeekGridCollapsed());
@@ -250,10 +268,7 @@ function renderScheduleModal(){
   document.getElementById('sched-apply-btn').textContent=isTemplate?'Save as Default':'Apply';
   document.getElementById('sched-reset-btn').textContent=isTemplate?'↺ Clear custom template':'↺ Reset week';
 
-  const makeOpts=(current)=>[
-    `<option value="${REST_DAY}"${current===REST_DAY?' selected':''}>Rest / Off</option>`,
-    ...activeDays.map((day,idx)=>`<option value="${idx}"${current===idx?' selected':''}>${day.dow} — ${escapeHtml(day.name)}</option>`)
-  ].join('');
+  const makeOpts=workoutOptionsHTML;
 
   if(isTemplate){
     document.getElementById('sched-rows').innerHTML=dowNames.map((dow,i)=>`

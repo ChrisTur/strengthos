@@ -20,7 +20,7 @@ module.exports = defineConfig({
     serviceWorkers: 'block',
   },
   webServer: {
-    command: 'python3 -m http.server 8123',
+    command: 'node tests/static-server.js',
     url: 'http://localhost:8123/index.html',
     reuseExistingServer: !process.env.CI,
     timeout: 20000,
