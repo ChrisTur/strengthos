@@ -162,21 +162,19 @@ function renderCustomDayModal(){
     return;
   }
   list.innerHTML=_customDayExercises.map((ex,i)=>`
-    <div class="custom-day-row">
+    <div class="custom-day-row sortable-item">
+      <button class="drag-handle" type="button" aria-label="Reorder ${escapeHtml(ex.name)} — drag, or use the arrow keys" title="Drag to reorder (or press and hold the row)">⠿</button>
       <span class="custom-day-name-txt">${escapeHtml(ex.name)}</span>
       <input class="custom-day-struct" value="${escapeHtml(ex.structure)}" placeholder="e.g. 3×10"
         oninput="_customDayExercises[${i}].structure=this.value">
-      <div style="display:flex;gap:4px;flex-shrink:0">
-        <button class="cday-btn" onclick="moveCustomEx(${i},-1)" ${i===0?'disabled':''}>↑</button>
-        <button class="cday-btn" onclick="moveCustomEx(${i},1)" ${i===_customDayExercises.length-1?'disabled':''}>↓</button>
-        <button class="cday-btn cday-del" onclick="removeCustomEx(${i})">✕</button>
-      </div>
+      <button class="cday-btn cday-del" onclick="removeCustomEx(${i})" aria-label="Remove ${escapeHtml(ex.name)}">✕</button>
     </div>`).join('');
+  enableSortable(list,{itemSelector:'.custom-day-row',handleSelector:'.drag-handle',onReorder:moveCustomEx});
 }
-function moveCustomEx(i,dir){
-  const j=i+dir;
-  if(j<0||j>=_customDayExercises.length) return;
-  [_customDayExercises[i],_customDayExercises[j]]=[_customDayExercises[j],_customDayExercises[i]];
+function moveCustomEx(from,to){
+  if(from===to||from<0||to<0||from>=_customDayExercises.length||to>=_customDayExercises.length) return;
+  const [moved]=_customDayExercises.splice(from,1);
+  _customDayExercises.splice(to,0,moved);
   renderCustomDayModal();
 }
 function removeCustomEx(i){

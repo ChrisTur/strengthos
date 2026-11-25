@@ -226,7 +226,9 @@ function renderDashboard(){
   document.getElementById('dash-content').innerHTML=`
     ${renderProgressRangeBar()}
 
-    <div class="dash-section-title">Overview — ${getActiveProfile()}</div>
+    ${renderXPCard()}
+
+    <div class="dash-section-title">Overview — ${escapeHtml(getActiveProfile())}</div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">Sessions in Range</div></div>
       <div class="stat-card"><div class="stat-value">${stats.thisWeek}</div><div class="stat-label">This Week</div></div>
