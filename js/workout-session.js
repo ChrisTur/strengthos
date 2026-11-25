@@ -51,21 +51,21 @@ function initDraft(dayIdx,date){
   date=date||activeDate;
   const goal=getGoal();
   const disliked=loadDisliked();
-  const extras=(GOAL_EXERCISES[goal]||[])
-    .filter(ex=>!disliked.includes(ex.name))
-    .map(ex=>({name:ex.name,sets:[{reps:'',weight:'',done:false}],goalAdded:true}));
   const day=getActiveDay(dayIdx);
+  const extras=getGoalExtrasForDay(day,goal)
+    .filter(ex=>!disliked.includes(ex.name))
+    .map(ex=>({name:ex.name,sets:[isCardioExercise(ex.name)?{duration:'',done:false}:{reps:'',weight:'',done:false}],goalAdded:true}));
   // Pre-fill weights from the most recent session on this same day slot
   const lastSession=loadSessions().filter(s=>s.dayIdx===dayIdx&&s.date!==date).slice(-1)[0]||null;
   _lastSession=lastSession;
   function prefillSets(exName){
     const isCardio=isCardioExercise(exName);
     if(isCardio){
-      const lastEx=lastSession?.exercises.find(e=>e.name===exName);
+      const lastEx=findExerciseByName(lastSession?.exercises,exName);
       return [{duration:lastEx?.sets?.[0]?.duration||'',done:false}];
     }
     if(!lastSession) return [{reps:'',weight:'',done:false}];
-    const lastEx=lastSession.exercises.find(e=>e.name===exName);
+    const lastEx=findExerciseByName(lastSession.exercises,exName);
     if(!lastEx||!lastEx.sets.length) return [{reps:'',weight:'',done:false}];
     return lastEx.sets.map(s=>({reps:'',weight:s.weight||'',done:false,warmup:s.warmup||false}));
   }
@@ -77,10 +77,18 @@ function initDraft(dayIdx,date){
     ],
     notes:'',startedAt:Date.now()};
 }
+// Matches by canonical name, so a session logged under an old spelling (see
+// EXERCISE_ALIASES) still pre-fills and shows "last session" for the new one.
+function findExerciseByName(list,name){
+  if(!Array.isArray(list)) return null;
+  const c=canonicalExerciseName(name);
+  return list.find(e=>e.name===name)||list.find(e=>canonicalExerciseName(e.name)===c)||null;
+}
 function syncGoalExercises(){
   const goal=getGoal();
   const disliked=loadDisliked();
-  const extras=(GOAL_EXERCISES[goal]||[]).filter(ex=>!disliked.includes(ex.name));
+  const day=draftSession.dayIdx===REST_DAY?null:getActiveDay(draftSession.dayIdx);
+  const extras=getGoalExtrasForDay(day,goal).filter(ex=>!disliked.includes(ex.name));
   // Preserve any set data already logged for goal exercises
   const existing=draftSession.exercises.filter(ex=>ex.goalAdded);
   draftSession.exercises=draftSession.exercises.filter(ex=>!ex.goalAdded);
@@ -89,12 +97,15 @@ function syncGoalExercises(){
     const blankSet=isCardioExercise(ex.name)?{duration:'',done:false}:{reps:'',weight:'',done:false};
     draftSession.exercises.push(prev||{name:ex.name,sets:[blankSet],goalAdded:true});
   });
+  // An extra that no longer applies here (e.g. an older draft that got a HIIT
+  // finisher stacked onto a cardio day) is dropped — unless you already logged
+  // work on it, which is never thrown away.
+  existing.filter(ex=>!extras.some(e=>e.name===ex.name)&&ex.sets.some(isSetDone))
+    .forEach(ex=>draftSession.exercises.push(ex));
 }
 function renderDetail(){
   const panel=document.getElementById('detail-panel');
-  const activeDays=getActiveDays();
-  const workoutOpts=`<option value="${REST_DAY}"${activeDayIdx===REST_DAY?' selected':''}>Rest / Off</option>`
-    +activeDays.map((d,i)=>`<option value="${i}"${i===activeDayIdx?' selected':''}>${d.dow} — ${escapeHtml(d.name)}</option>`).join('');
+  const workoutOpts=workoutOptionsHTML(activeDayIdx);
 
   const isRestDay=activeDayIdx===REST_DAY;
   const day=isRestDay?null:(getActiveDay(activeDayIdx)||DAYS[activeDayIdx]);
@@ -121,7 +132,18 @@ function renderDetail(){
       </div>`
     :'';
   const restDayBannerHTML=isRestDay
-    ?`<div class="info-banner">😴 Scheduled rest day — recovery matters as much as training. Add an exercise below only if you actually want to train today.</div>`
+    ?`<div class="info-banner">😴 Scheduled rest day — recovery matters as much as training.
+        <div class="bonus-prompt">
+          <span>Feeling good? Try a bonus workout <strong>(+${BONUS_XP} XP)</strong></span>
+          <select class="workout-select" onchange="if(this.value)changeWorkoutForDate(this.value)" aria-label="Pick a bonus workout">
+            <option value="">Choose…</option>
+            ${getBonusWorkouts().map((d,i)=>`<option value="${BONUS_BASE+i}">${escapeHtml(d.name)}</option>`).join('')}
+          </select>
+        </div>
+      </div>`
+    :'';
+  const bonusBannerHTML=isBonusDayIdx(activeDayIdx)
+    ?`<div class="info-banner info-banner-accent">⭐ Bonus workout — finish it for an extra <strong>+${BONUS_XP} XP</strong>. Your program rotation isn't affected.</div>`
     :'';
   const goal=getGoal(); const goalObj=GOALS.find(g=>g.id===goal);
   const goalCoachingText=!isRestDay?(GOAL_COACHING[goal]||''):'';
@@ -134,6 +156,7 @@ function renderDetail(){
   panel.innerHTML=`
     ${heroHTML}
     ${restDayBannerHTML}
+    ${bonusBannerHTML}
     ${deloadBannerHTML}
     ${goalCoachingHTML}
     <div class="detail-header">
@@ -185,7 +208,10 @@ function renderDetail(){
     <div class="session-bar">
       <div class="session-bar-status">
         <div class="session-date" id="session-status">Draft</div>
-        <div id="session-timer" style="font-size:10px;color:var(--text3);margin-top:2px"></div>
+        <div class="session-meta-row">
+          <span class="session-xp" id="session-xp" title="XP this workout will earn"></span>
+          <span id="session-timer" style="font-size:10px;color:var(--text3)"></span>
+        </div>
       </div>
       <div class="session-bar-actions">
         <label class="rest-label">Rest <select class="rest-select" onchange="setRestPeriod(parseFloat(this.value));updateDetailSub()">${restSelectHTML()}</select></label>
@@ -194,6 +220,7 @@ function renderDetail(){
       </div>
     </div>`;
 
+  _lastDraftXP=null; // fresh screen → set the baseline without a "+XP" pop
   renderExerciseRows(lastSession);
   updateSessionStatus();
   startDurationTimer();
@@ -268,7 +295,7 @@ function renderExerciseRows(lastSession){
       ?(planEx.structure||planEx.plan||'')
       :planEx.plan;
 
-    const lastEx=lastSession?lastSession.exercises.find(e=>e.name===ex.name):null;
+    const lastEx=lastSession?findExerciseByName(lastSession.exercises,ex.name):null;
     let lastHTML='<span style="font-size:11px;color:var(--text3)">—</span>';
     let overloadHint='';
     if(lastEx&&lastEx.sets.length){
@@ -303,7 +330,7 @@ function renderExerciseRows(lastSession){
     const safeName=escapeJsAttr(ex.name);
     const superset=supersetLabels[ei];
     const tr=document.createElement('tr');
-    tr.className='ex-row'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'')+(superset?' superset-row':'');
+    tr.className='ex-row sortable-item'+(isGoalEx?' goal-ex-row':'')+(isCustom?' custom-ex-row':'')+(superset?' superset-row':'');
     if(superset) tr.style.borderLeft=`3px solid ${superset.color}`;
     const muscle=getExerciseMuscle(ex.name);
     const muscleColor=MUSCLE_COLORS[muscle]||'#555';
@@ -316,7 +343,8 @@ function renderExerciseRows(lastSession){
     tr.innerHTML=`
       <td class="ex-name-cell">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
-          <div>
+          <button class="drag-handle" type="button" aria-label="Reorder ${escapeHtml(ex.name)} — drag, or use the arrow keys" title="Drag to reorder (or press and hold the card)">⠿</button>
+          <div style="flex:1;min-width:0">
             ${superset?`<span class="superset-badge" style="background:${superset.color}" title="Part of a superset — logged back-to-back with no rest until the group is done">${superset.label}</span>`:''}
             <span ${isGoalEx?'style="color:var(--accent)"':isCustom?'style="color:var(--text2);font-style:italic"':''}>${escapeHtml(ex.name)}${isCustom?' <span style="font-size:10px;color:var(--text3)">(added)</span>':''}</span>
             <div class="ex-action-row">
@@ -329,8 +357,6 @@ ${ei<draftSession.exercises.length-1?`<button class="superset-btn${ex.linkedToNe
           <div class="ex-controls">
             <button class="ex-kebab-btn" onclick="event.stopPropagation();toggleExMenu(${ei})" title="More options">⋯</button>
             <div class="ex-menu" id="ex-menu-${ei}">
-              <button onclick="closeExMenus();moveExercise(${ei},-1)" ${ei===0?'disabled':''}>↑ Move up</button>
-              <button onclick="closeExMenus();moveExercise(${ei},1)" ${ei===draftSession.exercises.length-1?'disabled':''}>↓ Move down</button>
               <button class="ex-menu-danger" onclick="closeExMenus();removeExerciseToday(${ei})">✕ Remove exercise</button>
             </div>
           </div>
@@ -346,6 +372,7 @@ ${ei<draftSession.exercises.length-1?`<button class="superset-btn${ex.linkedToNe
     tbody.appendChild(tr);
     renderSets(ei);
   });
+  enableSortable(tbody,{itemSelector:'.ex-row',handleSelector:'.drag-handle',onReorder:reorderExercise});
 }
 function renderSets(ei){
   const container=document.getElementById('sets-'+ei); if(!container) return;
@@ -371,7 +398,7 @@ function renderSets(ei){
     return;
   }
 
-  const lastEx=_lastSession?.exercises?.find(e=>e.name===ex.name);
+  const lastEx=findExerciseByName(_lastSession?.exercises,ex.name);
   const inc=getWeightUnit()==='kg'?1.25:2.5;
   sets.forEach((set,si)=>{
     const lastSet=lastEx?.variantNote?null:lastEx?.sets?.[si];
@@ -585,10 +612,20 @@ function toggleExMenu(ei){
 function closeExMenus(){
   document.querySelectorAll('.ex-menu.open').forEach(m=>m.classList.remove('open'));
 }
-function moveExercise(ei,dir){
-  const j=ei+dir;
-  if(j<0||j>=draftSession.exercises.length) return;
-  [draftSession.exercises[ei],draftSession.exercises[j]]=[draftSession.exercises[j],draftSession.exercises[ei]];
+// Drag-and-drop (or keyboard) reorder: move exercise `from` so it ends up at
+// index `to`. Supersets are positional — each exercise's linkedToNext points at
+// whatever follows it — so the old swap-based Move up/down could silently
+// re-pair a superset with the wrong partner. Instead: lifting a card out closes
+// its group around the gap, and dropping it *inside* a group joins that group.
+function reorderExercise(from,to){
+  const list=draftSession.exercises;
+  if(from===to||from<0||to<0||from>=list.length||to>=list.length) return;
+  if(from>0) list[from-1].linkedToNext=!!(list[from-1].linkedToNext&&list[from].linkedToNext&&from+1<list.length);
+  const [moved]=list.splice(from,1);
+  moved.linkedToNext=false;
+  list.splice(to,0,moved);
+  if(to>0&&list[to-1].linkedToNext&&to+1<list.length) moved.linkedToNext=true;
+  if(list.length) list[list.length-1].linkedToNext=false;
   _markModified(); saveDraft(activeDate,draftSession);
   const prev=_lastSavedSession(); renderExerciseRows(prev); updateSessionStatus();
 }
@@ -610,7 +647,23 @@ function _lastSavedSession(){
   const s=loadSessions().filter(s=>s.dayIdx===activeDayIdx);
   return s.length?s[s.length-1]:null;
 }
+let _lastDraftXP=null;
+function updateSessionXP(){
+  const el=document.getElementById('session-xp'); if(!el||!draftSession) return;
+  const r=draftSessionXP(draftSession)||{xp:0,items:[]};
+  el.textContent=r.xp>0?`⚡ ${r.xp} XP`:'';
+  const prs=r.items.filter(i=>i.pr).length;
+  if(_lastDraftXP&&r.xp>_lastDraftXP.xp){
+    const a=document.activeElement;
+    const anchor=a&&a!==document.body&&document.getElementById('detail-panel')?.contains(a)?a:el;
+    const gain=r.xp-_lastDraftXP.xp;
+    if(prs>_lastDraftXP.prs) xpFloat(anchor,`🏆 PR! +${gain} XP`,'xp-float-pr');
+    else xpFloat(anchor,`+${gain} XP`);
+  }
+  _lastDraftXP={xp:r.xp,prs};
+}
 function updateSessionStatus(){
+  updateSessionXP();
   const el=document.getElementById('session-status'); if(!el) return;
   if(draftSession.finishedAt){
     const t=new Date(draftSession.finishedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -689,14 +742,11 @@ function _persistSession({silent=false}={}){
   draftSession.syncStatus='pending';
   saveDraft(activeDate,draftSession);
 
-  // Capture references now — by the time this resolves the user may have
-  // navigated to a different day, and activeDate/draftSession will have moved on.
-  const draftRef=draftSession, draftDateAtSave=activeDate;
-  apiSyncSession(session).then(ok=>{
-    draftRef.syncStatus=ok?'synced':'failed';
-    saveDraft(draftDateAtSave,draftRef);
-    if(draftSession===draftRef) updateSessionStatus();
-  });
+  // Status updates (and retry-on-reconnect if this fails) happen inside
+  // apiSyncSession itself now — see _onSessionSyncSettled in api.js — since a
+  // background retry succeeding later needs the exact same status-line update
+  // this call would have done, not just the first attempt.
+  apiSyncSession(session);
 
   return session;
 }
@@ -718,7 +768,7 @@ function saveSession(){
   if(!session){ alert('Could not save — your device storage may be full. Free up space and try again.'); return; }
   draftSession.finishedAt=Date.now();
   saveDraft(activeDate,draftSession);
-  renderWeekGrid(); renderExerciseRows(session); updateSessionStatus();
+  renderWeekGrid(); renderExerciseRows(session); updateSessionStatus(); renderXPBadge();
   showCompletionSummary(session,prevPRs);
 }
 function showCompletionSummary(session,prevPRs){
@@ -760,8 +810,10 @@ function showCompletionSummary(session,prevPRs){
       ${session.duration>0?`<div><div class="completion-stat-val">${session.duration}</div><div class="completion-stat-lbl">Min</div></div>`:''}
     </div>
     ${prsHTML}
+    ${renderCompletionXP(session)}
     ${moodHTML}`;
   document.getElementById('completion-modal').style.display='flex';
+  animateCompletionXP();
 }
 function closeCompletionModal(){
   document.getElementById('completion-modal').style.display='none';
@@ -776,7 +828,7 @@ function discardDraft(){
     saveSessions(loadSessions().filter(s=>s.id!==draftSession.savedSessionId));
     apiDeleteSession(draftSession.savedSessionId);
   }
-  clearDraft(activeDate); draftSession=initDraft(activeDayIdx,activeDate); renderDetail();
+  clearDraft(activeDate); draftSession=initDraft(activeDayIdx,activeDate); renderDetail(); renderXPBadge();
 }
 // ── Muscle volume tracker ─────────────────────────────────────────────────────
 // Buckets the given range into Mon–Sun weeks and returns, per muscle, both the

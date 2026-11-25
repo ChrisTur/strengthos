@@ -85,7 +85,7 @@ const DAYS=[
     {name:'Chest Press (machine)', plan:'3 × 10 @ 150',             structure:'3 × 10',note:'Maintain from Mon'},
     {name:'Chest Fly',             plan:'3 × 10 @ 145',             structure:'3 × 10',note:'Pump focus'},
     {name:'Tricep Dips (machine)', plan:'3 × 12 @ 110',             structure:'3 × 12',note:'Squeeze at bottom'},
-    {name:'Tricep Pushdown',       plan:'3 sets: 60.5 / 66 / 71.5', structure:'3 sets', note:'Superset option with curls'},
+    {name:'Tricep Cable Pushdown', plan:'3 sets: 60.5 / 66 / 71.5', structure:'3 sets', note:'Superset option with curls'},
     {name:'Bicep Curls',           plan:'3 × 10 @ 30',              structure:'3 × 10',note:'Same weight, better reps'},
     {name:'Hammer Curls',          plan:'2 × 12 @ 27.5',            structure:'2 × 12',note:'Finish arms'},
    ]},
@@ -106,7 +106,7 @@ const DAYS=[
    exercises:[
     {name:'Lateral Raises',       plan:'3 × 15 @ 30–35',  structure:'3 × 15',note:'Light, blood flow'},
     {name:'Cable Curls',          plan:'3 × 15 @ light',   structure:'3 × 15',note:'Pump, no fatigue'},
-    {name:'Chest Fly (pec deck)', plan:'3 × 15 @ 100–110', structure:'3 × 15',note:'Stretch-focused'},
+    {name:'Chest Fly', plan:'3 × 15 @ 100–110', structure:'3 × 15',note:'Stretch-focused'},
     {name:'Rear Delt',            plan:'2 × 15 @ 50–60',   structure:'2 × 15',note:'Posture work'},
    ]},
 ];
@@ -114,126 +114,10 @@ const DAYS=[
 // ── Frequency-based programs ──────────────────────────────────────────────────
 const REST_DAY=-1;
 
-// Strength programs — 3 through 7-day splits (no preset weights, structure only)
-const PROGRAMS={
-  3:[
-    {dow:'Day 1',name:'Push',short:'Push',dots:[CORAL,GREEN,PURPLE],
-     tags:['Chest','Shoulders','Triceps'],
-     exercises:[
-      {name:'Barbell Bench Press',    structure:'4 × 6–8',  note:'Primary strength mover — add weight when all reps are clean. Controlled 2s descent.'},
-      {name:'Incline DB Press',       structure:'3 × 10',   note:'Upper chest emphasis — elbows at 45°, pause at chest, squeeze at top'},
-      {name:'Shoulder Press',         structure:'3 × 10',   note:'Strict overhead press — brace core, no leg drive, full lockout'},
-      {name:'Lateral Raises',         structure:'4 × 12–15',note:'Slow eccentric (3s down) — weight should stop momentum, not use it'},
-      {name:'Tricep Pushdown',        structure:'3 × 12',   note:'Pin elbows to sides, full extension, hold 1s at bottom each rep'},
-     ]},
-    {dow:'Day 2',name:'Pull',short:'Pull',dots:[BLUE,AMBER],
-     tags:['Back','Biceps'],
-     exercises:[
-      {name:'Lat Pulldown',           structure:'4 × 8–10', note:'Full stretch at top — don\'t shortchange the range. Drive elbows to back pockets.'},
-      {name:'Cable Seated Row',       structure:'3 × 10',   note:'Hold 1s at peak contraction. Chest tall, don\'t round at end of the pull.'},
-      {name:'Machine Row',            structure:'3 × 10',   note:'Back thickness builder — squeeze shoulder blades hard at the top'},
-      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip, supinate at top — hits brachialis and long head simultaneously'},
-      {name:'Bicep Curls',            structure:'3 × 10',   note:'Strict form — no swinging. 2s eccentric, peak squeeze at top'},
-     ]},
-    {dow:'Day 3',name:'Legs',short:'Legs',dots:[GREEN],
-     tags:['Legs'],
-     exercises:[
-      {name:'Leg Press',              structure:'4 × 8–10', note:'Full range — heels shoulder-width, don\'t let knees cave, controlled descent'},
-      {name:'Romanian Deadlift',      structure:'3 × 10',   note:'Feel the hamstring stretch — push hips back, soft knees, bar skims legs'},
-      {name:'Leg Extension',          structure:'3 × 12',   note:'Squeeze hard at top, 2s eccentric — pure quad isolation'},
-      {name:'Leg Curl',               structure:'3 × 10',   note:'Full range, controlled lowering — hamstrings under tension the whole set'},
-      {name:'Calf Raises',            structure:'4 × 15',   note:'Pause at bottom stretch, explosive rise, squeeze at top — calves respond to range'},
-     ]},
-  ],
-  4:[
-    {dow:'Day 1',name:'Chest + Triceps',short:'Chest/Tri',dots:[CORAL,PURPLE],
-     tags:['Chest','Triceps'],
-     exercises:[
-      {name:'Barbell Bench Press',    structure:'4 × 6–8',  note:'Work to a top set of 6; track this number — it\'s your chest strength benchmark'},
-      {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest gap-filler; go to failure on set 4 — note the weight'},
-      {name:'Cable Fly',              structure:'3 × 12',   note:'Long-head stretch — cross hands at peak, hold 1s. Keep slight elbow bend.'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Lock elbows in; full extension each rep. Ramp weight across sets.'},
-      {name:'Tricep Dips (machine)',  structure:'3 × 12',   note:'Slow negative (3s down); tricep dips are underrated for mass'},
-     ]},
-    {dow:'Day 2',name:'Back + Biceps',short:'Back/Bi',dots:[BLUE,AMBER],
-     tags:['Back','Biceps'],
-     exercises:[
-      {name:'Lat Pulldown',           structure:'4 × 8–10', note:'Wide overhand grip; full dead-hang stretch at top. Drive elbows to hips.'},
-      {name:'Cable Seated Row',       structure:'4 × 10',   note:'Mid-back thickness — hold contraction 1s. Don\'t rock the torso.'},
-      {name:'Dumbbell Row',           structure:'3 × 10',   note:'Knee on bench, elbow flares slightly back — pulls lats and teres major'},
-      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip builds brachialis — the muscle that "pushes up" the bicep peak'},
-      {name:'Preacher Curl',          structure:'3 × 10',   note:'Zero cheat possible — pure bicep. Full stretch at bottom, don\'t drop weight.'},
-     ]},
-    {dow:'Day 3',name:'Legs',short:'Legs',dots:[GREEN],
-     tags:['Legs'],
-     exercises:[
-      {name:'Hack Squat',             structure:'4 × 8–10', note:'Controlled 3s descent; drive heels into platform. Knees stay out.'},
-      {name:'Romanian Deadlift',      structure:'4 × 10',   note:'Hip hinge, not a squat — push hips back, feel hamstrings pull. Bar skims legs.'},
-      {name:'Leg Extension',          structure:'3 × 12',   note:'Hold peak contraction 1s; 2s eccentric. Keep quads under tension the whole set.'},
-      {name:'Leg Curl',               structure:'3 × 10',   note:'Full range — don\'t shortcut the stretch. Hamstrings respond to time under tension.'},
-      {name:'Calf Raises',            structure:'4 × 15',   note:'Stretch fully at bottom (calves have short range of motion — use all of it)'},
-     ]},
-    {dow:'Day 4',name:'Shoulders + Arms',short:'Shldr/Arms',dots:[GREEN,PURPLE,AMBER],
-     tags:['Shoulders','Arms'],
-     exercises:[
-      {name:'Overhead Press',         structure:'4 × 6–8',  note:'Seated or standing; brace core and glutes. Full lockout. This is your shoulder strength test.'},
-      {name:'Lateral Raises',         structure:'4 × 12–15',note:'No swinging — if you can\'t control it, it\'s too heavy. 3s eccentric, chase the burn.'},
-      {name:'Face Pull',              structure:'3 × 15',   note:'External rotation at end of pull — crucial for shoulder health and rear-delt development'},
-      {name:'Tricep Pushdown',        structure:'3 × 12',   note:'Superset option with curls below to save time and boost pump'},
-      {name:'Barbell Curl',           structure:'3 × 10',   note:'Strict — no swing. 2s up, 3s down. Squeeze at peak.'},
-     ]},
-  ],
-  5:[
-    {dow:'Day 1',name:'Chest + Triceps',short:'Chest/Tri',dots:[CORAL,PURPLE],
-     tags:['Chest','Triceps','Priority'],
-     exercises:[
-      {name:'Barbell Bench Press',    structure:'4 × 5–6',  note:'Heavy strength day — work to a challenging top set, then one back-off set at 80%'},
-      {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest is almost always the lagging area — prioritise this every chest session'},
-      {name:'Chest Fly',              structure:'3 × 12',   note:'Go for the stretch — hands wide, elbows slightly bent, feel pecs fully loaded at bottom'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Volume finisher — elbows pinned, full extension, pump the triceps out'},
-      {name:'Overhead Tricep Extension',structure:'3 × 12', note:'Long head (the biggest part) only gets stretched in overhead position — don\'t skip this'},
-     ]},
-    {dow:'Day 2',name:'Back + Biceps',short:'Back/Bi',dots:[BLUE,AMBER],
-     tags:['Back','Biceps'],
-     exercises:[
-      {name:'Lat Pulldown',           structure:'4 × 8–10', note:'Lat width — lean back slightly, pull bar to upper chest, feel elbows drive to back pockets'},
-      {name:'Cable Seated Row',       structure:'4 × 10',   note:'Mid-back thickness — stay tall, don\'t lean forward on the way out'},
-      {name:'Dumbbell Row',           structure:'3 × 10',   note:'Go heavy here — the dumbbell row is one of the best back builders available'},
-      {name:'Straight-Arm Pulldown',  structure:'3 × 12',   note:'Arms straight, hinge at shoulder — isolates lats without any bicep involvement'},
-      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip; hit brachialis and bicep long head simultaneously'},
-      {name:'Bicep Curls',            structure:'3 × 10',   note:'Slow eccentric (3s), squeeze at top — curl is earned, not swung'},
-     ]},
-    {dow:'Day 3',name:'Legs',short:'Legs',dots:[GREEN],
-     tags:['Legs','Quads','Hamstrings'],
-     exercises:[
-      {name:'Hack Squat',             structure:'4 × 8',    note:'Primary quad compound — 3s descent, pause briefly at depth, drive through heels'},
-      {name:'Romanian Deadlift',      structure:'4 × 10',   note:'This is your hamstring strength movement — go heavy, feel the stretch every rep'},
-      {name:'Leg Extension',          structure:'3 × 12',   note:'Quad isolation — squeeze at top and hold 1s. Drop sets on final set for intensity.'},
-      {name:'Leg Curl',               structure:'3 × 10',   note:'Control the negative — hamstrings grow from stretch-to-contraction, not just contraction'},
-      {name:'Calf Raises',            structure:'4 × 15',   note:'Stand on step if possible; calves need full range to grow — don\'t half-rep these'},
-      {name:'Hip Abductor Machine',   structure:'3 × 15',   note:'Glute medius / outer hip — often neglected; directly improves knee stability and glute shape'},
-     ]},
-    {dow:'Day 4',name:'Shoulders + Core',short:'Shldr/Core',dots:[GREEN,GRAY],
-     tags:['Shoulders','Core'],
-     exercises:[
-      {name:'Overhead Press',         structure:'4 × 6–8',  note:'Seated or standing — brace everything, press in a straight line, full lockout overhead'},
-      {name:'Lateral Raises',         structure:'5 × 12–15',note:'Side delts are responsible for visible shoulder width — high volume, controlled tempo'},
-      {name:'Rear Delt Machine',      structure:'4 × 12',   note:'Rear delts balance shoulder health and directly improve posture and bench stability'},
-      {name:'Face Pull',              structure:'3 × 15',   note:'External rotation at peak — the most important injury-prevention exercise in this programme'},
-      {name:'Cable Crunch',           structure:'3 × 15',   note:'Weighted ab work; round the spine fully — this is not a hip flexor exercise'},
-      {name:'Plank Hold',             structure:'3 × 45s',  note:'Full-body tension — glutes squeezed, ribs down, no breath-holding'},
-     ]},
-    {dow:'Day 5',name:'Chest + Back',short:'Chest/Back',dots:[CORAL,BLUE],
-     tags:['Chest','Back','Volume'],
-     exercises:[
-      {name:'Incline Barbell Press',  structure:'4 × 8',    note:'Second chest session — more volume, moderate weight. Upper chest and shoulder tie-in.'},
-      {name:'Cable Crossover',        structure:'4 × 12',   note:'Full stretch and squeeze — cross hands at the end; best chest isolation for pump work'},
-      {name:'Pull-Up',                structure:'4 × max',  note:'Bodyweight pull — dead hang start, chest to bar. Scale with band if needed.'},
-      {name:'Cable Seated Row — Wide Grip',structure:'4 × 10',note:'Upper back and rear delt emphasis — wider grip, pull to lower chest, elbows flare wide'},
-      {name:'Dumbbell Curl',          structure:'3 × 10',   note:'Incline dumbbell curl option for extra stretch — hit biceps from a different angle'},
-     ]},
-  ],
-  6:[
+// Push/Pull/Legs twice through — the 6-day split, and the first six days of the
+// 7-day split (which only adds a recovery day). Defined once instead of
+// copy-pasted into both, so the two can't silently drift apart.
+const PPL_SIX_DAY=[
     {dow:'Day 1',name:'Push A — Chest',short:'Push A',dots:[CORAL,PURPLE],
      tags:['Chest','Triceps','Push'],
      exercises:[
@@ -241,7 +125,7 @@ const PROGRAMS={
       {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest; go to failure on final set — note the reps and weight'},
       {name:'Chest Fly',              structure:'3 × 12',   note:'Full stretch at the bottom — don\'t shorten the range for heavier weight'},
       {name:'Lateral Raises',         structure:'4 × 15',   note:'3s eccentric; side delts need volume to grow — these should burn'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension; ramp weight across the 4 sets'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension; ramp weight across the 4 sets'},
      ]},
     {dow:'Day 2',name:'Pull A — Back Width',short:'Pull A',dots:[BLUE,AMBER],
      tags:['Back','Biceps','Pull'],
@@ -285,78 +169,143 @@ const PROGRAMS={
      exercises:[
       {name:'Romanian Deadlift',      structure:'4 × 8–10', note:'Hip hinge — push hips back, feel the hamstrings pull taut. Heavy is fine if form is right.'},
       {name:'Leg Curl',               structure:'4 × 10',   note:'Hamstring isolation — slow eccentric (3s), don\'t let hips lift off pad'},
-      {name:'Hip Abductor Machine',   structure:'3 × 15',   note:'Glute medius — most people neglect this. Knee stability and outer glute shape both depend on it.'},
+      {name:'Hip Abduction Machine',  structure:'3 × 15',   note:'Glute medius — most people neglect this. Knee stability and outer glute shape both depend on it.'},
       {name:'Hack Squat',             structure:'3 × 10',   note:'Lighter than Day 3 — focus on depth and feel rather than max load'},
       {name:'Calf Raises',            structure:'4 × 15',   note:'Full stretch every rep — calves are notorious for partial reps, which is why they don\'t grow'},
       {name:'Plank Hold',             structure:'3 × 60s',  note:'End every leg day with a plank — core stability directly supports squat and hinge mechanics'},
      ]},
-  ],
-  7:[
-    {dow:'Day 1',name:'Push A — Chest',short:'Push A',dots:[CORAL,PURPLE],
-     tags:['Chest','Triceps','Push'],
-     exercises:[
-      {name:'Barbell Bench Press',    structure:'4 × 5',    note:'Primary strength movement — add weight when all reps are clean and controlled'},
-      {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest — go to failure on set 4, note the weight and reps'},
-      {name:'Chest Fly',              structure:'3 × 12',   note:'Stretch-focused — feel the pecs fully loaded at the bottom, don\'t shorten the range'},
-      {name:'Lateral Raises',         structure:'4 × 15',   note:'3s eccentric; no swinging — if form breaks, the weight is too heavy'},
-      {name:'Tricep Pushdown',        structure:'4 × 12',   note:'Elbows fixed; full extension each rep; ramp weight across sets'},
-     ]},
-    {dow:'Day 2',name:'Pull A — Width',short:'Pull A',dots:[BLUE,AMBER],
-     tags:['Back','Biceps','Pull'],
-     exercises:[
-      {name:'Pull-Up',                structure:'4 × max',  note:'Best lat width builder — dead hang to chin over bar, full range every rep'},
-      {name:'Lat Pulldown',           structure:'4 × 10',   note:'Supplement pull-ups; emphasise the stretch at the top'},
-      {name:'Dumbbell Row',           structure:'3 × 10',   note:'Elbow high and back — the go-to for back thickness alongside rows'},
-      {name:'Straight-Arm Pulldown',  structure:'3 × 12',   note:'Arms straight — lat isolation without bicep help'},
-      {name:'Barbell Curl',           structure:'3 × 8',    note:'Strength curl — strict, 3s eccentric, no swing'},
-     ]},
-    {dow:'Day 3',name:'Legs A — Quad',short:'Legs A',dots:[GREEN],
-     tags:['Legs','Quads'],
-     exercises:[
-      {name:'Hack Squat',             structure:'4 × 8',    note:'3s descent; knee tracks over toes; drive through heels'},
-      {name:'Leg Press',              structure:'3 × 10',   note:'Full range; don\'t lock knees at top'},
-      {name:'Leg Extension',          structure:'4 × 12',   note:'Squeeze and hold 1s; drop set on last set for extra stimulus'},
-      {name:'Calf Raises',            structure:'4 × 15',   note:'Step-edge stretch — use the full range calves require'},
-      {name:'Cable Crunch',           structure:'3 × 15',   note:'Weighted core; round the spine fully on each rep'},
-     ]},
-    {dow:'Day 4',name:'Push B — Shoulders',short:'Push B',dots:[GREEN,PURPLE],
-     tags:['Shoulders','Triceps','Push'],
-     exercises:[
-      {name:'Overhead Press',         structure:'4 × 6–8',  note:'Shoulder strength benchmark — track this number and try to beat it every 2–3 weeks'},
-      {name:'Incline DB Press',       structure:'3 × 10',   note:'Second chest hit — upper chest and anterior delt'},
-      {name:'Lateral Raises',         structure:'5 × 12–15',note:'High volume — the biggest driver of visible shoulder width'},
-      {name:'Face Pull',              structure:'3 × 15',   note:'External rotation — mandatory for shoulder health on a high-frequency push schedule'},
-      {name:'Overhead Tricep Extension',structure:'4 × 12', note:'Long-head stretch — the part of the tricep that fills in the horseshoe shape'},
-     ]},
-    {dow:'Day 5',name:'Pull B — Thickness',short:'Pull B',dots:[BLUE,AMBER],
-     tags:['Back','Biceps','Pull'],
-     exercises:[
-      {name:'Cable Seated Row',       structure:'4 × 8–10', note:'Thickness — hold 1–2s peak contraction, controlled release, chest tall throughout'},
-      {name:'Machine Row',            structure:'4 × 10',   note:'Chest-supported; pure back contraction — no lower back involvement'},
-      {name:'Lat Pulldown — Close Grip',structure:'3 × 10', note:'Hits lower lats and more bicep — complements the wide-grip work from Day 2'},
-      {name:'Face Pull',              structure:'3 × 15',   note:'Rear delt and external rotation — every pull day, no exceptions'},
-      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip; brachialis builder — the muscle that makes biceps look bigger from the front'},
-      {name:'Preacher Curl',          structure:'3 × 10',   note:'Full stretch at bottom is the key — where the growth signal peaks for bicep'},
-     ]},
-    {dow:'Day 6',name:'Legs B — Posterior',short:'Legs B',dots:[GREEN,AMBER],
-     tags:['Legs','Hamstrings','Glutes'],
-     exercises:[
-      {name:'Romanian Deadlift',      structure:'4 × 8–10', note:'Hip hinge — bar skims legs, push hips back, hamstrings should pull taut well above the floor'},
-      {name:'Leg Curl',               structure:'4 × 10',   note:'3s eccentric — hamstrings respond to time under tension more than most muscles'},
-      {name:'Hip Abductor Machine',   structure:'3 × 15',   note:'Glute medius and outer hip — most people skip this and their glutes suffer for it'},
-      {name:'Hack Squat',             structure:'3 × 10',   note:'Lighter than Day 3; focus on depth and feel, not maximum load'},
-      {name:'Calf Raises',            structure:'4 × 15',   note:'Full range every rep — partial reps are why most people\'s calves don\'t grow'},
-      {name:'Plank Hold',             structure:'3 × 60s',  note:'Core endurance; pairs perfectly with legs — holds the body together under load'},
-     ]},
-    {dow:'Day 7',name:'Active Recovery',short:'Recovery',dots:[GRAY,GREEN],
+];
+// Light day that rounds out the 7-day split
+const STRENGTH_RECOVERY_DAY={dow:'Day 7',name:'Active Recovery',short:'Recovery',dots:[GRAY,GREEN],
      tags:['Active Recovery','Mobility'],
      exercises:[
       {name:'Brisk Walk',             structure:'20–30 min', note:'Gentle — 50–60% max HR. Active recovery accelerates repair more than full rest.'},
       {name:'Full-Body Stretch',      structure:'15 min',    note:'Hold each 30–45s: hip flexors, quads, hamstrings, chest, lats, shoulders'},
       {name:'Foam Roll',              structure:'8 min',     note:'Glutes, IT band, upper back, lats — slow and deliberate, not just rolling around'},
       {name:'Plank Hold',             structure:'2 × 30s',   note:'Light core — just maintaining, not training'},
+     ]};
+
+// Strength programs — 3 through 7-day splits (no preset weights, structure only)
+const PROGRAMS={
+  3:[
+    {dow:'Day 1',name:'Push',short:'Push',dots:[CORAL,GREEN,PURPLE],
+     tags:['Chest','Shoulders','Triceps'],
+     exercises:[
+      {name:'Barbell Bench Press',    structure:'4 × 6–8',  note:'Primary strength mover — add weight when all reps are clean. Controlled 2s descent.'},
+      {name:'Incline DB Press',       structure:'3 × 10',   note:'Upper chest emphasis — elbows at 45°, pause at chest, squeeze at top'},
+      {name:'Shoulder Press',         structure:'3 × 10',   note:'Strict overhead press — brace core, no leg drive, full lockout'},
+      {name:'Lateral Raises',         structure:'4 × 12–15',note:'Slow eccentric (3s down) — weight should stop momentum, not use it'},
+      {name:'Tricep Cable Pushdown',        structure:'3 × 12',   note:'Pin elbows to sides, full extension, hold 1s at bottom each rep'},
+     ]},
+    {dow:'Day 2',name:'Pull',short:'Pull',dots:[BLUE,AMBER],
+     tags:['Back','Biceps'],
+     exercises:[
+      {name:'Lat Pulldown',           structure:'4 × 8–10', note:'Full stretch at top — don\'t shortchange the range. Drive elbows to back pockets.'},
+      {name:'Cable Seated Row',       structure:'3 × 10',   note:'Hold 1s at peak contraction. Chest tall, don\'t round at end of the pull.'},
+      {name:'Machine Row',            structure:'3 × 10',   note:'Back thickness builder — squeeze shoulder blades hard at the top'},
+      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip, supinate at top — hits brachialis and long head simultaneously'},
+      {name:'Bicep Curls',            structure:'3 × 10',   note:'Strict form — no swinging. 2s eccentric, peak squeeze at top'},
+     ]},
+    {dow:'Day 3',name:'Legs',short:'Legs',dots:[GREEN],
+     tags:['Legs'],
+     exercises:[
+      {name:'Leg Press',              structure:'4 × 8–10', note:'Full range — heels shoulder-width, don\'t let knees cave, controlled descent'},
+      {name:'Romanian Deadlift',      structure:'3 × 10',   note:'Feel the hamstring stretch — push hips back, soft knees, bar skims legs'},
+      {name:'Leg Extension',          structure:'3 × 12',   note:'Squeeze hard at top, 2s eccentric — pure quad isolation'},
+      {name:'Leg Curl',               structure:'3 × 10',   note:'Full range, controlled lowering — hamstrings under tension the whole set'},
+      {name:'Calf Raises',            structure:'4 × 15',   note:'Pause at bottom stretch, explosive rise, squeeze at top — calves respond to range'},
      ]},
   ],
+  4:[
+    {dow:'Day 1',name:'Chest + Triceps',short:'Chest/Tri',dots:[CORAL,PURPLE],
+     tags:['Chest','Triceps'],
+     exercises:[
+      {name:'Barbell Bench Press',    structure:'4 × 6–8',  note:'Work to a top set of 6; track this number — it\'s your chest strength benchmark'},
+      {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest gap-filler; go to failure on set 4 — note the weight'},
+      {name:'Cable Fly',              structure:'3 × 12',   note:'Long-head stretch — cross hands at peak, hold 1s. Keep slight elbow bend.'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Lock elbows in; full extension each rep. Ramp weight across sets.'},
+      {name:'Tricep Dips (machine)',  structure:'3 × 12',   note:'Slow negative (3s down); tricep dips are underrated for mass'},
+     ]},
+    {dow:'Day 2',name:'Back + Biceps',short:'Back/Bi',dots:[BLUE,AMBER],
+     tags:['Back','Biceps'],
+     exercises:[
+      {name:'Lat Pulldown',           structure:'4 × 8–10', note:'Wide overhand grip; full dead-hang stretch at top. Drive elbows to hips.'},
+      {name:'Cable Seated Row',       structure:'4 × 10',   note:'Mid-back thickness — hold contraction 1s. Don\'t rock the torso.'},
+      {name:'Dumbbell Row',           structure:'3 × 10',   note:'Knee on bench, elbow flares slightly back — pulls lats and teres major'},
+      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip builds brachialis — the muscle that "pushes up" the bicep peak'},
+      {name:'Preacher Curl',          structure:'3 × 10',   note:'Zero cheat possible — pure bicep. Full stretch at bottom, don\'t drop weight.'},
+     ]},
+    {dow:'Day 3',name:'Legs',short:'Legs',dots:[GREEN],
+     tags:['Legs'],
+     exercises:[
+      {name:'Hack Squat',             structure:'4 × 8–10', note:'Controlled 3s descent; drive heels into platform. Knees stay out.'},
+      {name:'Romanian Deadlift',      structure:'4 × 10',   note:'Hip hinge, not a squat — push hips back, feel hamstrings pull. Bar skims legs.'},
+      {name:'Leg Extension',          structure:'3 × 12',   note:'Hold peak contraction 1s; 2s eccentric. Keep quads under tension the whole set.'},
+      {name:'Leg Curl',               structure:'3 × 10',   note:'Full range — don\'t shortcut the stretch. Hamstrings respond to time under tension.'},
+      {name:'Calf Raises',            structure:'4 × 15',   note:'Stretch fully at bottom (calves have short range of motion — use all of it)'},
+     ]},
+    {dow:'Day 4',name:'Shoulders + Arms',short:'Shldr/Arms',dots:[GREEN,PURPLE,AMBER],
+     tags:['Shoulders','Arms'],
+     exercises:[
+      {name:'Overhead Press',         structure:'4 × 6–8',  note:'Seated or standing; brace core and glutes. Full lockout. This is your shoulder strength test.'},
+      {name:'Lateral Raises',         structure:'4 × 12–15',note:'No swinging — if you can\'t control it, it\'s too heavy. 3s eccentric, chase the burn.'},
+      {name:'Face Pull',              structure:'3 × 15',   note:'External rotation at end of pull — crucial for shoulder health and rear-delt development'},
+      {name:'Tricep Cable Pushdown',        structure:'3 × 12',   note:'Superset option with curls below to save time and boost pump'},
+      {name:'Barbell Curl',           structure:'3 × 10',   note:'Strict — no swing. 2s up, 3s down. Squeeze at peak.'},
+     ]},
+  ],
+  5:[
+    {dow:'Day 1',name:'Chest + Triceps',short:'Chest/Tri',dots:[CORAL,PURPLE],
+     tags:['Chest','Triceps','Priority'],
+     exercises:[
+      {name:'Barbell Bench Press',    structure:'4 × 5–6',  note:'Heavy strength day — work to a challenging top set, then one back-off set at 80%'},
+      {name:'Incline DB Press',       structure:'4 × 10',   note:'Upper chest is almost always the lagging area — prioritise this every chest session'},
+      {name:'Chest Fly',              structure:'3 × 12',   note:'Go for the stretch — hands wide, elbows slightly bent, feel pecs fully loaded at bottom'},
+      {name:'Tricep Cable Pushdown',        structure:'4 × 12',   note:'Volume finisher — elbows pinned, full extension, pump the triceps out'},
+      {name:'Overhead Tricep Extension',structure:'3 × 12', note:'Long head (the biggest part) only gets stretched in overhead position — don\'t skip this'},
+     ]},
+    {dow:'Day 2',name:'Back + Biceps',short:'Back/Bi',dots:[BLUE,AMBER],
+     tags:['Back','Biceps'],
+     exercises:[
+      {name:'Lat Pulldown',           structure:'4 × 8–10', note:'Lat width — lean back slightly, pull bar to upper chest, feel elbows drive to back pockets'},
+      {name:'Cable Seated Row',       structure:'4 × 10',   note:'Mid-back thickness — stay tall, don\'t lean forward on the way out'},
+      {name:'Dumbbell Row',           structure:'3 × 10',   note:'Go heavy here — the dumbbell row is one of the best back builders available'},
+      {name:'Straight-Arm Pulldown',  structure:'3 × 12',   note:'Arms straight, hinge at shoulder — isolates lats without any bicep involvement'},
+      {name:'Hammer Curls',           structure:'3 × 12',   note:'Neutral grip; hit brachialis and bicep long head simultaneously'},
+      {name:'Bicep Curls',            structure:'3 × 10',   note:'Slow eccentric (3s), squeeze at top — curl is earned, not swung'},
+     ]},
+    {dow:'Day 3',name:'Legs',short:'Legs',dots:[GREEN],
+     tags:['Legs','Quads','Hamstrings'],
+     exercises:[
+      {name:'Hack Squat',             structure:'4 × 8',    note:'Primary quad compound — 3s descent, pause briefly at depth, drive through heels'},
+      {name:'Romanian Deadlift',      structure:'4 × 10',   note:'This is your hamstring strength movement — go heavy, feel the stretch every rep'},
+      {name:'Leg Extension',          structure:'3 × 12',   note:'Quad isolation — squeeze at top and hold 1s. Drop sets on final set for intensity.'},
+      {name:'Leg Curl',               structure:'3 × 10',   note:'Control the negative — hamstrings grow from stretch-to-contraction, not just contraction'},
+      {name:'Calf Raises',            structure:'4 × 15',   note:'Stand on step if possible; calves need full range to grow — don\'t half-rep these'},
+      {name:'Hip Abduction Machine',  structure:'3 × 15',   note:'Glute medius / outer hip — often neglected; directly improves knee stability and glute shape'},
+     ]},
+    {dow:'Day 4',name:'Shoulders + Core',short:'Shldr/Core',dots:[GREEN,GRAY],
+     tags:['Shoulders','Core'],
+     exercises:[
+      {name:'Overhead Press',         structure:'4 × 6–8',  note:'Seated or standing — brace everything, press in a straight line, full lockout overhead'},
+      {name:'Lateral Raises',         structure:'5 × 12–15',note:'Side delts are responsible for visible shoulder width — high volume, controlled tempo'},
+      {name:'Rear Delt Machine',      structure:'4 × 12',   note:'Rear delts balance shoulder health and directly improve posture and bench stability'},
+      {name:'Face Pull',              structure:'3 × 15',   note:'External rotation at peak — the most important injury-prevention exercise in this programme'},
+      {name:'Cable Crunch',           structure:'3 × 15',   note:'Weighted ab work; round the spine fully — this is not a hip flexor exercise'},
+      {name:'Plank Hold',             structure:'3 × 45s',  note:'Full-body tension — glutes squeezed, ribs down, no breath-holding'},
+     ]},
+    {dow:'Day 5',name:'Chest + Back',short:'Chest/Back',dots:[CORAL,BLUE],
+     tags:['Chest','Back','Volume'],
+     exercises:[
+      {name:'Incline Barbell Press',  structure:'4 × 8',    note:'Second chest session — more volume, moderate weight. Upper chest and shoulder tie-in.'},
+      {name:'Cable Crossover',        structure:'4 × 12',   note:'Full stretch and squeeze — cross hands at the end; best chest isolation for pump work'},
+      {name:'Pull-Up',                structure:'4 × max',  note:'Bodyweight pull — dead hang start, chest to bar. Scale with band if needed.'},
+      {name:'Cable Seated Row — Wide Grip',structure:'4 × 10',note:'Upper back and rear delt emphasis — wider grip, pull to lower chest, elbows flare wide'},
+      {name:'Bicep Curls',            structure:'3 × 10',   note:'Incline dumbbell curl option for extra stretch — hit biceps from a different angle'},
+     ]},
+  ],
+  6:PPL_SIX_DAY,
+  7:[...PPL_SIX_DAY,STRENGTH_RECOVERY_DAY],
 };
 
 // Cardio day variants — selected by user's cardio intensity preference
@@ -401,7 +350,87 @@ const CARDIO_DAYS={
 };
 function getCardioDay(){ return CARDIO_DAYS[getCardioLevel()]||CARDIO_DAYS.moderate }
 
-// Pure cardio-only schedules — used when goal === 'cardio'
+// Pure cardio-only schedules — used when goal === 'cardio'.
+// Each session type is defined once and composed into the 3–7 day weeks below,
+// instead of the same day being copy-pasted into every frequency (which let
+// copies quietly drift apart and made a real within-week duplicate — two
+// identical walk/stretch/foam-roll days in the 7-day plan — easy to miss).
+const CARDIO_SESSIONS={
+  steady:{dow:'Steady',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
+    tags:['Cardio','Endurance'],
+    defaultNote:'Steady state — 60–70% max HR. Easy conversation pace throughout.',
+    exercises:[
+      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min each week — consistency beats intensity here'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
+    ]},
+  hiit:{dow:'HIIT',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
+    tags:['HIIT','High Intensity'],
+    defaultNote:'Intervals — 80–90% max HR on work sets, full rest between rounds.',
+    exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build before intervals — protect your joints'},
+      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort every sprint — walk the rest'},
+      {name:'Jump Rope',              structure:'4 × 2 min',        note:'Continuous effort, 60s rest between rounds'},
+      {name:'Burpees',                structure:'4 × 10',           note:'Full range — chest to floor, jump at top'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Heart rate return — do not skip'},
+    ]},
+  // 4-day week swaps jump rope for the air bike, so its one HIIT day hits harder
+  hiitBike:{dow:'HIIT',name:'HIIT — Air Bike',short:'HIIT',dots:[CORAL,BLUE],
+    tags:['HIIT','Fat Loss'],
+    defaultNote:'Intervals — 80–90% max HR on work sets. True rest between rounds.',
+    exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build — protect your joints'},
+      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort, walk the rest'},
+      {name:'Air Bike (Assault Bike)',structure:'4 × 20s / 40s rest',note:'All-out — the hardest 20s you have'},
+      {name:'Burpees',                structure:'3 × 12',           note:'Full range every rep'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Essential — heart rate return'},
+    ]},
+  zone2:{dow:'Zone 2',name:'Zone 2 Endurance',short:'Zone 2',dots:[BLUE,GREEN],
+    tags:['Cardio','Zone 2','Endurance'],
+    defaultNote:'Long easy effort — Zone 2 builds your aerobic base. Keep it truly easy.',
+    exercises:[
+      {name:'Stationary Bike',        structure:'45 min',           note:'Steady cadence, same pace throughout — no surges'},
+      {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body'},
+    ]},
+  tempo:{dow:'Tempo',name:'Tempo Run',short:'Tempo',dots:[CORAL,AMBER],
+    tags:['Cardio','Endurance','Tempo'],
+    defaultNote:'Tempo — comfortably hard. 75–85% max HR. Should feel like a "controlled struggle".',
+    exercises:[
+      {name:'Warm-up Jog',            structure:'5 min',            note:'Easy pace before tempo'},
+      {name:'Running',                structure:'20 min @ tempo pace',note:'Steady hard effort — not a sprint, not a jog'},
+      {name:'Stair Climber',          structure:'10 min',           note:'Moderate-high resistance, steady climb'},
+      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Full lower body stretch'},
+    ]},
+  long:{dow:'Long',name:'Long Endurance',short:'Long',dots:[BLUE,GREEN],
+    tags:['Cardio','Endurance'],
+    defaultNote:'Your long easy day — the cornerstone of endurance fitness. Stay at 60–70% max HR.',
+    exercises:[
+      {name:'Cycling',                structure:'60–75 min',        note:'Easy gear, conversational pace the whole way'},
+      {name:'Rowing Machine',         structure:'20 min',           note:'Low rate, smooth strokes — form over speed'},
+      {name:'Cool-down Stretch',      structure:'8 min',            note:'Full body — take your time'},
+    ]},
+  recovery:{dow:'Recovery',name:'Active Recovery',short:'Recovery',dots:[GREEN],
+    tags:['Recovery','Core'],
+    defaultNote:'Easy movement only — blood flow and mobility. Active recovery accelerates progress more than extra hard sessions.',
+    exercises:[
+      {name:'Brisk Walk',             structure:'30 min',           note:'Easy, enjoyable pace — outdoors if possible'},
+      {name:'Plank Hold',             structure:'3 × 45s',          note:'Core stability — stable hips, steady breathing'},
+      {name:'Full-Body Stretch',      structure:'12 min',           note:'Hold each stretch 30–45s — hips, hamstrings, back, shoulders'},
+      {name:'Foam Roll',              structure:'5 min',            note:'Glutes, IT band, upper back, calves'},
+    ]},
+  // Deliberately NOT another walk/stretch/foam-roll day — the 7-day week already
+  // has `recovery` mid-week, so its last day is joint-mobility work instead.
+  mobility:{dow:'Mobility',name:'Mobility Flow',short:'Mobility',dots:[GREEN],
+    tags:['Recovery','Mobility'],
+    defaultNote:'Active rest — joint mobility to finish the week. Move slowly, breathe, no intensity today.',
+    exercises:[
+      {name:'Hip Mobility Flow',      structure:'10 min',           note:'90/90 switches, hip circles, deep squat hold — slow and controlled'},
+      {name:'Thoracic Mobility',      structure:'8 min',            note:'Open books, cat-cow, thread-the-needle — rotate through the upper back'},
+      {name:'Yoga Flow',              structure:'15 min',           note:'Sun salutations at an easy pace — link breath to movement'},
+      {name:'Dead Bug',               structure:'2 × 10 ea',        note:'Light core — lower back stays flat'},
+    ]},
+};
+// Gives a shared session the "Day N" label for its slot in a given week
+const _cardioWeek=(...keys)=>keys.map((k,i)=>({...CARDIO_SESSIONS[k],dow:'Day '+(i+1)}));
 const CARDIO_PROGRAMS={
   3:[
     {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
@@ -434,197 +463,18 @@ const CARDIO_PROGRAMS={
      ]},
   ],
   4:[
-    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance'],
-     defaultNote:'Steady state — hold 60–70% max HR for the full session.',
-     exercises:[
-      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min/week — consistency beats intensity here'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
-     ]},
-    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
-     tags:['HIIT','Fat Loss'],
-     defaultNote:'Intervals — 80–90% max HR on work sets. True rest between rounds.',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build — protect your joints'},
-      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort, walk the rest'},
-      {name:'Air Bike (Assault Bike)',structure:'4 × 20s / 40s rest',note:'All-out — the hardest 20s you have'},
-      {name:'Burpees',                structure:'3 × 12',           note:'Full range every rep'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Essential — heart rate return'},
-     ]},
-    {dow:'Day 3',name:'Zone 2 Endurance',short:'Zone 2',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance','Zone 2'],
-     defaultNote:'Zone 2 — long easy effort at 60–70% max HR. This builds your aerobic base. Should feel easy.',
-     exercises:[
+    ..._cardioWeek('steady','hiitBike'),
+    // 4-day Zone 2 adds a rowing block, since it's the week's only long session
+    {...CARDIO_SESSIONS.zone2,dow:'Day 3',exercises:[
       {name:'Stationary Bike',        structure:'40 min',           note:'Steady cadence, hold the same pace throughout'},
       {name:'Rowing Machine',         structure:'15 min',           note:'Moderate pace — focus on form and breathing'},
       {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body + shoulders'},
-     ]},
-    {dow:'Day 4',name:'Active Recovery',short:'Recovery',dots:[GREEN],
-     tags:['Recovery','Core'],
-     defaultNote:'Easy day — restore and move. No burning, no breathlessness.',
-     exercises:[
-      {name:'Brisk Walk',             structure:'30 min',           note:'Easy pace, outdoors if possible'},
-      {name:'Plank Hold',             structure:'3 × 45s',          note:'Core bracing — stable hips'},
-      {name:'Full-Body Stretch',      structure:'10 min',           note:'Priority: hips, hamstrings, upper back'},
-      {name:'Foam Roll',              structure:'5 min',            note:'Slow and deliberate — glutes, IT band, lats'},
-     ]},
+    ]},
+    ..._cardioWeek('recovery').map(d=>({...d,dow:'Day 4'})),
   ],
-  5:[
-    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance'],
-     defaultNote:'Steady state — 60–70% max HR. Easy conversation pace throughout.',
-     exercises:[
-      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min each week'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
-     ]},
-    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
-     tags:['HIIT','High Intensity'],
-     defaultNote:'Intervals — 80–90% max HR work sets, full rest between rounds.',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build before intervals'},
-      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort every sprint'},
-      {name:'Jump Rope',              structure:'4 × 2 min',        note:'Continuous, 60s rest rounds'},
-      {name:'Burpees',                structure:'4 × 10',           note:'Full range'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Heart rate return — do not skip'},
-     ]},
-    {dow:'Day 3',name:'Zone 2 Endurance',short:'Zone 2',dots:[BLUE,GREEN],
-     tags:['Cardio','Zone 2','Endurance'],
-     defaultNote:'Long easy effort — the session that builds your engine. Keep it truly easy.',
-     exercises:[
-      {name:'Stationary Bike',        structure:'45 min',           note:'Steady cadence, same pace throughout — no surges'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body'},
-     ]},
-    {dow:'Day 4',name:'Tempo Run',short:'Tempo',dots:[CORAL,AMBER],
-     tags:['Cardio','Endurance','Tempo'],
-     defaultNote:'Tempo — comfortably hard. 75–85% max HR. Should feel like a "controlled struggle".',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Easy pace before tempo'},
-      {name:'Running',                structure:'20 min @ tempo pace',note:'Steady hard effort — not a sprint, not a jog'},
-      {name:'Stair Climber',          structure:'10 min',           note:'Moderate-high resistance, steady climb'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Full lower body stretch'},
-     ]},
-    {dow:'Day 5',name:'Active Recovery',short:'Recovery',dots:[GREEN],
-     tags:['Recovery','Core'],
-     defaultNote:'Easy movement only. Active recovery accelerates progress more than extra hard sessions.',
-     exercises:[
-      {name:'Brisk Walk',             structure:'30 min',           note:'Easy, enjoyable pace'},
-      {name:'Plank Hold',             structure:'3 × 45s',          note:'Core stability maintenance'},
-      {name:'Full-Body Stretch',      structure:'12 min',           note:'Hold each stretch 30–45s — hips, hamstrings, back, shoulders'},
-      {name:'Foam Roll',              structure:'5 min',            note:'Glutes, IT band, upper back, calves'},
-     ]},
-  ],
-  6:[
-    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance'],
-     defaultNote:'Steady state — 60–70% max HR. Easy conversation pace throughout.',
-     exercises:[
-      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min each week'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
-     ]},
-    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
-     tags:['HIIT','High Intensity'],
-     defaultNote:'Intervals — 80–90% max HR work sets, full rest between rounds.',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Gradual build before intervals'},
-      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort every sprint'},
-      {name:'Jump Rope',              structure:'4 × 2 min',        note:'Continuous, 60s rest rounds'},
-      {name:'Burpees',                structure:'4 × 10',           note:'Full range'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Heart rate return — do not skip'},
-     ]},
-    {dow:'Day 3',name:'Zone 2 Endurance',short:'Zone 2',dots:[BLUE,GREEN],
-     tags:['Cardio','Zone 2','Endurance'],
-     defaultNote:'Long easy effort — Zone 2 builds your aerobic base. Keep it truly easy.',
-     exercises:[
-      {name:'Stationary Bike',        structure:'45 min',           note:'Steady cadence, same pace throughout'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body'},
-     ]},
-    {dow:'Day 4',name:'Tempo',short:'Tempo',dots:[CORAL,AMBER],
-     tags:['Cardio','Tempo'],
-     defaultNote:'Tempo — comfortably hard at 75–85% max HR.',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Easy before tempo'},
-      {name:'Running',                structure:'20 min @ tempo pace',note:'Steady hard effort'},
-      {name:'Stair Climber',          structure:'10 min',           note:'Moderate-high resistance'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Full lower body stretch'},
-     ]},
-    {dow:'Day 5',name:'Active Recovery',short:'Recovery',dots:[GREEN],
-     tags:['Recovery','Core'],
-     defaultNote:'Easy movement only — blood flow and mobility.',
-     exercises:[
-      {name:'Brisk Walk',             structure:'30 min',           note:'Easy pace'},
-      {name:'Plank Hold',             structure:'3 × 45s',          note:'Core stability'},
-      {name:'Full-Body Stretch',      structure:'12 min',           note:'Hips, hamstrings, back, shoulders'},
-      {name:'Foam Roll',              structure:'5 min',            note:'Glutes, IT band, upper back'},
-     ]},
-    {dow:'Day 6',name:'Long Endurance',short:'Long',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance'],
-     defaultNote:'Long easy effort — the most important session of the week for building base fitness. Stay easy.',
-     exercises:[
-      {name:'Cycling',                structure:'60 min',           note:'Easy gear, conversational pace the whole time'},
-      {name:'Rowing Machine',         structure:'20 min',           note:'Low rate, smooth strokes — form over speed'},
-      {name:'Cool-down Stretch',      structure:'8 min',            note:'Full body — take your time'},
-     ]},
-  ],
-  7:[
-    {dow:'Day 1',name:'Steady State',short:'Steady',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance'],
-     defaultNote:'Steady state — 60–70% max HR. Easy conversation pace.',
-     exercises:[
-      {name:'Treadmill / Walk-Run',   structure:'35 min',           note:'Build by 2 min each week'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Calves, quads, hip flexors'},
-     ]},
-    {dow:'Day 2',name:'HIIT',short:'HIIT',dots:[CORAL,BLUE],
-     tags:['HIIT','High Intensity'],
-     defaultNote:'Intervals — 80–90% max HR on work sets.',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Build before intervals'},
-      {name:'Sprint Intervals',       structure:'10 × 30s / 30s rest',note:'Max effort every sprint'},
-      {name:'Jump Rope',              structure:'4 × 2 min',        note:'Continuous, 60s rest'},
-      {name:'Burpees',                structure:'4 × 10',           note:'Full range'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Do not skip'},
-     ]},
-    {dow:'Day 3',name:'Zone 2',short:'Zone 2',dots:[BLUE,GREEN],
-     tags:['Cardio','Zone 2'],
-     defaultNote:'Zone 2 — long easy effort, builds your aerobic engine.',
-     exercises:[
-      {name:'Stationary Bike',        structure:'45 min',           note:'Steady cadence throughout'},
-      {name:'Cool-down Stretch',      structure:'5 min',            note:'Full lower body'},
-     ]},
-    {dow:'Day 4',name:'Active Recovery',short:'Recovery',dots:[GREEN],
-     tags:['Recovery','Core'],
-     defaultNote:'Mid-week recovery — easy movement, no burning.',
-     exercises:[
-      {name:'Brisk Walk',             structure:'25 min',           note:'Easy pace, enjoy it'},
-      {name:'Full-Body Stretch',      structure:'10 min',           note:'Hips, hamstrings, shoulders'},
-      {name:'Foam Roll',              structure:'5 min',            note:'Glutes, IT band, lats'},
-     ]},
-    {dow:'Day 5',name:'Tempo',short:'Tempo',dots:[CORAL,AMBER],
-     tags:['Cardio','Tempo'],
-     defaultNote:'Tempo — comfortably hard, 75–85% max HR.',
-     exercises:[
-      {name:'Warm-up Jog',            structure:'5 min',            note:'Easy before tempo'},
-      {name:'Running',                structure:'20 min @ tempo pace',note:'Steady hard effort'},
-      {name:'Stair Climber',          structure:'10 min',           note:'Moderate-high resistance'},
-      {name:'Cool-down Walk + Stretch',structure:'8 min',           note:'Full lower body stretch'},
-     ]},
-    {dow:'Day 6',name:'Long Endurance',short:'Long',dots:[BLUE,GREEN],
-     tags:['Cardio','Endurance'],
-     defaultNote:'Your long easy day — the cornerstone of endurance fitness. Stay at 60–70% max HR.',
-     exercises:[
-      {name:'Cycling',                structure:'60–75 min',        note:'Easy gear, conversational pace the whole way'},
-      {name:'Rowing Machine',         structure:'20 min',           note:'Low rate, smooth strokes'},
-      {name:'Cool-down Stretch',      structure:'8 min',            note:'Full body stretch'},
-     ]},
-    {dow:'Day 7',name:'Mobility & Rest',short:'Mobility',dots:[GREEN],
-     tags:['Recovery','Mobility'],
-     defaultNote:'Active rest — gentle movement and mobility work to finish the week. No cardio intensity today.',
-     exercises:[
-      {name:'Brisk Walk',             structure:'20 min',           note:'Gentle, no effort — just move'},
-      {name:'Full-Body Stretch',      structure:'15 min',           note:'Take your time — hold 45–60s per stretch'},
-      {name:'Foam Roll',              structure:'8 min',            note:'Whole body — slow and deliberate'},
-      {name:'Plank Hold',             structure:'2 × 30s',          note:'Light core — not a workout'},
-     ]},
-  ],
+  5:_cardioWeek('steady','hiit','zone2','tempo','recovery'),
+  6:_cardioWeek('steady','hiit','zone2','tempo','recovery','long'),
+  7:_cardioWeek('steady','hiit','zone2','recovery','tempo','long','mobility'),
 };
 
 // ── Workout hero images (Unsplash photo IDs, matched by day name/tags) ────────
@@ -709,17 +559,32 @@ function getActiveDays(){
   // Apply per-slot custom day overrides
   return applyOverrides(base);
 }
-function getActiveDay(idx){ return getActiveDays()[idx]||null }
+function getActiveDay(idx){
+  if(idx>=BONUS_BASE){
+    const b=BONUS_WORKOUTS[idx-BONUS_BASE];
+    return b?(getCustomDay(idx)||filterDayForEquipment(b,getAvailableEquipment())):null;
+  }
+  return getActiveDays()[idx]||null;
+}
+// Goal "extras" (a HIIT finisher for fat loss, a steady-state block for cardio)
+// belong on lifting days only. They used to be appended to every draft — rest
+// days and cardio days included — which stacked duplicates like "HIIT
+// Intervals" + "Cardio Finisher (HIIT)" on the same fat-loss cardio day, and a
+// second steady-state block onto every cardio-goal session that already was one.
+function getGoalExtrasForDay(day,goal){
+  if(!day||!Array.isArray(day.exercises)||!day.exercises.length) return [];
+  const timed=day.exercises.filter(e=>getExerciseMuscle(e.name)==='Cardio').length;
+  if(timed*2>=day.exercises.length) return [];
+  const names=new Set(day.exercises.map(e=>e.name));
+  return (GOAL_EXERCISES[goal]||[]).filter(e=>!names.has(e.name));
+}
 
 // Goal-aware week defaults
 function getGoalWeekDefaults(){
   const custom=getWeekTemplate();
   if(custom&&custom.length===7) return custom;
   const dpw=getDaysPerWeek(),goal=getGoal();
-  if(goal==='hybrid'){
-    // Mon=0(Upper), Tue=rest, Wed=1(Cardio), Thu=rest, Fri=2(Lower), Sat=3(Conditioning), Sun=rest
-    return [0,REST_DAY,1,REST_DAY,2,3,REST_DAY];
-  }
+  if(goal==='hybrid') return HYBRID_WEEK_DEFAULTS[dpw]||HYBRID_WEEK_DEFAULTS[4];
   if(goal==='cardio'){
     const cpKeys=Object.keys(CARDIO_PROGRAMS).map(Number);
     const cpKey=CARDIO_PROGRAMS[dpw]?dpw:cpKeys.reduce((a,b)=>Math.abs(b-dpw)<Math.abs(a-dpw)?b:a);
@@ -745,9 +610,11 @@ const GOALS=[
 ];
 
 // ── Hybrid strength + cardio programs ────────────────────────────────────────
-const HYBRID_PROGRAMS={
-  4:[
-    {dow:'Mon', name:'Upper Strength', short:'Upper', dots:[CORAL,BLUE,PURPLE],
+// Session building blocks — composed into 3–7 day weeks below. The 4-day week is
+// the original plan; the others used to silently fall back to it regardless of
+// how many days you'd picked, so a 6-day hybrid athlete only ever saw 4 days.
+const HYBRID_SESSIONS={
+  upper:{dow:'Mon', name:'Upper Strength', short:'Upper', dots:[CORAL,BLUE,PURPLE],
      tags:['Chest','Back','Shoulders'],
      defaultNote:'Upper strength day — focus on compound presses and rows. Rest 90s–2 min between sets.',
      exercises:[
@@ -755,9 +622,9 @@ const HYBRID_PROGRAMS={
       {name:'Barbell Row',         structure:'4 × 6',  note:'Pull as hard as you push — flat back, drive elbows to hips'},
       {name:'Overhead Press',      structure:'3 × 8',  note:'Strict press — no leg drive, keep ribs down'},
       {name:'Lat Pulldown',        structure:'3 × 10', note:'Full stretch at top, squeeze lats at bottom'},
-      {name:'Dumbbell Curl',       structure:'3 × 12', note:'Slow eccentric — 3 seconds down'},
+      {name:'Bicep Curls',         structure:'3 × 12', note:'Slow eccentric — 3 seconds down'},
      ]},
-    {dow:'Wed', name:'Cardio & Core', short:'Cardio', dots:[BLUE,GREEN],
+  cardioCore:{dow:'Wed', name:'Cardio & Core', short:'Cardio', dots:[BLUE,GREEN],
      tags:['Cardio','Core'],
      defaultNote:'Cardio day — 25 min continuous effort then core circuit. Keep intensity sustainable throughout.',
      exercises:[
@@ -766,7 +633,7 @@ const HYBRID_PROGRAMS={
       {name:'Hanging Knee Raise',    structure:'3 × 15',     note:'Controlled — no swinging, squeeze at top'},
       {name:'Dead Bug',              structure:'3 × 10 ea',  note:'Lower back stays flat — slow and deliberate'},
      ]},
-    {dow:'Fri', name:'Lower Strength', short:'Lower', dots:[GREEN,AMBER],
+  lower:{dow:'Fri', name:'Lower Strength', short:'Lower', dots:[GREEN,AMBER],
      tags:['Quads','Hamstrings','Glutes'],
      defaultNote:'Lower strength day — squat and hinge are the stars. Full range of motion on every rep.',
      exercises:[
@@ -776,17 +643,185 @@ const HYBRID_PROGRAMS={
       {name:'Walking Lunges',        structure:'3 × 10 ea',  note:'Slow and controlled — feel the glute load'},
       {name:'Standing Calf Raise',   structure:'4 × 15',     note:'Full stretch at bottom — pause 1s before rising'},
      ]},
-    {dow:'Sat', name:'Conditioning', short:'HIIT', dots:[CORAL,AMBER],
+  conditioning:{dow:'Sat', name:'Conditioning', short:'HIIT', dots:[CORAL,AMBER],
      tags:['HIIT','Full Body','Conditioning'],
      defaultNote:'Conditioning day — short rest, high effort. This session builds your engine as much as your physique.',
      exercises:[
       {name:'Cardio Finisher (HIIT)',structure:'15 min',     note:'30s max effort / 30s rest × 15 rounds — true max effort'},
       {name:'Kettlebell Swing',      structure:'4 × 20',     note:'Hip snap — not a squat, hinge and drive through hips'},
       {name:'Dumbbell Thruster',     structure:'3 × 12',     note:'Squat to overhead press — one fluid movement, no pause'},
-      {name:'Farmers Carry',         structure:'3 × 40m',    note:'Chest tall, grip tight, walk fast — shoulders packed'},
+      {name:'Farmer\'s Carry',       structure:'3 × 40m',    note:'Chest tall, grip tight, walk fast — shoulders packed'},
      ]},
-  ],
+  fullBodyA:{dow:'Day 1', name:'Full Body Strength A', short:'Full A', dots:[GREEN,CORAL,BLUE],
+     tags:['Full Body','Strength'],
+     defaultNote:'Squat, press, pull — the three big patterns in one session. Rest 2 min between main sets.',
+     exercises:[
+      {name:'Barbell Back Squat',  structure:'4 × 5',  note:'Primary strength — hit depth every rep, chest up'},
+      {name:'Barbell Bench Press', structure:'4 × 5',  note:'Controlled descent, pause on the chest, drive up'},
+      {name:'Barbell Row',         structure:'3 × 8',  note:'Flat back, pull to lower ribs'},
+      {name:'Face Pull',           structure:'3 × 15', note:'Shoulder health — external rotation at the end'},
+      {name:'Plank Hold',          structure:'3 × 45s',note:'Ribs down, glutes squeezed'},
+     ]},
+  fullBodyB:{dow:'Day 3', name:'Full Body Strength B', short:'Full B', dots:[AMBER,GREEN,BLUE],
+     tags:['Full Body','Strength'],
+     defaultNote:'Hinge, overhead press, vertical pull — complements Day A so every pattern gets trained twice a week.',
+     exercises:[
+      {name:'Romanian Deadlift',   structure:'4 × 8',     note:'Hip hinge — hamstrings pull taut, bar skims legs'},
+      {name:'Overhead Press',      structure:'4 × 6',     note:'Strict — brace core and glutes, full lockout'},
+      {name:'Lat Pulldown',        structure:'3 × 10',    note:'Full stretch at top, elbows to hips'},
+      {name:'Walking Lunges',      structure:'3 × 10 ea', note:'Long stride, upright torso'},
+      {name:'Hanging Knee Raise',  structure:'3 × 12',    note:'No swinging — curl the pelvis up'},
+     ]},
+  upperVolume:{dow:'Day 5', name:'Upper Volume', short:'Upper B', dots:[CORAL,BLUE,AMBER],
+     tags:['Chest','Back','Arms'],
+     defaultNote:'Second upper day — moderate weight, higher reps. Chase the pump, not a max.',
+     exercises:[
+      {name:'Incline DB Press',      structure:'3 × 10', note:'Upper chest — elbows at 45°'},
+      {name:'Cable Seated Row',      structure:'3 × 12', note:'Hold the squeeze 1s'},
+      {name:'Lateral Raises',        structure:'4 × 15', note:'3s eccentric — no swinging'},
+      {name:'Face Pull',             structure:'3 × 15', note:'Rear delts and rotator cuff'},
+      {name:'Hammer Curls',          structure:'3 × 12', note:'Neutral grip, no swing'},
+      {name:'Tricep Cable Pushdown', structure:'3 × 12', note:'Elbows pinned, full extension'},
+     ]},
+  zone2Long:{dow:'Day 6', name:'Long Zone 2', short:'Zone 2', dots:[BLUE,GREEN],
+     tags:['Cardio','Zone 2','Endurance'],
+     defaultNote:'The aerobic-base session — long and genuinely easy. If you can\'t talk in full sentences, slow down.',
+     exercises:[
+      {name:'Light Jog',             structure:'40 min', note:'60–70% max HR — swap for cycling or rowing any week'},
+      {name:'Hip Mobility Flow',     structure:'8 min',  note:'Undo the miles — 90/90s, hip circles, deep squat hold'},
+     ]},
 };
+const _hybridWeek=(...keys)=>keys.map(k=>k==='recovery'?STRENGTH_RECOVERY_DAY:HYBRID_SESSIONS[k]);
+const HYBRID_PROGRAMS={
+  3:_hybridWeek('fullBodyA','cardioCore','fullBodyB'),
+  4:_hybridWeek('upper','cardioCore','lower','conditioning'),
+  5:_hybridWeek('upper','cardioCore','lower','conditioning','zone2Long'),
+  6:_hybridWeek('upper','cardioCore','lower','conditioning','upperVolume','zone2Long'),
+  7:_hybridWeek('upper','cardioCore','lower','conditioning','upperVolume','zone2Long','recovery'),
+};
+// Mon…Sun → index into HYBRID_PROGRAMS[dpw]. Strength days never land back-to-back
+// with the conditioning day that hits the same legs.
+const HYBRID_WEEK_DEFAULTS={
+  3:[0,REST_DAY,1,REST_DAY,2,REST_DAY,REST_DAY],
+  4:[0,REST_DAY,1,REST_DAY,2,3,REST_DAY],
+  5:[0,1,REST_DAY,2,REST_DAY,3,4],
+  6:[0,1,2,REST_DAY,4,3,5],
+  7:[0,1,2,6,4,3,5],
+};
+
+// ── Bonus workouts ───────────────────────────────────────────────────────────
+// Standalone sessions you can drop onto any date (a rest day you feel good on,
+// a travel day, a short-on-time day) without touching your program. They live
+// at dayIdx BONUS_BASE+i — well clear of any program's 0…6 — so they never
+// shift program day indices, which sessions/custom days/schedules all key on,
+// and never enter the next-workout rotation. Each one earns a bonus-XP kicker.
+const BONUS_BASE=100;
+const BONUS_WORKOUTS=[
+  {dow:'Bonus',name:'Full Body Express',short:'Full Body',dots:[GREEN,CORAL,BLUE],
+   tags:['Full Body','Quick','~30 min'],
+   defaultNote:'Short on time — one movement per pattern, 60–90s rest. In and out in half an hour.',
+   exercises:[
+    {name:'Goblet Squat',         structure:'3 × 12',    note:'Elbows inside knees at the bottom, chest tall'},
+    {name:'Dumbbell Bench Press', structure:'3 × 10',    note:'Full stretch at the bottom, press up and slightly in'},
+    {name:'Dumbbell Row',         structure:'3 × 10 ea', note:'Pull the elbow to your hip'},
+    {name:'Dumbbell RDL',         structure:'3 × 10',    note:'Hinge — dumbbells skim your thighs'},
+    {name:'Plank Hold',           structure:'2 × 45s',   note:'Squeeze glutes, ribs down'},
+   ]},
+  {dow:'Bonus',name:'No-Equipment Anywhere',short:'Bodyweight',dots:[GREEN,AMBER],
+   tags:['Bodyweight','Travel','Full Body'],
+   defaultNote:'Hotel room, living room, park — no kit needed. Move briskly between exercises.',
+   exercises:[
+    {name:'Push-Up',              structure:'4 × 12',    note:'Body in one straight line — scale to knees if needed'},
+    {name:'Bodyweight Squat',     structure:'4 × 20',    note:'Sit between your heels, full depth'},
+    {name:'Glute Bridge',         structure:'3 × 15',    note:'Pause 1s at the top'},
+    {name:'Diamond Push-Up',      structure:'3 × 10',    note:'Hands together under the chest — triceps burner'},
+    {name:'Mountain Climber',     structure:'3 × 30',    note:'Fast feet, hips level'},
+    {name:'Side Plank',           structure:'2 × 30s ea',note:'Stack the hips, don\'t let them sag'},
+   ]},
+  {dow:'Bonus',name:'Arm Pump',short:'Arms',dots:[PURPLE,AMBER],
+   tags:['Biceps','Triceps','Pump'],
+   defaultNote:'Superset each curl with the pushdown/extension after it. 45–60s rest — chase the pump.',
+   exercises:[
+    {name:'Incline Dumbbell Curl',     structure:'3 × 12', note:'Arms hang behind you — huge stretch at the bottom'},
+    {name:'Rope Pushdown',             structure:'3 × 12', note:'Split the rope at the bottom'},
+    {name:'Hammer Curls',              structure:'3 × 12', note:'Neutral grip, no swing'},
+    {name:'Overhead Tricep Extension', structure:'3 × 12', note:'Long-head stretch'},
+    {name:'Cable Curls',               structure:'2 × 15', note:'Burnout — constant tension'},
+   ]},
+  {dow:'Bonus',name:'Core Crusher',short:'Core',dots:[GRAY,CORAL],
+   tags:['Core','Abs','~20 min'],
+   defaultNote:'Anti-extension, anti-rotation, flexion — a complete core session in 20 minutes.',
+   exercises:[
+    {name:'Hanging Leg Raise', structure:'3 × 10',    note:'Curl the pelvis up — don\'t just lift the legs'},
+    {name:'Cable Crunch',      structure:'3 × 15',    note:'Round the spine, don\'t pull with the arms'},
+    {name:'Pallof Press',      structure:'3 × 10 ea', note:'Resist the twist — press straight out'},
+    {name:'Side Plank',        structure:'3 × 30s ea',note:'Hips high'},
+    {name:'Dead Bug',          structure:'3 × 10 ea', note:'Lower back glued to the floor'},
+   ]},
+  {dow:'Bonus',name:'Glute Builder',short:'Glutes',dots:[CORAL,GREEN],
+   tags:['Glutes','Hamstrings'],
+   defaultNote:'Glute-focused lower session — slow eccentrics, hard squeeze at lockout.',
+   exercises:[
+    {name:'Hip Thrust (Barbell)',  structure:'4 × 10',    note:'Chin tucked, ribs down — pause 1s at the top'},
+    {name:'Bulgarian Split Squat', structure:'3 × 10 ea', note:'Lean forward slightly to bias the glute'},
+    {name:'Cable Kickback',        structure:'3 × 15 ea', note:'Kick back and slightly out — no lower-back arch'},
+    {name:'Hip Abduction Machine', structure:'3 × 20',    note:'Lean forward for upper-glute emphasis'},
+    {name:'Frog Pump',             structure:'2 × 30',    note:'Burnout — soles together, fast reps'},
+   ]},
+  {dow:'Bonus',name:'Shoulder Health & Posture',short:'Posture',dots:[GREEN,BLUE],
+   tags:['Shoulders','Prehab','Light'],
+   defaultNote:'Rotator cuff and upper-back work — light weights, perfect reps. Great on a rest day.',
+   exercises:[
+    {name:'Banded Pull-Apart',          structure:'3 × 20',  note:'Squeeze the shoulder blades together'},
+    {name:'Face Pull',                  structure:'3 × 15',  note:'Pull to the eyes, rotate the hands back'},
+    {name:'Shoulder External Rotation', structure:'3 × 12 ea',note:'Elbow pinned to your side'},
+    {name:'Prone Y-T-W',                structure:'2 × 8',   note:'Thumbs up, slow and strict'},
+    {name:'Wall Slide',                 structure:'2 × 12',  note:'Keep wrists and elbows on the wall'},
+   ]},
+  {dow:'Bonus',name:'HIIT 20',short:'HIIT 20',dots:[CORAL,BLUE],
+   tags:['HIIT','Conditioning','~20 min'],
+   defaultNote:'Twenty minutes, all-out work intervals. Full effort on, full recovery off.',
+   exercises:[
+    {name:'Warm-up Jog',     structure:'3 min',          note:'Easy — get the heart rate up gradually'},
+    {name:'Tabata Protocol', structure:'2 × 4 min',      note:'20s max / 10s rest × 8 — 1 min easy between blocks'},
+    {name:'Battle Ropes',    structure:'5 × 30s / 30s',  note:'Alternating waves, stay low'},
+    {name:'Burpees',         structure:'5 min EMOM × 6', note:'6 burpees at the top of every minute'},
+    {name:'Cool-down Walk',  structure:'3 min',          note:'Bring the heart rate down before stopping'},
+   ]},
+  {dow:'Bonus',name:'Desk-Worker Reset',short:'Reset',dots:[GREEN],
+   tags:['Mobility','Recovery','Light'],
+   defaultNote:'Undo a day of sitting — open the hips and upper back. Gentle, no intensity.',
+   exercises:[
+    {name:'Thoracic Mobility', structure:'6 min',      note:'Open books and thread-the-needle'},
+    {name:'Hip Mobility Flow', structure:'8 min',      note:'Couch stretch and 90/90 switches'},
+    {name:'Bird Dog',          structure:'2 × 10 ea',  note:'Reach long, hips square'},
+    {name:'Wall Slide',        structure:'2 × 12',     note:'Slow — feel the upper back work'},
+    {name:'Foam Roll',         structure:'5 min',      note:'Upper back, lats, glutes'},
+   ]},
+  {dow:'Bonus',name:'Upper Body Express',short:'Upper',dots:[CORAL,BLUE,GREEN],
+   tags:['Chest','Back','Shoulders','~35 min'],
+   defaultNote:'Push/pull alternating — pair each press with the pull after it to save time.',
+   exercises:[
+    {name:'Pull-Up',               structure:'3 × max', note:'Dead hang to chin over bar — use assistance if needed'},
+    {name:'Seated Dumbbell Press', structure:'3 × 10',  note:'Back supported, press straight up'},
+    {name:'Chest-Supported Row',   structure:'3 × 10',  note:'Chest stays on the pad'},
+    {name:'Incline DB Press',      structure:'3 × 10',  note:'Upper chest, elbows at 45°'},
+    {name:'Lateral Raises',        structure:'3 × 15',  note:'Lead with the elbows'},
+   ]},
+  {dow:'Bonus',name:'Leg Day Express',short:'Legs',dots:[GREEN,AMBER],
+   tags:['Quads','Hamstrings','Calves','~35 min'],
+   defaultNote:'Machine-based legs — safe to push hard without a spotter.',
+   exercises:[
+    {name:'Leg Press',           structure:'4 × 12', note:'Full depth, don\'t lock the knees'},
+    {name:'Lying Leg Curl',      structure:'3 × 12', note:'Hips stay down on the pad'},
+    {name:'Leg Extension',       structure:'3 × 15', note:'Squeeze 1s at the top'},
+    {name:'Walking Lunges',      structure:'2 × 10 ea',note:'Long stride, upright torso'},
+    {name:'Standing Calf Raise', structure:'3 × 15', note:'Full stretch, pause at the bottom'},
+   ]},
+];
+const BONUS_XP=25;
+function isBonusDayIdx(idx){ return idx>=BONUS_BASE&&idx<BONUS_BASE+BONUS_WORKOUTS.length }
+function getBonusWorkouts(){ return BONUS_WORKOUTS.map((_,i)=>getActiveDay(BONUS_BASE+i)) }
 
 // ── Personas shown in onboarding step 2 ──────────────────────────────────────
 const PERSONAS=[
@@ -895,7 +930,7 @@ const GOAL_COACHING={
   muscle:  '💪 Muscle goal: rest 90s–2 min between main sets. Aim to add weight or reps every session — that\'s the whole game.',
   fat_loss:'🔥 Fat loss goal: keep rest ≤60s between sets. Complete the cardio finisher at the end — this is where the goal is won.',
   hybrid:  '🏃 Hybrid goal: treat strength and cardio sessions as equal. Never skip either — the combination is what creates your results.',
-  cardio:  '❤️ Cardio goal: finish every session with the steady-state block. Target 3–4 cardio sessions this week.',
+  cardio:  '❤️ Cardio goal: keep most sessions truly easy (conversational pace) and save the hard efforts for HIIT and tempo days.',
   general: '',
 };
 
@@ -967,7 +1002,6 @@ const EXERCISE_LIBRARY={
     {name:'Landmine Press',               type:'Compound',  equipment:'Barbell'},
     // ── Dumbbell ─────────────────────────────────────────────────────────────
     {name:'Dumbbell Bench Press',         type:'Compound',  equipment:'Dumbbell'},
-    {name:'Incline Dumbbell Press',       type:'Compound',  equipment:'Dumbbell'},
     {name:'Decline Dumbbell Press',       type:'Compound',  equipment:'Dumbbell'},
     {name:'Incline DB Press',             type:'Compound',  equipment:'Dumbbell'},
     {name:'Flat Dumbbell Fly',            type:'Isolation', equipment:'Dumbbell'},
@@ -979,7 +1013,6 @@ const EXERCISE_LIBRARY={
     {name:'Chest Press (machine)',        type:'Compound',  equipment:'Machine'},
     {name:'Chest Press (neutral grip)',   type:'Compound',  equipment:'Machine'},
     {name:'Chest Fly',                    type:'Isolation', equipment:'Machine'},
-    {name:'Chest Fly (pec deck)',         type:'Isolation', equipment:'Machine'},
     {name:'Incline Fly or Pec Deck',      type:'Isolation', equipment:'Machine'},
     // ── Cable ─────────────────────────────────────────────────────────────────
     {name:'Cable Fly',                    type:'Isolation', equipment:'Cable'},
@@ -1008,6 +1041,8 @@ const EXERCISE_LIBRARY={
     {name:'Cable Seated Row',               type:'Compound',  equipment:'Cable',     targets:'Mid Back / Rhomboids',  cue:'Drive elbows back; hold 1s at peak contraction, controlled release'},
     {name:'Cable Seated Row — Wide Grip',   type:'Compound',  equipment:'Cable',     targets:'Upper Back / Rear Delt',cue:'Wide neutral or overhand grip; more rear delt and upper trap activation'},
     {name:'Machine Row',                    type:'Compound',  equipment:'Machine',   targets:'Mid Back',              cue:'Chest pad support; drive elbows back and squeeze shoulder blades'},
+    {name:'Assisted Pull-Up Machine',       type:'Compound',  equipment:'Machine',   targets:'Lats + Upper Back',     cue:'Counterweight assists the pull; dial the assist down over time toward a bodyweight pull-up'},
+    {name:'High Row Machine',               type:'Compound',  equipment:'Machine',   targets:'Upper Back / Lats',     cue:'Iso-lateral handles pull to chest height; squeeze shoulder blades at the top of each rep'},
     {name:'Barbell Row',                    type:'Compound',  equipment:'Barbell',   targets:'Full Back',             cue:'Hinge to ~45°; pull bar to lower chest, control the descent'},
     {name:'Pendlay Row',                    type:'Compound',  equipment:'Barbell',   targets:'Upper Back / Traps',    cue:'Start each rep from floor; explosive pull to chest, strict form'},
     {name:'Dumbbell Row',                   type:'Compound',  equipment:'Dumbbell',  targets:'Lats + Mid Back',       cue:'Knee on bench; pull elbow toward ceiling, full elbow extension at bottom'},
@@ -1052,7 +1087,6 @@ const EXERCISE_LIBRARY={
     {name:'Kettlebell Press',         type:'Compound',  equipment:'Equipment'},
     {name:'Bradford Press',           type:'Compound',  equipment:'Barbell'},
     {name:'Behind-the-Neck Press',    type:'Compound',  equipment:'Barbell'},
-    {name:'Machine Shoulder Press',   type:'Compound',  equipment:'Machine'},
     // ── Lateral / side delt ───────────────────────────────────────────────────
     {name:'Lateral Raises',           type:'Isolation', equipment:'Dumbbell'},
     {name:'Cable Lateral Raise',      type:'Isolation', equipment:'Cable'},
@@ -1062,7 +1096,6 @@ const EXERCISE_LIBRARY={
     // ── Rear delt ─────────────────────────────────────────────────────────────
     {name:'Rear Delt Machine',        type:'Isolation', equipment:'Machine'},
     {name:'Rear Delt',                type:'Isolation', equipment:'Dumbbell'},
-    {name:'Rear Delt Fly',            type:'Isolation', equipment:'Dumbbell'},
     {name:'Cable Face Pull',          type:'Isolation', equipment:'Cable'},
     {name:'Prone Y-T-W',              type:'Isolation', equipment:'Bodyweight'},
     {name:'Rear Delt Cable Fly',      type:'Isolation', equipment:'Cable'},
@@ -1084,7 +1117,6 @@ const EXERCISE_LIBRARY={
     {name:'21s (EZ Bar)',             type:'Isolation', equipment:'Barbell'},
     // ── Dumbbell ─────────────────────────────────────────────────────────────
     {name:'Bicep Curls',              type:'Isolation', equipment:'Dumbbell'},
-    {name:'Dumbbell Curl',            type:'Isolation', equipment:'Dumbbell'},
     {name:'Hammer Curls',             type:'Isolation', equipment:'Dumbbell'},
     {name:'Incline Dumbbell Curl',    type:'Isolation', equipment:'Dumbbell'},
     {name:'Concentration Curl',       type:'Isolation', equipment:'Dumbbell'},
@@ -1103,12 +1135,13 @@ const EXERCISE_LIBRARY={
     // ── Machine ───────────────────────────────────────────────────────────────
     {name:'Preacher Curl',            type:'Isolation', equipment:'Machine'},
     {name:'Machine Curl',             type:'Isolation', equipment:'Machine'},
-    {name:'Machine Preacher Curl',    type:'Isolation', equipment:'Machine'},
+    // ── Bodyweight ───────────────────────────────────────────────────────────
+    {name:'Towel Curl',               type:'Isolation', equipment:'Bodyweight'},
+    {name:'Isometric Doorframe Curl', type:'Isolation', equipment:'Bodyweight'},
   ],
   Triceps:[
     // ── Cable pushdown variations ─────────────────────────────────────────────
     {name:'Tricep Cable Pushdown',      type:'Isolation', equipment:'Cable'},
-    {name:'Tricep Pushdown',            type:'Isolation', equipment:'Cable'},
     {name:'Rope Pushdown',              type:'Isolation', equipment:'Cable'},
     {name:'V-Bar Pushdown',             type:'Isolation', equipment:'Cable'},
     {name:'Single-Arm Pushdown',        type:'Isolation', equipment:'Cable'},
@@ -1175,6 +1208,9 @@ const EXERCISE_LIBRARY={
     {name:'Face Pull (trap focus)',     type:'Isolation', equipment:'Cable'},
     {name:'Meadows Shrug',              type:'Isolation', equipment:'Barbell'},
     {name:'Pendlay Row (trap focus)',   type:'Compound',  equipment:'Barbell'},
+    // ── Bodyweight ─────────────────────────────────────────────────────────────
+    {name:'Wall Slide',                 type:'Isolation', equipment:'Bodyweight'},
+    {name:'Prone Trap Raise',           type:'Isolation', equipment:'Bodyweight'},
   ],
   Quads:[
     // ── Barbell ───────────────────────────────────────────────────────────────
@@ -1196,6 +1232,7 @@ const EXERCISE_LIBRARY={
     {name:'Hack Squat',               type:'Compound',  equipment:'Machine'},
     {name:'Smith Machine Squat',      type:'Compound',  equipment:'Machine'},
     {name:'Terminal Knee Extension',  type:'Isolation', equipment:'Cable'},
+    {name:'Cable Squat',              type:'Compound',  equipment:'Cable'},
     // ── Dumbbell / bodyweight ─────────────────────────────────────────────────
     {name:'Bulgarian Split Squat',    type:'Compound',  equipment:'Dumbbell'},
     {name:'Walking Lunges',           type:'Compound',  equipment:'Dumbbell'},
@@ -1203,6 +1240,7 @@ const EXERCISE_LIBRARY={
     {name:'Forward Lunge',            type:'Compound',  equipment:'Dumbbell'},
     {name:'Lateral Lunge',            type:'Compound',  equipment:'Dumbbell'},
     {name:'Step-Up',                  type:'Compound',  equipment:'Dumbbell'},
+    {name:'Dumbbell Thruster',         type:'Compound',  equipment:'Dumbbell'},
     {name:'Goblet Squat',             type:'Compound',  equipment:'Dumbbell'},
     {name:'Dumbbell Split Squat',     type:'Compound',  equipment:'Dumbbell'},
     {name:'Sissy Squat',              type:'Isolation', equipment:'Bodyweight'},
@@ -1242,6 +1280,7 @@ const EXERCISE_LIBRARY={
     {name:'Single-Leg Hip Thrust',     type:'Compound',  equipment:'Bodyweight'},
     {name:'Glute Bridge',              type:'Compound',  equipment:'Bodyweight'},
     {name:'Weighted Glute Bridge',     type:'Compound',  equipment:'Barbell'},
+    {name:'Barbell Step-Up',           type:'Compound',  equipment:'Barbell'},
     {name:'Frog Pump',                 type:'Isolation', equipment:'Bodyweight'},
     // ── Cable / machine isolation ─────────────────────────────────────────────
     {name:'Cable Kickback',            type:'Isolation', equipment:'Cable'},
@@ -1280,7 +1319,6 @@ const EXERCISE_LIBRARY={
   Core:[
     // ── Plank / anti-extension ────────────────────────────────────────────────
     {name:'Plank Hold',                type:'Isolation', equipment:'Bodyweight'},
-    {name:'Plank',                     type:'Isolation', equipment:'Bodyweight'},
     {name:'Side Plank',                type:'Isolation', equipment:'Bodyweight'},
     {name:'Weighted Plank',            type:'Isolation', equipment:'Bodyweight'},
     {name:'Hollow Body Hold',          type:'Isolation', equipment:'Bodyweight'},
@@ -1314,6 +1352,8 @@ const EXERCISE_LIBRARY={
     {name:'Cable Oblique Crunch',      type:'Isolation', equipment:'Cable'},
     {name:'Windshield Wipers',         type:'Isolation', equipment:'Bodyweight'},
     {name:'Side Bend (dumbbell)',      type:'Isolation', equipment:'Dumbbell'},
+    {name:'Weighted Sit-Up',           type:'Isolation', equipment:'Dumbbell'},
+    {name:'Ab Crunch Machine',         type:'Isolation', equipment:'Machine'},
     // ── Dynamic / compound ────────────────────────────────────────────────────
     {name:'Dragon Flag',               type:'Compound',  equipment:'Bodyweight'},
     {name:'Mountain Climber',          type:'Compound',  equipment:'Bodyweight'},
@@ -1356,6 +1396,22 @@ const EXERCISE_LIBRARY={
     // ── Equipment / outdoor ───────────────────────────────────────────────────
     {name:'Cycling',                   type:'Cardio',    equipment:'Equipment'},
     {name:'Kettlebell Swing',          type:'Cardio',    equipment:'Equipment'},
+    // ── Warm-ups, finishers & cool-downs (timed) ──────────────────────────────
+    // These were used by program days but missing from the library, so the
+    // app couldn't tell they were timed — they showed weight × reps inputs.
+    {name:'Warm-up Jog',               type:'Cardio',    equipment:'Bodyweight'},
+    {name:'Brisk Walk',                type:'Cardio',    equipment:'Bodyweight'},
+    {name:'Cool-down Walk',            type:'Cardio',    equipment:'Bodyweight'},
+    {name:'Cool-down Walk + Stretch',  type:'Cardio',    equipment:'Bodyweight'},
+    {name:'Cardio Finisher (HIIT)',    type:'Cardio',    equipment:'Bodyweight'},
+    {name:'Cardio — Steady State',     type:'Cardio',    equipment:'Machine'},
+    // ── Mobility & recovery (timed) ───────────────────────────────────────────
+    {name:'Cool-down Stretch',         type:'Mobility',  equipment:'Bodyweight'},
+    {name:'Full-Body Stretch',         type:'Mobility',  equipment:'Bodyweight'},
+    {name:'Hip Mobility Flow',         type:'Mobility',  equipment:'Bodyweight'},
+    {name:'Thoracic Mobility',         type:'Mobility',  equipment:'Bodyweight'},
+    {name:'Yoga Flow',                 type:'Mobility',  equipment:'Bodyweight'},
+    {name:'Foam Roll',                 type:'Mobility',  equipment:'Equipment'},
     {name:'Battle Ropes',              type:'Cardio',    equipment:'Equipment'},
     {name:'Sled Push',                 type:'Cardio',    equipment:'Equipment'},
     {name:'Prowler Push',              type:'Cardio',    equipment:'Equipment'},
@@ -1376,7 +1432,16 @@ const EXERCISE_LIBRARY={
   }
 })();
 
+// Old spellings that still appear in logged history → the library's name, so
+// those sets keep counting toward muscle volume/recovery instead of dropping
+// out (lookups are exact-string). Templates now use the canonical names.
+const EXERCISE_ALIASES={
+  'Hip Abductor Machine':'Hip Abduction Machine',
+  'Farmers Carry':'Farmer\'s Carry',
+};
+function canonicalExerciseName(name){ return EXERCISE_ALIASES[name]||name }
 function getExerciseMuscle(name){
+  name=canonicalExerciseName(name);
   for(const [group,arr] of Object.entries(EXERCISE_LIBRARY)){
     if(arr.some(e=>e.name===name)) return group;
   }
@@ -1384,6 +1449,7 @@ function getExerciseMuscle(name){
 }
 
 function getExerciseInfo(name){
+  name=canonicalExerciseName(name);
   for(const arr of Object.values(EXERCISE_LIBRARY)){
     const found=arr.find(e=>e.name===name);
     if(found) return found;

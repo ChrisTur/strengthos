@@ -6,12 +6,20 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ── Users & Auth ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
-  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  email         TEXT        UNIQUE NOT NULL,
-  name          TEXT        NOT NULL,
-  password_hash TEXT        NOT NULL,
-  created_at    TIMESTAMPTZ DEFAULT NOW()
+  id                     UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email                  TEXT        UNIQUE NOT NULL,
+  name                   TEXT        NOT NULL,
+  password_hash          TEXT        NOT NULL,
+  failed_login_attempts  INTEGER     NOT NULL DEFAULT 0,
+  locked_until           TIMESTAMPTZ,
+  created_at             TIMESTAMPTZ DEFAULT NOW()
 );
+-- Additive — safe to re-run against a database created before these columns
+-- existed (this whole file is designed to be re-run: everything above is
+-- CREATE TABLE IF NOT EXISTS, this is the ALTER equivalent for a column added
+-- after the fact rather than a schema that never existed).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS auth_sessions (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

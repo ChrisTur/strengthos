@@ -1,6 +1,25 @@
 // ── Swap modal, add-exercise modal, custom day editor ──────────────────────────────────────────────
 
 // ── Exercise library modal (swap + add) ───────────────────────────────────────
+// Counts how many past sessions included each exercise — once per session,
+// not per set, so one heavy day doesn't skew the ranking — so the picker can
+// surface exercises this specific user actually reaches for first, instead of
+// the library's fixed insertion order. Personal (per-profile) rather than
+// global across accounts: with a handful of accounts on this app a "global"
+// popularity signal would just reflect whoever logs the most, not what's
+// actually relevant to the person searching.
+function getExerciseFrequency(){
+  const freq={};
+  loadSessions().forEach(s=>{
+    const seen=new Set();
+    s.exercises.forEach(ex=>{
+      if(seen.has(ex.name)) return;
+      seen.add(ex.name);
+      freq[ex.name]=(freq[ex.name]||0)+1;
+    });
+  });
+  return freq;
+}
 let _swapEI=-1, _swapMode='swap', _swapMuscleFilter=null;
 let _customDayIdx=-1, _customDayExercises=[], _customDayName='';
 function _openLibraryModal(){
@@ -83,6 +102,12 @@ function renderSwapGrid(){
     pool=pool.filter(e=>avail.includes(e.equipment));
   }
 
+  // Most-used-by-this-user first; sort is stable, so exercises tied on
+  // frequency (including everyone at 0, i.e. never logged) keep their
+  // existing relative order rather than getting shuffled.
+  const freq=getExerciseFrequency();
+  pool=[...pool].sort((a,b)=>(freq[b.name]||0)-(freq[a.name]||0));
+
   const grid=document.getElementById('swap-exercise-grid');
   if(!pool.length){
     grid.innerHTML='<p style="color:var(--text3);font-size:13px;padding:8px 0">No exercises found.</p>';
@@ -162,21 +187,19 @@ function renderCustomDayModal(){
     return;
   }
   list.innerHTML=_customDayExercises.map((ex,i)=>`
-    <div class="custom-day-row">
+    <div class="custom-day-row sortable-item">
+      <button class="drag-handle" type="button" aria-label="Reorder ${escapeHtml(ex.name)} — drag, or use the arrow keys" title="Drag to reorder (or press and hold the row)">⠿</button>
       <span class="custom-day-name-txt">${escapeHtml(ex.name)}</span>
       <input class="custom-day-struct" value="${escapeHtml(ex.structure)}" placeholder="e.g. 3×10"
         oninput="_customDayExercises[${i}].structure=this.value">
-      <div style="display:flex;gap:4px;flex-shrink:0">
-        <button class="cday-btn" onclick="moveCustomEx(${i},-1)" ${i===0?'disabled':''}>↑</button>
-        <button class="cday-btn" onclick="moveCustomEx(${i},1)" ${i===_customDayExercises.length-1?'disabled':''}>↓</button>
-        <button class="cday-btn cday-del" onclick="removeCustomEx(${i})">✕</button>
-      </div>
+      <button class="cday-btn cday-del" onclick="removeCustomEx(${i})" aria-label="Remove ${escapeHtml(ex.name)}">✕</button>
     </div>`).join('');
+  enableSortable(list,{itemSelector:'.custom-day-row',handleSelector:'.drag-handle',onReorder:moveCustomEx});
 }
-function moveCustomEx(i,dir){
-  const j=i+dir;
-  if(j<0||j>=_customDayExercises.length) return;
-  [_customDayExercises[i],_customDayExercises[j]]=[_customDayExercises[j],_customDayExercises[i]];
+function moveCustomEx(from,to){
+  if(from===to||from<0||to<0||from>=_customDayExercises.length||to>=_customDayExercises.length) return;
+  const [moved]=_customDayExercises.splice(from,1);
+  _customDayExercises.splice(to,0,moved);
   renderCustomDayModal();
 }
 function removeCustomEx(i){

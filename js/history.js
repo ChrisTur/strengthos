@@ -4,7 +4,7 @@
 function populateHistoryFilters(){
   const sel=document.getElementById('hist-day-filter');
   sel.innerHTML='<option value="">All days</option>';
-  getActiveDays().forEach((d,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${d.dow} — ${d.name}`;sel.appendChild(o)});
+  sel.innerHTML+=workoutOptionsHTML(null).replace(/<option value="-1"[^>]*>[^<]*<\/option>/,'');
 }
 function renderHistory(){
   const list=document.getElementById('history-list');

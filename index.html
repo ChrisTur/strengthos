@@ -240,7 +240,7 @@
         <input type="text" id="custom-day-name" class="modal-input" placeholder="Day name…" style="flex:1;margin:0">
         <button class="btn btn-sm" onclick="resetCustomDay()" title="Revert to program default" style="white-space:nowrap;color:var(--red)">Reset</button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Reorder or remove exercises. Changes apply every time this workout is loaded.</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Hold and drag a row to reorder it, or remove exercises. Changes apply every time this workout is loaded.</div>
     </div>
     <div class="swap-grid-scroll" style="padding:0 24px 0">
       <div id="custom-day-list"></div>
@@ -357,7 +357,7 @@
 <div class="header">
   <div>
     <div class="header-title">StrengthOS</div>
-    <div class="header-sub">7-day split · Chest &amp; arms priority</div>
+    <button class="xp-badge" id="xp-badge" type="button" onclick="showView('dashboard')" aria-label="Your level — open Progress"></button>
   </div>
   <div class="header-right">
     <!-- Profile selector -->
@@ -443,6 +443,8 @@
   <script src="js/exercise-picker.js"></script>
   <script src="js/week-plan.js"></script>
   <script src="js/workout-session.js"></script>
+  <script src="js/sortable.js"></script>
+  <script src="js/xp.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/progress.js"></script>
   <script src="js/history.js"></script>
